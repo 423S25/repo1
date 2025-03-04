@@ -44,6 +44,8 @@ class Product(Model):
         )
         return product
 
+
+
     # Fills the database with how many days till each product is out of stock
     @staticmethod
     def fill_days_left():
@@ -108,6 +110,9 @@ class Product(Model):
         product = Product.get_product(product_id)
         product.delete_instance()
 
+    def set_img_path(self, img_path: str):
+        self.image_path = img_path
+        self.save()
 
 
     # Sets the ideal stock to [`new_stock`] units
@@ -115,6 +120,18 @@ class Product(Model):
         self.ideal_stock = new_stock
         self.last_updated = datetime.datetime.now()
         self.save()
+
+    def update_product(self, product_name: str, price: float, unit_type: str, ideal_stock: int):
+        self.product_name = product_name
+        self.price = price
+        self.unit_type = unit_type
+        self.ideal_stock = ideal_stock
+
+        self.last_updated = datetime.datetime.now()
+
+        self.save()
+
+
 
     # Sets the current available stock of a product to [`new_stock`] units
     def update_stock(self, new_stock: int):

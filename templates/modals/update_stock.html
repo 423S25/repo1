@@ -1,0 +1,14 @@
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+	<div class="modal-underlay" _="on click trigger closeModal"></div>
+	<div class="modal-content">
+		<form action="/update/inventory/{{ product.get_id() }}" method="POST" id="updateInventoryForm">
+			<input type="hidden" name="_method" value="PATCH">
+			<label for="stock">Update Stock:</label>
+			<input type="number" id="stock" name="stock" min="0" required>
+			<button type="submit">Update</button>
+		</form>
+		<br>
+		<br>
+		<button class="btn danger" _="on click trigger closeModal">Close</button>
+	</div>
+</div>

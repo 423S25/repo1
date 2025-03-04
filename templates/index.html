@@ -72,7 +72,7 @@
                         <span style="font-weight: bold;">{{ product.inventory }}/{{ product.ideal_stock }}</span>
                     </div>
                     <div class="center-all">Last Updated {{ product.last_updated.strftime("%m/%d/%y") }}</div>
-                    <a class="inventory-item-link" href="/inventory-history?product-id={{ product.get_id() }}">
+                    <a class="inventory-item-link" href="/{{ product.get_id() }}">
                         <img src="icons/arrow_up_right.svg" alt="Arrow Up Right"/>
                     </a>
                 </div>

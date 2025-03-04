@@ -6,67 +6,127 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"
         integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
         crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HRDC Inventory Management System</title>
     <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/product.css">
     <script src="scripts/index.js"></script>
 </head>
 
 <body>
-    <a href="/"><- Back to Home</a>
 
-    <h1>Inventory History - {{ product.product_name }} </h1>
-    {% if snapshot_count==0 %}
-        <h2>No history to show</h2>
+    <div class="header">
+        <img class="logo" src="icons/logo_white.png">
+    </div>
+
+    <div class="navigation">
+        <a href="/"><- Back to Home</a>
+        <a class="inventory" element="current">INVENTORY</a>
+        <a class="reports">REPORTS</a>
+        <a class="account" img="icons/account">ACCOUNT</a>
+        <form class="logout" action="/logout" method="post" style="display: flex; align-items: center; gap: 10px">
+            <p>Welcome, {{ user.username }}</p>
+            <button type="submit">Log Out</button>
+        </form>
+    </div>
+
+    <div class="image-box">
+        <label for="fileInput">
+    {% if not filepath %}
+            <img src="icons/image-camera.svg" class="upload-trigger" />
     {% else %}
-        {%if snapshot_count == 1 %}
-            <h2>1 entry found</h2>
-        {% else %}
-            <h2>{{ snapshot_count }} entries found</h2>
-        {% endif %}
-        <h2>Entries in red are ignored</h2>
-        {% if daily_usage is none %}
-            <h2>Usage Rate: TBD</h2>
-        {% else %}
-            <h2>Usage Rate: {{ daily_usage }} per day</h2>
-        {% endif %}
-        {% if days_until_out is none %}
-            <h2>Remaining Stock: TBD Days</h2>
-            {% elif days_until_out == 1 %}
-            <h2>Remaining Stock: 1 Day</h2>
-            {% else %}
-            <h2>Remaining Stock: {{ days_until_out }} Days</h2>
-        {% endif %}
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Inventory</th>
-                    <th>Time Delta</th>
-                    <th>Inventory Delta</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for snapshot in snapshots %}
-                    <tr {% if snapshot.ignored %}style="background-color: red;"{% elif loop.index0==0 %}style="background-color: green;"{% endif %}>
-                        <td>{{ snapshot.timestamp }}</td>
-                        <td>{{ snapshot.inventory }}</td>
-                        {% if loop.index0 == snapshot_count - 1 %}
-                            <td>N/A</td>
-                            <td>N/A</td>
-                        {% else %}
-                            <td>{{ snapshot.timestamp - snapshots[loop.index0 + 1].timestamp }}</td>
-                            <td>
-                                {% if snapshot.inventory - snapshots[loop.index0 + 1].inventory > 0 %}+{% endif %}{{ snapshot.inventory - snapshots[loop.index0 + 1].inventory }}
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <img src="images/{{ filepath }}" />
     {% endif %}
+        </label>
+    </div>
+    <form action="/upload/{{ product.get_id() }}" method="POST" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
+    </form>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function() {
+        this.form.submit();
+        });
+    </script>
+    <h1>{{ product.product_name }}</h1>
+    <h2>Item Category Placeholder</h2>
+    <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
+    <div class="inventory-item-bar">
+        {% if product.inventory == 0 or product.ideal_stock == 0 %}
+            <div class="inventory-item-no-stock"></div>
+        {% elif product.inventory <= product.ideal_stock * 0.25 %}
+            <div style="width: {{product.inventory/product.ideal_stock*100}}%; background-color: var(--hrdc-theme-stock-urgent);"></div>
+        {% elif product.inventory <= product.ideal_stock * 0.5 %}
+            <div style="width: {{product.inventory/product.ideal_stock*100}}%; background-color: var(--hrdc-theme-stock-low);"></div>
+        {% elif product.inventory > product.ideal_stock %}
+            <div style="width: 100%; background-color: var(--hrdc-theme-stock-okay);"></div>
+        {% else %}
+            <div style="width: {{product.inventory/product.ideal_stock*100}}%; background-color: var(--hrdc-theme-stock-okay);"></div>
+        {% endif %}
+    </div>
+
+
+    <button class="product-button" hx-get="/load_update/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+            ADJUST STOCK
+    </button>
+
+
+    <div class="dropdown">
+        <button class="dropdown-btn">
+            <img src="icons/three_dot.svg" width="40" height="30">
+        </button>
+
+
+        <div class="dropdown-content">
+            <a href="#" hx-delete="/delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
+
+            <a hx-get="/load_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Info</a>
+
+        </div>
+    </div>
+
+
+
+
+    <div class ="info_container">
+    <table id = "info_table">
+        <tr>
+            <td class="title-column">Price per Unit</td>
+            <td class="dash-column">
+                <hr class="line">
+            </td>
+            <td class="value-column">${{product.price }}</td>
+        </tr>
+        <tr>
+            <td class="title-column">Perferred Quantity</td>
+            <td class="dash-column">
+                <hr class="line">
+            </td>
+            <td class="value-column">{{product.ideal_stock }}</td>
+        </tr>
+        <tr>
+            <td class="title-column">Minimum Quantity</td>
+            <td class="dash-column">
+                <hr class="line">
+            </td>
+            <td class="value-column">min</td>
+        </tr>
+    </table>
+        <script>
+
+        </script>
+    </div>
+
+
+
+
+
+{% block update_stock %}
+{% endblock %}
+{% block update_all %}
+{% endblock %}
 </body>
 
 </html>

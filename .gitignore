@@ -174,3 +174,4 @@ cython_debug/
 inventory.db
 users.db
 .vscode
+static/images/*
