@@ -24,7 +24,7 @@
     <div class="navigation">
         <a class="inventory" element="current">INVENTORY</a>
         <a class="reports">REPORTS</a>
-        <a class="account" img="icons/account">ACCOUNT</a>
+        <a class="account" img="icons/account" href="/settings">ADMIN SETTINGS</a>
         <form class="logout" action="/logout" method="post" style="display: flex; align-items: center; gap: 10px">
             <p>Welcome, {{ user.username }}</p>
             <button type="submit">Log Out</button>

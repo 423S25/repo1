@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@2.0.4"
+        integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+        crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRDC Inventory Management System</title>
+    <link rel="stylesheet" href="styles/index.css">
+    <script src="scripts/index.js"></script>
+</head>
+<header>
+    <a href="/">Home</a>
+</header>
+<body>
+    <h1>Admin Settings</h1>
+    <form method="post" action="/settings" hx-confirm="Update the admin email?">
+        <input name="email" type="text", placeholder={{ user.email }}>
+        <button type="submit">UPDATE</button>
+    </form>
+</body>
+
+</html>

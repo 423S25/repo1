@@ -17,9 +17,11 @@ class Product(Model):
     image_path = CharField(null=True)
     last_updated = DateTimeField(default=datetime.datetime.now)
     days_left = DecimalField(decimal_places=2, auto_round=True, null=True)
+    notified = BooleanField(default=False)
 
-
-
+    ########################################
+    ############# CLASS METHODS ############
+    ########################################
     @staticmethod
     def all() -> list['Product']:
         return list(Product.select())
@@ -43,6 +45,12 @@ class Product(Model):
             }
         )
         return product
+    
+    # Deletes the chosen product
+    @classmethod
+    def delete_product(cls, product_id):
+        product = Product.get_product(product_id)
+        product.delete_instance()
 
     # Fills the database with how many days till each product is out of stock
     @staticmethod
@@ -57,9 +65,6 @@ class Product(Model):
             product.save()
 
 
-
-
-
     # Returns the information of the chosen product based on its product name or id
     @staticmethod
     def get_product(name_or_id: str | int) -> Optional['Product']:
@@ -71,7 +76,20 @@ class Product(Model):
         except DoesNotExist:
             return None
     
+    #retrieves products with inventory <= 25% ideal stock
+    @staticmethod
+    def products_leq_quarter() -> list['Product']:
+        products = Product.all()
+        res = []
+        for item in products:
+            if not item.notified and item.inventory <= (item.ideal_stock / 4):
+                res.append(item)
+        return res
+
     
+    ########################################
+    ########### INSTANCE METHODS ###########
+    ########################################
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:
@@ -99,14 +117,6 @@ class Product(Model):
             return None
         else:
             return self.inventory / daily_usage
-
-
-
-    # Deletes the chosen product
-    @classmethod
-    def delete_product(cls, product_id):
-        product = Product.get_product(product_id)
-        product.delete_instance()
 
 
 
@@ -139,6 +149,11 @@ class Product(Model):
     def increment_stock(self, increase: int):
         self.inventory += increase
         self.last_updated = datetime.datetime.now()
+        self.save()
+
+    #marks product as notified (after email is sent)
+    def mark_notified(self):
+        self.notified = True
         self.save()
 
         

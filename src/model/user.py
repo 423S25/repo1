@@ -35,6 +35,10 @@ class User(UserMixin, user_db.Model):
              password = hashed_password
         )
         return user
+    
+    def update_email(self, email: str):
+        self.email = email
+        self.save()
 
 
     class Meta:

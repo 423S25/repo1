@@ -1,10 +1,15 @@
-import secrets
+import os, secrets
 from flask import Flask, request, Response, render_template, redirect, abort, flash, url_for
 from src.model.product import Product, InventorySnapshot, db
 from src.model.user import User, user_db
-from src.common.forms import LoginForm
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
+
+from src.common.forms import LoginForm
+from src.common.email_job import EmailJob
+
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 
@@ -14,8 +19,8 @@ login_manager.init_app(app)
 
 bcrypt = Bcrypt(app)
 
-# app.config['SECRET_KEY'] = secrets.token_urlsafe()
-app.config['SECRET_KEY'] = "asdf"
+app.config['SECRET_KEY'] = secrets.token_urlsafe()
+#app.config['SECRET_KEY'] = "asdf"
 app.config["SESSION_PROTECTION"] = "strong"
 
 
@@ -113,7 +118,6 @@ def get_add():
     return render_template("add_form.html")
 
 
-#Simple add, just adds stuff + 1 works with htmx
 #TODO: make this a form
 @app.route("/add", methods=["POST"])
 @login_required
@@ -124,6 +128,7 @@ def add():
     if Product.get_product(request.form.get("product_name")) is None:
         Product.add_product(request.form.get("product_name"), int(request.form.get("inventory")), float(request.form.get("price")), request.form.get("unit_type"), int(request.form.get("ideal_stock")), None)
         Product.fill_days_left()
+        EmailJob.process_emails(User.get_by_username('admin').email)
         return redirect("/")
     else:
         abort(400)
@@ -156,15 +161,32 @@ def update_inventory(product_id: int):
         return abort(404, description=f"Could not find product {product_id}")
 
     product.update_stock(new_stock)
+    EmailJob.process_emails(User.get_by_username('admin').email)
     return redirect("/", 303)
+
+@app.get("/settings")
+@login_required
+def get_settings():
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access admin settings')
+    return render_template("settings.html", user=current_user)
+
+@app.post("/settings")
+@login_required
+def update_settings():
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access admin settings')
+    email = request.form.get("email")
+    User.get_by_username('admin').update_email(email)
+    return redirect("/settings")
 
 with app.app_context():
     if not User.get_by_username('admin'):
-        User.add_user('admin', bcrypt.generate_password_hash('password'))
+        User.add_user('admin', bcrypt.generate_password_hash(os.environ.get("ADMIN_PASSWORD")))
     if not User.get_by_username('staff'):
-        User.add_user('staff', bcrypt.generate_password_hash('password'))
+        User.add_user('staff', bcrypt.generate_password_hash(os.environ.get("STAFF_PASSWORD")))
     if not User.get_by_username('volunteer'):
-        User.add_user('volunteer', bcrypt.generate_password_hash('password'))
+        User.add_user('volunteer', bcrypt.generate_password_hash(os.environ.get("VOLUNTEER_PASSWORD")))
 
 if __name__ == '__main__':
 
