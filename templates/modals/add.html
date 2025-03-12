@@ -17,6 +17,8 @@
     <label for="ideal_stock">Ideal Stock:</label>
     <input type="number" id="ideal_stock" name="ideal_stock" required><br>
 
+    <label for="donation">Donation:</label>
+    <input type="checkbox" id="donation" name="donation"><br>
 
     <button hx-post="/add" hx-target="body" hx-swap="outerHTML">Submit</button>
     <button hx-get="/" hx-target="body" hx-swap="outerHTML">Cancel</button>

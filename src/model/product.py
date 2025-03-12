@@ -18,6 +18,7 @@ class Product(Model):
     last_updated = DateTimeField(default=datetime.datetime.now)
     days_left = DecimalField(decimal_places=2, auto_round=True, null=True)
     notified = BooleanField(default=False)
+    donation = BooleanField(default=False)
 
     ########################################
     ############# CLASS METHODS ############
@@ -32,7 +33,7 @@ class Product(Model):
         return list(UR)
 
     @staticmethod
-    def add_product(name: str, stock: int, price: float, unit_type: str, ideal_stock: int, days_left: None ,image_path: str = None) -> 'Product':
+    def add_product(name: str, stock: int, price: float, unit_type: str, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
         product, created = Product.get_or_create(
             product_name=name,
             defaults={
@@ -41,9 +42,11 @@ class Product(Model):
                 'unit_type': unit_type,
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
-                'days_left': days_left
+                'days_left': days_left,
+                'donation': donation
             }
         )
+        InventorySnapshot.create_snapshot(product.get_id(), product.inventory, product.donation)
         return product
 
 
@@ -81,11 +84,44 @@ class Product(Model):
             if not item.notified and item.inventory <= (item.ideal_stock / 4):
                 res.append(item)
         return res
+    
+    # Deletes the chosen product
+    @classmethod
+    def delete_product(cls, product_id):
+        product = Product.get_product(product_id)
+        product.delete_instance()
+        InventorySnapshot.delete_snapshots_for_product(product_id)
 
     
     ########################################
     ########### INSTANCE METHODS ###########
     ########################################
+
+    def get_donated_inventory(self) -> int:
+        snapshots = InventorySnapshot.product_snapshots_chronological(self.get_id())
+        prev_inventory = 0
+        donated = 0
+        for record in snapshots:
+            if record.inventory < prev_inventory or not record.donation:
+                prev_inventory = record.inventory
+                continue
+            increase = record.inventory - prev_inventory
+            donated += increase
+            prev_inventory = record.inventory
+        return donated
+                
+    def get_purchased_inventory(self) -> int:
+        snapshots = InventorySnapshot.product_snapshots_chronological(self.get_id())
+        prev_inventory = 0
+        purchased = 0
+        for record in snapshots:
+            if record.inventory < prev_inventory or record.donation:
+                prev_inventory = record.inventory
+                continue
+            increase = record.inventory - prev_inventory
+            purchased += increase
+            prev_inventory = record.inventory
+        return purchased
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:
@@ -114,14 +150,6 @@ class Product(Model):
         else:
             return self.inventory / daily_usage
 
-
-
-    # Deletes the chosen product
-    @classmethod
-    def delete_product(cls, product_id):
-        product = Product.get_product(product_id)
-        product.delete_instance()
-
     def set_img_path(self, img_path: str):
         self.image_path = img_path
         self.save()
@@ -146,11 +174,12 @@ class Product(Model):
 
 
     # Sets the current available stock of a product to [`new_stock`] units
-    def update_stock(self, new_stock: int):
+    def update_stock(self, new_stock: int, donation: bool):
         self.inventory = new_stock
+        self.donation = donation
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory, self.donation)
 
     # Increment price
     def increment_price(self, increase: float):
@@ -189,6 +218,7 @@ class Product(Model):
 class InventorySnapshot(Model):
     product_id = IntegerField(null=False)
     inventory = IntegerField(null=False)
+    donation = BooleanField(default=False)
     timestamp = DateTimeField(default=datetime.datetime.now)
     ignored = BooleanField(default=False) # To be used if a value was added in error
 
@@ -211,16 +241,28 @@ class InventorySnapshot(Model):
                 prev.ignore()
         
         return snapshots
+    
+    @staticmethod
+    def product_snapshots_chronological(product_id: int) -> list['InventorySnapshot']:
+        snapshots: list['InventorySnapshot'] = list(InventorySnapshot.select().where(
+            InventorySnapshot.product_id==product_id
+        ))
+        return snapshots
 
 
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int) -> 'InventorySnapshot':
+    def create_snapshot(product_id: int, inventory: int, donation: bool) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
-            inventory=inventory
+            inventory=inventory, 
+            donation=donation
         )
         return snapshot
+    
+    @staticmethod
+    def delete_snapshots_for_product(product_id: int):
+        InventorySnapshot.delete().where(InventorySnapshot.product_id == product_id).execute()
     
 
 

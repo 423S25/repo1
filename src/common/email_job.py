@@ -25,7 +25,7 @@ class EmailJob():
             response = sg.send(message)
             print(response.status_code)
         except Exception as e:
-            print(e.message)
+            print(e)
 
     @staticmethod
     def process_emails(admin_email: str):

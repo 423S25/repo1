@@ -20,6 +20,9 @@
 
 <div class="header">
     <img class="logo" src="icons/logo_white.png">
+    {% if current_user and current_user.username == "admin" %}
+        <a href="/settings" class="account">ADMIN SETTINGS</a>
+    {% endif %}
 </div>
 {% block content %}
 {% endblock %}

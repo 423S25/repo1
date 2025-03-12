@@ -53,6 +53,7 @@ body {
 }
 
 .header {
+    position: relative;
     width: 100%;
     background: var(--hrdc-theme-teal);
     color: white;
@@ -66,6 +67,15 @@ body {
     display: block;
     margin-left: auto;
     margin-right: auto;
+}
+
+.header a{
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: white;
+    padding: 5px;
+    margin-right: 20px;
 }
 
 

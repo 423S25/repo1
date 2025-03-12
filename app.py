@@ -87,7 +87,7 @@ def home():
     return render_template("index.html", product_list=products, user=current_user)
 
 @app.get("/<int:product_id>")
-@login_required
+@login_required #any user can access this page
 def inventory_history(product_id: int):
 
     if product_id is None: # TODO: have actual error page
@@ -113,6 +113,7 @@ def inventory_history(product_id: int):
 
 
 @app.post("/upload/<int:product_id>")
+@login_required
 def upload_image(product_id: int):
     if 'file' not in request.files:
         return redirect('/' + str(product_id))
@@ -137,7 +138,6 @@ def get_add():
     return render_template("add_form.html")
 
 
-#TODO: make this a form
 @app.route("/add", methods=["POST"])
 @login_required
 def add():
@@ -145,7 +145,13 @@ def add():
     if current_user.username != 'admin':
         return abort(401, description='Only admins can add products')
     if Product.get_product(request.form.get("product_name")) is None:
-        Product.add_product(request.form.get("product_name"), int(request.form.get("inventory")), float(request.form.get("price")), request.form.get("unit_type"), int(request.form.get("ideal_stock")), None)
+        Product.add_product(request.form.get("product_name"), \
+                            int(request.form.get("inventory")), \
+                            float(request.form.get("price")), \
+                            request.form.get("unit_type"), \
+                            int(request.form.get("ideal_stock")), \
+                            bool(request.form.get("donation")),
+                            None)
         Product.fill_days_left()
         EmailJob.process_emails(User.get_by_username('admin').email)
         return redirect("/")
@@ -170,14 +176,15 @@ def delete(product_id: int):
 def update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         new_stock = request.form.get('stock', None, type=int)
+        donation = request.form.get("donation", False)
         if new_stock is None or new_stock < 0:
             return abort(400, description="Stock count must be a positive integer")
 
         product = Product.get_product(product_id)
         if product is None:
             return abort(404, description=f"Could not find product {product_id}")
-
-        product.update_stock(new_stock)
+        
+        product.update_stock(new_stock, donation)
         product.mark_not_notified()
         EmailJob.process_emails(User.get_by_username('admin').email)
         return redirect("/" + str(product_id), 303)
@@ -210,18 +217,25 @@ def update_all(product_id: int):
 
 #MODALS
 @app.get("/load_update/<int:product_id>")
+@login_required
 def load_update(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/update_stock.html",
                            product=product)
 
 @app.get("/load_update_all/<int:product_id>")
+@login_required
 def load_update_all(product_id: int):
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
     return render_template("modals/update_all.html",
                            product=product)
 @app.get("/load_add")
+@login_required
 def load_add():
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can add products')
     return render_template("modals/add.html")
 
 
@@ -250,5 +264,4 @@ with app.app_context():
         User.add_user('volunteer', bcrypt.generate_password_hash(os.environ.get("VOLUNTEER_PASSWORD")))
 
 if __name__ == '__main__':
-
     app.run(port=5000, debug=False)
