@@ -13,7 +13,7 @@ from src.common.email_job import EmailJob
 from dotenv import load_dotenv
 load_dotenv()
 
-app = Flask(__name__, static_url_path='', static_folder='static')
+app = Flask(__name__, static_url_path='', static_folder='static', port=8080)
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
