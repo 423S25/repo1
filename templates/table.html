@@ -1,128 +1,35 @@
-{% include "nav.html" %}
-<head>
-    <link rel="stylesheet" href="styles/inventory.css">
-</head>
 
-<!--
-    endpoint: the endpoing to hit to update (e.g., /update/<endpoint>/<id>)
-    id: the product id (e.g., /update/<endpoint>/<id>)
-    value: the current value to display
-    param: the param/input name
-    human_desc: a human-readable attribute name
--->
-
-<div class="urgency-placeholder">
-    <div></div>
-    <div></div>
-    <div></div>
-</div>
-<div class="scaffolding">
-
-    <div class="filter-parent">
-
-        <label for="category_id">Categories</label>
-            {% set current_category = current_category | int %}
-			<select id="category_id" name="category_id"
-                    hx-trigger="change"
-                    hx-post="/filter"
-                    hx-target="body"
-                    hx-swap="outerHTML"
-                    hx-vals='js:{category_id: document.getElementById("category_id").value}'>
-				<option value="0"
-                        {% if current_category is none or current_category == 0 %}
-                        selected
-                        {% endif %}>
-                    All
-                </option>
-				{% for category in categories %}
-					<option value="{{ category.id }}"
-                            {% if category.id == current_category %}
-                            selected
-                            {% endif %}>
-                        {{ category.name }}
-
-                    </option>
-				{% endfor %}
-
-			</select>
-        {% if current_category != 0 %}
-            <button hx-get="/load_edit_category/{{current_category}}" hx-target="body" hx-swap="beforeend">Edit Current Category</button>
-        {% endif %}
-        {% block edit_category %}
-        {% endblock %}
-    </div>
-    <div class="action-parent">
-
-        <input class="form-control" type="search"
-               name="search" placeholder="SEARCH INVENTORY"
-               hx-post="/search"
-               hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load"
-               hx-target="#search-results"
-               hx-indicator=".htmx-indicator">
-
-        <button class="product-button" hx-get="/load_add" hx-target="body" hx-swap="beforeend">
-            NEW PRODUCT
-        </button>
-        <button class="product-button" hx-get="/load_add_category" hx-target="body" hx-swap="beforeend">
-            NEW CATEGORY
-        </button>
-        {% block add %}
-        {% endblock %}
-
-    </div>
-    <div class="inventory-table">
-        {% for product in product_list %}
-            <div class="inventory-table-row box-shadow-small">
-                <img alt="Map" src="icons/map.svg" class="inventory-item-icon"/>
-                <div class="center-vert">
-                    <span class="inventory-item-name">{{ product.product_name }}</span>
-                    {% if product.category.name is not none %}
+<div id="inventory-table" class="inventory-table">
+    {% for product in product_list %}
+        <div class="inventory-table-row box-shadow-small">
+            <img alt="Map" src="icons/map.svg" class="inventory-item-icon"/>
+            <div class="center-vert">
+                <span class="inventory-item-name">{{ product.product_name }}</span>
+                {% if product.category.name is not none %}
                     <span>{{ product.category.name }}</span>
-                    {% endif %}
+                {% endif %}
 
-                </div>
-                <div class="center-all" style="padding: 0 25px;">
-                    <div class="inventory-item-bar">
-                        {% if product.inventory == 0 or product.ideal_stock == 0 %}
-                            <div class="inventory-item-no-stock"></div>
-                        {% elif product.inventory <= product.ideal_stock * 0.25 %}
-                            <div style="width: {{ product.inventory/product.ideal_stock*100 }}%; background-color: var(--hrdc-theme-stock-urgent);"></div>
-                        {% elif product.inventory <= product.ideal_stock * 0.5 %}
-                            <div style="width: {{ product.inventory/product.ideal_stock*100 }}%; background-color: var(--hrdc-theme-stock-low);"></div>
-                        {% elif product.inventory > product.ideal_stock %}
-                            <div style="width: 100%; background-color: var(--hrdc-theme-stock-okay);"></div>
-                        {% else %}
-                            <div style="width: {{ product.inventory/product.ideal_stock*100 }}%; background-color: var(--hrdc-theme-stock-okay);"></div>
-                        {% endif %}
-                    </div>
-                    <span style="font-weight: bold;">{{ product.inventory }}/{{ product.ideal_stock }}</span>
-                </div>
-                <div class="center-all">Last Updated {{ product.last_updated.strftime("%m/%d/%y") }}</div>
-                <a class="inventory-item-link" href="/{{ product.get_id() }}">
-                    <img src="icons/arrow_up_right.svg" alt="Arrow Up Right"/>
-                </a>
             </div>
-        {% endfor %}
-    </div>
+            <div class="center-all" style="padding: 0 25px;">
+                <div class="inventory-item-bar">
+                    {% if product.inventory == 0 or product.ideal_stock == 0 %}
+                        <div class="inventory-item-no-stock"></div>
+                    {% elif product.inventory <= product.ideal_stock * 0.25 %}
+                        <div style="width: {{ product.inventory/product.ideal_stock*100 }}%; background-color: var(--hrdc-theme-stock-urgent);"></div>
+                    {% elif product.inventory <= product.ideal_stock * 0.5 %}
+                        <div style="width: {{ product.inventory/product.ideal_stock*100 }}%; background-color: var(--hrdc-theme-stock-low);"></div>
+                    {% elif product.inventory > product.ideal_stock %}
+                        <div style="width: 100%; background-color: var(--hrdc-theme-stock-okay);"></div>
+                    {% else %}
+                        <div style="width: {{ product.inventory/product.ideal_stock*100 }}%; background-color: var(--hrdc-theme-stock-okay);"></div>
+                    {% endif %}
+                </div>
+                <span style="font-weight: bold;">{{ product.inventory }}/{{ product.ideal_stock }}</span>
+            </div>
+            <div class="center-all">Last Updated {{ product.last_updated.strftime("%m/%d/%y") }}</div>
+            <a class="inventory-item-link" href="/{{ product.get_id() }}">
+                <img src="icons/arrow_up_right.svg" alt="Arrow Up Right"/>
+            </a>
+        </div>
+    {% endfor %}
 </div>
-
-
-
-{% macro updatable_table_cell(endpoint, id, value, param, human_desc) %}
-    <td>
-        <span class="static">{{ value }}</span>
-        <button onclick="toEditCell(this)" class="in-cell-action static hidden" title="Edit {{ human_desc }}">
-            <img src="icons/pencil.svg" alt="Edit Icon"/>
-        </button>
-        <form class="edit" style="display: none;" hx-patch="update/{{ endpoint }}/{{ id }}" hx-target="body">
-            <input onkeypress="onInputEnter(this, event)" name="{{ param }}" value="{{ value }}"/>
-            <button onclick="event.preventDefault(); toStaticCell(this);" class="in-cell-action" title="Cancel Changes">
-                <img src="icons/close.svg" alt="Close Icon"/>
-            </button>
-            <button type="submit" class="in-cell-action" title="Save {{ human_desc }}">
-                <img src="icons/checkmark.svg" alt="Checkmark Icon"/>
-            </button>
-        </form>
-    </td>
-{% endmacro %}
-

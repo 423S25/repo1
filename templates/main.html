@@ -1,0 +1,118 @@
+{% include "nav.html" %}
+
+<!--
+    endpoint: the endpoing to hit to update (e.g., /update/<endpoint>/<id>)
+    id: the product id (e.g., /update/<endpoint>/<id>)
+    value: the current value to display
+    param: the param/input name
+    human_desc: a human-readable attribute name
+-->
+
+<div class="urgency-banners">
+    <div>
+        <div class="shadow">
+            <div class="red_rectangle"></div>
+            <div class="banner">
+                <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[0] }}</p>
+                <p style="font-size: .75rem">Low Stock Products</p>
+            </div>
+        </div>
+
+    </div>
+    <div>
+        <div class="shadow">
+            <div class="orange_rectangle"></div>
+            <div class="banner">
+                <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[1] }}</p>
+                <p style="font-size: .75rem">Medium Stock Products</p>
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="shadow">
+            <div class="green_rectangle"></div>
+            <div class="banner">
+                <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[2] }}</p>
+                <p style="font-size: .75rem">Well Stocked Products</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="scaffolding">
+    <div class="filter-parent">
+        <label for="category_id">Categories</label>
+        {% set current_category = current_category | int %}
+        <select id="category_id" name="category_id"
+                hx-trigger="change"
+                hx-post="/filter"
+                hx-target="body"
+                hx-swap="outerHTML"
+                hx-vals='js:{category_id: document.getElementById("category_id").value}'>
+            <option value="0"
+                    {% if current_category is none or current_category == 0 %}
+                    selected
+                    {% endif %}>
+                All
+            </option>
+            {% for category in categories %}
+                <option value="{{ category.id }}"
+                        {% if category.id == current_category %}
+                        selected
+                        {% endif %}>
+                    {{ category.name }}
+
+                </option>
+            {% endfor %}
+
+        </select>
+        {% if current_category != 0 %}
+            <button hx-get="/load_edit_category/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
+                Current Category
+            </button>
+        {% endif %}
+        {% block edit_category %}
+        {% endblock %}
+    </div>
+    <div class="action-parent">
+
+        <input class="form-control" type="search" name="q" value="{{ search }}"
+               name="search" placeholder="SEARCH INVENTORY"
+               hx-get="/search"
+               hx-trigger="input changed delay:300ms"
+               hx-target="main"
+               hx-swap="innerHTML">
+        <button class="product-button" hx-get="/load_add" hx-target="body" hx-swap="beforeend">
+            NEW PRODUCT
+        </button>
+        <button class="product-button" hx-get="/load_add_category" hx-target="body" hx-swap="beforeend">
+            NEW CATEGORY
+        </button>
+        {% block add %}
+        {% endblock %}
+    </div>
+    <main class="container">
+        {% include "table.html" %}
+    </main>
+</div>
+
+
+
+{% macro updatable_table_cell(endpoint, id, value, param, human_desc) %}
+    <td>
+        <span class="static">{{ value }}</span>
+        <button onclick="toEditCell(this)" class="in-cell-action static hidden" title="Edit {{ human_desc }}">
+            <img src="icons/pencil.svg" alt="Edit Icon"/>
+        </button>
+        <form class="edit" style="display: none;" hx-patch="update/{{ endpoint }}/{{ id }}" hx-target="body">
+            <input onkeypress="onInputEnter(this, event)" name="{{ param }}" value="{{ value }}"/>
+            <button onclick="event.preventDefault(); toStaticCell(this);" class="in-cell-action" title="Cancel Changes">
+                <img src="icons/close.svg" alt="Close Icon"/>
+            </button>
+            <button type="submit" class="in-cell-action" title="Save {{ human_desc }}">
+                <img src="icons/checkmark.svg" alt="Checkmark Icon"/>
+            </button>
+        </form>
+    </td>
+{% endmacro %}
+

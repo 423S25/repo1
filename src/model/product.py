@@ -70,9 +70,27 @@ class Product(Model):
     ########################################
     ############# CLASS METHODS ############
     ########################################
+
+    @staticmethod
+    def get_low_products():
+        product_levels = [0,0,0]
+        for product in Product.all():
+            if product.inventory / product.ideal_stock <= 0.25:
+                product_levels[0] += 1
+            elif (product.inventory / product.ideal_stock > 0.25) and (product.inventory / product.ideal_stock <= 0.5):
+                product_levels[1] += 1
+            else:
+                product_levels[2] += 1
+        return product_levels
+
+
     @staticmethod
     def all() -> list['Product']:
         return list(Product.select())
+
+    @staticmethod
+    def search(product: str = '') -> list['Product']:
+        return list(Product.select().where(Product.product_name.ilike(f'%{product}%')))
 
     @staticmethod
     #overloaded with category id for filter
