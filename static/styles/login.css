@@ -14,7 +14,7 @@ h1
 .form-region
 {
     width: 30%;
-    height: 35%;
+    height: 45%;
     margin: auto;
     padding-top: 5%;
     background-color: #ffffff;
@@ -22,7 +22,7 @@ h1
     text-align: center;
 }
 
-.username-label
+.username-label, .password-label
 {
     color: var(--hrdc-theme-teal);
     font-size: 12px;
@@ -32,33 +32,10 @@ h1
     margin-right: 60%;
 }
 
-input#username
+input#username, input#password
 {
     width: 75%;
-    height: 20%;
-    color: #ffffff;
-    border-color: var(--hrdc-theme-teal);
-    border-radius: 5px;
-    font-family: 'Gotham Book';
-    text-indent: 5px;
-    color: var(--hrdc-theme-teal);
-    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
-}
-
-.password-label
-{
-    color: var(--hrdc-theme-teal);
-    font-size: 12px;
-    font-family: 'Gotham Book';
-    font-weight: bold;
-    text-align: left;
-    margin-right: 60%;
-}
-
-input#password
-{
-    width: 75%;
-    height: 20%;
+    height: 15%;
     color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
@@ -76,10 +53,9 @@ input#submit
     text-decoration: none;
     font-size: 14px;
     width: 25%;
-    height: 20%;
+    height: 15%;
     font-weight: bold;
     font-family: 'Gotham Book';
-    margin-top: 5%;
     margin-left: 50%;
 }
 

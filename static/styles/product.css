@@ -125,6 +125,91 @@
 	animation-timing-function: ease;
 }
 
+/* The design for the add modal. */
+
+.add-modal-content > form
+{
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+    grid-gap: 10px;
+    margin-left: 7.5%;
+}
+
+.add-label
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 24px;
+    font-family: 'Gotham Bold';
+	text-align: center;
+}
+
+label
+{
+	color: var(--hrdc-theme-teal);
+    font-size: 12px;
+    font-family: 'Gotham Book';
+    font-weight: bold;
+	text-align: left;
+}
+
+input#product_name, input#inventory, input#price, input#unit_type, input#ideal_stock
+{
+	color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    font-family: 'Gotham Book';
+    text-indent: 5px;
+    color: var(--hrdc-theme-teal);
+    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
+	display: grid;
+    padding: 0.7em 0.7em;
+}
+
+input#donation
+{
+	color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    color: var(--hrdc-theme-teal);
+    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
+	display: grid;
+    transform: scale(1.5);
+}
+
+.add-category-id
+{
+	color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    font-family: 'Gotham Book';
+    color: var(--hrdc-theme-teal);
+    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
+	display: grid;
+    padding: 1em 3.3em;
+}
+
+button#add-product-label, button.btn-danger
+{
+	background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    display: grid;
+    padding: 1rem 1rem;
+}
+
+.buttons
+{
+    display: grid;
+    grid-template-columns: 0.3fr;
+    grid-gap: 5px;
+    justify-content: center;
+}
+
 @keyframes fadeIn {
 	0% {opacity: 0;}
 	100% {opacity: 1;}
@@ -144,8 +229,6 @@
 	0% {transform: scale(1);}
 	100% {transform: scale(0.9);}
 }
-
-
 
 
 
