@@ -3,6 +3,10 @@ body {
     overflow-y: auto;
 }
 
+.form-control
+{
+    padding: 15px 22%;
+}
 .navigation {
     display: flex;
     flex-direction: row;
@@ -35,8 +39,8 @@ body {
     color: var(--hrdc-theme-dark-teal);
 }
 
-.inventory {
-    border-bottom: 3px solid var(--hrdc-theme-green-yellow);
+.current {
+    border-bottom: 3px solid var(--hrdc-theme-teal);
 }
 
 .inventory:hover {
@@ -62,9 +66,6 @@ body {
     filter: brightness(1) invert(0);
 }
 
-
-.form-control {
-    padding: 15px 30.5%;
     font-family: 'Gotham Book';
     font-size: 14px;
     font-weight: bold;

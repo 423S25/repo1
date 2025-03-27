@@ -96,3 +96,57 @@ body {
     justify-content: center;
     flex-direction: column;
 }
+
+.navigation {
+    display: flex;
+    flex-direction: row;
+}
+
+.navigation button {
+    margin-bottom: auto;
+    padding: 1em 1em;
+    color: var(--hrdc-theme-dark-teal);
+    cursor: pointer;
+
+    font-size: 12px;
+    font-family: 'Gotham Book';
+    border: 3px solid black;
+    border-color: #ffffff;
+    background-color: #ffffff;
+}
+
+.navigation button:hover {
+    border: 3px solid black;
+    background-color: var(--hrdc-theme-teal);
+    border-color: var(--hrdc-theme-teal);
+    color: white;
+}
+
+.navigation button:active {
+    border: 3px solid black;
+    border-color: var(--hrdc-theme-teal);
+    background-color: #ffffff;
+    color: var(--hrdc-theme-dark-teal);
+}
+
+.logout
+{
+    margin-left: auto;
+}
+
+.logout-icon
+{
+    width: 1.1em;
+    margin-right: 0.5em;
+    vertical-align: bottom;
+}
+
+.logout:hover .logout-icon
+{
+    filter: brightness(0) invert(1);
+}
+
+.logout:active .logout-icon
+{
+    filter: brightness(1) invert(0);
+}

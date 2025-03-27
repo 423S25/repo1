@@ -8,11 +8,15 @@
         <h1>WELCOME</h1>
         <form action="{{ url_for('login', next=request.args.get('next', '')) }}" method="post">
             {{ form.csrf_token }}
-            {{ form.username.label }}{{ form.username }} <br>
-            {{ form.password.label }}{{ form.password }} <br>
-            {{ form.submit }}
+            <div class="form-region">
+                <span class="username-label">{{ form.username.label }}</span> <br>
+                {{ form.username }} <br><br>
+                <span class="password-label">{{ form.password.label }}</span> <br> 
+                {{ form.password }} <br><br>
+                {{ form.submit }}
+            </div>
         </form>
-        <ul>
+        <ul class="error-text">
         {% for error in errors %}
             <li>{{ error }}</li>
         {% endfor %}

@@ -1,0 +1,7 @@
+.inventory {
+    border-bottom: 3px solid var(--hrdc-theme-green-yellow);
+}
+
+.inventory:hover {
+    border-bottom: 3px solid #ffffff;
+}

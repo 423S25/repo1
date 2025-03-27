@@ -1,14 +1,6 @@
 .login
 {
     margin-top: 5%;
-    text-align: center;
-}
-
-.login.form
-{
-    width: 30%;
-    background-color: #ffffff;
-    box-shadow: 0px, 3px, 13px, 8px rgba(0, 0, 0, 0.7);
 }
 
 h1
@@ -17,4 +9,87 @@ h1
     font-size: 24px;
     font-family: 'Gotham Bold';
     text-align: center;
+}
+
+.form-region
+{
+    width: 30%;
+    height: 35%;
+    margin: auto;
+    padding-top: 5%;
+    background-color: #ffffff;
+    box-shadow: 0px 3.5px 13px 9px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.username-label
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 12px;
+    font-family: 'Gotham Book';
+    font-weight: bold;
+    text-align: left;
+    margin-right: 60%;
+}
+
+input#username
+{
+    width: 75%;
+    height: 20%;
+    color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    font-family: 'Gotham Book';
+    text-indent: 5px;
+    color: var(--hrdc-theme-teal);
+    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
+}
+
+.password-label
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 12px;
+    font-family: 'Gotham Book';
+    font-weight: bold;
+    text-align: left;
+    margin-right: 60%;
+}
+
+input#password
+{
+    width: 75%;
+    height: 20%;
+    color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    font-family: 'Gotham Book';
+    text-indent: 5px;
+    color: var(--hrdc-theme-teal);
+    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
+}
+
+input#submit
+{
+    background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    width: 25%;
+    height: 20%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin-top: 5%;
+    margin-left: 50%;
+}
+
+li
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 14px;
+    font-family: 'Gotham Book';
+    font-weight: bold;
+    text-align: center;
+    list-style-type: none;
+    text-indent: -2em;
 }

@@ -92,8 +92,9 @@ def home():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    flag = False
     return render_template("index.html", product_list=products, user=current_user,
-                           categories=categories, current_category=category_id, levels=levels)
+                           categories=categories, current_category=category_id, levels=levels, flag = flag)
 
 @app.get("/search")
 def search():
@@ -111,7 +112,22 @@ def search():
 def reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
-    return render_template("reports_index.html", product_list=products, user=current_user)
+    categories = [{"id": c.id, "name": c.name, "total_inventory": 0} for c in Category.all()]
+
+    # Create a mapping from category ID to total inventory
+    category_inventory = {c["id"]: 0 for c in categories}
+
+    # Sum up inventory for each product's category
+    for product in products:
+        if product.category_id in category_inventory:
+            category_inventory[product.category_id] += product.inventory
+
+    # Update category objects with total inventory values
+    for category in categories:
+        category["total_inventory"] = category_inventory[category["id"]]
+
+    flag = True
+    return render_template("reports_index.html", product_list=products, user=current_user, categories=categories, quant=[c["total_inventory"] for c in categories], flag=flag)
 
 
 @app.get("/<int:product_id>")
