@@ -1,10 +1,11 @@
 Flask==3.1.0
 Flask_Bcrypt==1.0.1
 Flask_Login==0.6.3
-flask_security==5.6.0
+flask_security==5.6.1
 flask_wtf==1.2.2
 peewee==3.17.6
-python-dotenv==1.0.1
+python-dotenv==1.1.0
 sendgrid==6.11.0
+user_agents==2.2.0
 WTForms==3.2.1
-user-agents==2.2.0
+setuptools==78.1.0
