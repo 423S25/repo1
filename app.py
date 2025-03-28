@@ -128,7 +128,6 @@ def reports():
 
     flag = True
     value = request.args.get('value')
-    print(value)
     return render_template("reports_index.html", product_list=products, user=current_user,
                            categories=categories, quant=[c["total_inventory"] for c in categories], flag=flag, value=value)
 
