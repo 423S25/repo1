@@ -1,0 +1,15 @@
+{% macro inventory_item_bar(inventory, ideal_stock) %}
+<div class="inventory-item-bar">
+    {% if inventory == 0 or ideal_stock == 0 %}
+        <div class="inventory-item-no-stock"></div>
+    {% elif inventory <= ideal_stock * 0.25 %}
+        <div style="width: {{ inventory / ideal_stock * 100 }}%; background-color: var(--hrdc-theme-stock-urgent);"></div>
+    {% elif inventory <= ideal_stock * 0.5 %}
+        <div style="width: {{ inventory / ideal_stock * 100 }}%; background-color: var(--hrdc-theme-stock-low);"></div>
+    {% elif inventory > ideal_stock %}
+        <div style="width: 100%; background-color: var(--hrdc-theme-stock-okay);"></div>
+    {% else %}
+        <div style="width: {{ inventory / ideal_stock * 100 }}%; background-color: var(--hrdc-theme-stock-okay);"></div>
+    {% endif %}
+</div>
+{% endmacro %}

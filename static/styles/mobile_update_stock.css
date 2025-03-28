@@ -1,0 +1,137 @@
+#mobile-modal {
+    height: 100vh;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background-color: hsla(0, 0%, 50%, 0.3);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    animation-name: fadeIn;
+    animation-duration: 150ms;
+    animation-fill-mode: forwards;
+}
+
+#mobile-modal > div {
+    animation-name: zoomIn;
+    animation-duration: 150ms;
+    padding: 15px;
+    width: 80%;
+    max-width: 600px;
+    background-color: white;
+    border-radius: 10px;
+    font-family: 'Gotham Book', sans-serif;
+}
+
+#mobile-modal > div *:not(:last-child) {
+    margin-bottom: 10px;
+}
+
+#mobile-modal.closing {
+    animation-name: fadeOut;
+    animation-duration: 150ms;
+}
+
+#mobile-modal.closing > div {
+    animation-name: zoomOut;
+    animation-duration: 150ms;
+}
+
+
+
+
+/* Customize the label (the container) */
+.mobile-modal-radio-container {
+    display: block;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    font-size: 1em;
+    user-select: none;
+}
+
+/* Hide the browser's default radio button */
+.mobile-modal-radio-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Create a custom radio button */
+.mobile-modal-radio-dot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+.mobile-modal-radio-container:hover input ~ .mobile-modal-radio-dot {
+    background-color: var(--hrdc-theme-medium-grey);
+}
+
+/* When the radio button is checked, add a blue background */
+.mobile-modal-radio-container input:checked ~ .mobile-modal-radio-dot {
+    background-color: var(--hrdc-theme-dark-teal);
+}
+
+/* Create the indicator (the dot/circle - hidden when not checked) */
+.mobile-modal-radio-dot::after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the indicator (dot/circle) when checked */
+.mobile-modal-radio-container input:checked ~ .mobile-modal-radio-dot::after {
+    display: block;
+}
+
+/* Style the indicator (dot/circle) */
+.mobile-modal-radio-container .mobile-modal-radio-dot::after {
+    top: 6px;
+    left: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+#mobile-modal input:not([type="submit"]) {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid var(--hrdc-theme-dark-teal);
+    padding: 5px 10px;
+    font-size: 1.2em;
+    border-radius: 5px;
+}
+#mobile-modal input:focus {
+    outline: none;
+}
+
+#mobile-modal input[type="submit"] {
+    width: 100%;
+    background-color: var(--hrdc-theme-teal);
+    color: white;
+    border: none;
+    font-size: 1.2em;
+    text-transform: uppercase;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.mobile-modal-close {
+    color: var(--hrdc-theme-red);
+    background: none;
+    width: 100%;
+    border: 1px solid var(--hrdc-theme-red);
+    border-radius: 5px;
+    text-transform: uppercase;
+    padding: 5px;
+}
