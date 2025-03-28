@@ -1,0 +1,78 @@
+.add-category-form
+{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 10px;
+    margin-left: 30%;
+}
+
+.add-category-header
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 24px;
+    font-family: 'Gotham Bold';
+	text-align: center;
+}
+
+.category-name-input
+{
+    color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    font-family: 'Gotham Book';
+    text-indent: 5px;
+    font-size: 14px;
+    color: var(--hrdc-theme-teal);
+    box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
+    padding: 0.7em 0.3em;
+    display: grid;
+}
+
+.category-name-label
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 12px;
+    font-family: 'Gotham Book';
+    font-weight: bold;
+    display: grid;
+}
+
+.category-color-input
+{
+    font-family: 'Gotham Book';
+    font-size: 14px;
+    color: var(--hrdc-theme-teal);
+    background-color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    box-shadow: 2px 4px 4px 2px rgba(0, 0, 0, 0.2);
+    width: 3em;
+    height: 3em;
+    display: grid;
+}
+
+.category-submit-button, .category-danger-button
+{
+    background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 1em 1em;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
+.category-submit-button:hover, button.category-danger-button:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 1em 1em;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
