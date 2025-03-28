@@ -1,7 +1,6 @@
-.reports {
-    border-bottom: 3px solid var(--hrdc-theme-green-yellow);
-}
 
-.reports:hover {
-    border-bottom: 3px solid #ffffff;
-}
+        #chart-container {
+            width: 300px;
+            height: 300px;
+            margin: auto;
+        }

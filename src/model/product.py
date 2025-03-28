@@ -4,18 +4,23 @@ from typing import Optional
 import io
 import csv
 
-from unicodedata import category
-
 db = SqliteDatabase('inventory.db')
 
 
 class Category(Model):
+    ALL_PRODUCTS_PLACEHOLDER = {"name": "All Products", "color": "black", "image_path": None, "id": 0}
+    
     name = CharField(unique=True)
     color = CharField(unique=True)
+    image_path = CharField(null=True)
 
     @staticmethod
     def all() -> list['Category']:
         return list(Category.select())
+    
+    @staticmethod
+    def all_alphabetized() -> list['Category']:
+        return list(Category.select().order_by(Category.name))
 
     @staticmethod
     def add_category(name: str, color: str) -> 'Category':
@@ -35,8 +40,8 @@ class Category(Model):
         except DoesNotExist:
             return None
 
-    @classmethod
-    def delete_category(cls, category_id):
+    @staticmethod
+    def delete_category(category_id):
         category = Category.get_category(category_id)
         category.delete_instance()
 
@@ -65,7 +70,8 @@ class Product(Model):
     #notified once (half inventory) = 1
     #notified twice (half and 1/4 inventory) = 2
     notified = IntegerField(default=0)
-    donation = BooleanField(default=False)
+    lifetime_donated = IntegerField(default=0)
+    lifetime_purchased = IntegerField(default=0)
 
     ########################################
     ############# CLASS METHODS ############
@@ -103,23 +109,36 @@ class Product(Model):
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
 
         return list(query)
+    
+    @staticmethod
+    #overloaded with category id for filter
+    def alphabetized_of_category(category_id: int = None) -> list['Product']:
+        query = Product.select(Product, Category).join(Category)
+
+        if category_id is not None:
+            query = query.where(Product.category_id == category_id)
+
+        query = query.order_by(Product.product_name)
+
+        return list(query)
 
     @staticmethod
     def add_product(name: str, stock: int, category: int, price: float, unit_type: str, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
+            lifetime_donated = stock if donation else 0,
+            lifetime_purchased = stock if not donation else 0,
             defaults={
                 'inventory': stock,
                 'price': price,
                 'unit_type': unit_type,
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
-                'days_left': days_left,
-                'donation': donation
+                'days_left': days_left
             }
         )
-        InventorySnapshot.create_snapshot(product.get_id(), product.inventory, product.donation)
+        InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
         return product
 
 
@@ -183,37 +202,13 @@ class Product(Model):
     def get_csv(cls):
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Name', 'Category', 'Inventory', 'Price', 'Unit Type', 'Ideal Stock', 'Days Left'])
+        writer.writerow(['Name', 'Category', 'Inventory', 'Price', 'Unit Type', 'Ideal Stock',\
+                          'Days Left', 'Lifetime amount donated', 'Lifetime amount purchased'])
         for product in cls.select():
-            writer.writerow([product.product_name, product.category.name, product.inventory, product.price, product.unit_type, product.ideal_stock, product.days_left])
+            writer.writerow([product.product_name, product.category.name, product.inventory, \
+                             product.price, product.unit_type, product.ideal_stock, product.days_left, product.lifetime_donated, product.lifetime_purchased])
         output.seek(0)
         return output.getvalue()
-
-    def get_donated_inventory(self) -> int:
-        snapshots = InventorySnapshot.product_snapshots_chronological(self.get_id())
-        prev_inventory = 0
-        donated = 0
-        for record in snapshots:
-            if record.inventory < prev_inventory or not record.donation:
-                prev_inventory = record.inventory
-                continue
-            increase = record.inventory - prev_inventory
-            donated += increase
-            prev_inventory = record.inventory
-        return donated
-                
-    def get_purchased_inventory(self) -> int:
-        snapshots = InventorySnapshot.product_snapshots_chronological(self.get_id())
-        prev_inventory = 0
-        purchased = 0
-        for record in snapshots:
-            if record.inventory < prev_inventory or record.donation:
-                prev_inventory = record.inventory
-                continue
-            increase = record.inventory - prev_inventory
-            purchased += increase
-            prev_inventory = record.inventory
-        return purchased
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:
@@ -266,12 +261,29 @@ class Product(Model):
 
 
     # Sets the current available stock of a product to [`new_stock`] units
-    def update_stock(self, new_stock: int, donation: bool):
+    def update_stock(self, new_stock: int):
         self.inventory = new_stock
-        self.donation = donation
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory, self.donation)
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
+
+    #1. sets the lifetime_donated
+    #2. if adjust_inventory is set, it will add/subtract from stock as well
+    def set_donated(self, new_amount: int, adjust_inventory: bool):
+        old_amount = self.lifetime_donated
+        if adjust_inventory:
+            self.inventory = self.inventory + (new_amount - old_amount)
+        self.lifetime_donated = new_amount
+        self.save()
+
+    #1. sets the lifetime_purchased
+    #2. if adjust_inventory is set, it will add/subtract from stock as well
+    def set_purchased(self, new_amount: int, adjust_inventory: bool):
+        old_amount = self.lifetime_purchased
+        if adjust_inventory:
+            self.inventory = self.inventory + (new_amount - old_amount)
+        self.lifetime_purchased = new_amount
+        self.save()
 
     # Increment price
     def increment_price(self, increase: float):
@@ -310,7 +322,6 @@ class Product(Model):
 class InventorySnapshot(Model):
     product_id = IntegerField(null=False)
     inventory = IntegerField(null=False)
-    donation = BooleanField(default=False)
     timestamp = DateTimeField(default=datetime.datetime.now)
     ignored = BooleanField(default=False) # To be used if a value was added in error
 
@@ -344,11 +355,10 @@ class InventorySnapshot(Model):
 
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int, donation: bool) -> 'InventorySnapshot':
+    def create_snapshot(product_id: int, inventory: int) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
             inventory=inventory, 
-            donation=donation
         )
         return snapshot
     

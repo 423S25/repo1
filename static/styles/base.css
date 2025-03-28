@@ -7,7 +7,9 @@
     --hrdc-theme-orange: rgb(242, 124, 70);
     --hrdc-theme-yellow: hsl(39, 87%, 61%);
     --hrdc-theme-green: hsl(100, 70%, 40%);
+    --hrdc-theme-really-light-grey: hsl(0, 0%, 93%);
     --hrdc-theme-light-grey: hsl(0, 0%, 85%);
+    --hrdc-theme-medium-grey: hsl(0, 0%, 70%);
 
     --hrdc-theme-alert: var(--hrdc-theme-red);
     --hrdc-theme-warning: var(--hrdc-theme-yellow);
@@ -55,6 +57,7 @@ body {
 .header {
     position: relative;
     width: 100%;
+    box-sizing: border-box;
     background: var(--hrdc-theme-teal);
     color: white;
     display: flex;

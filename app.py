@@ -10,6 +10,8 @@ from flask_bcrypt import Bcrypt
 from src.common.forms import LoginForm
 from src.common.email_job import EmailJob
 
+from user_agents import parse
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -27,6 +29,9 @@ app.config["SESSION_PROTECTION"] = "strong"
 UPLOAD_FOLDER = os.path.join("static", "images")
 app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
 
+def is_mobile():
+    user_agent = parse(request.user_agent.string)
+    return user_agent.is_mobile or user_agent.is_tablet
 
 with db:
     db.create_tables([Category, Product, InventorySnapshot])
@@ -82,6 +87,8 @@ def login():
 @app.get("/")
 @login_required #any user can access home page
 def home():
+    if is_mobile():
+        return redirect('/mobile', 303)
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order
@@ -92,8 +99,9 @@ def home():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    flag = False
     return render_template("index.html", product_list=products, user=current_user,
-                           categories=categories, current_category=category_id, levels=levels)
+                           categories=categories, current_category=category_id, levels=levels, flag = flag)
 
 @app.get("/search")
 def search():
@@ -111,7 +119,22 @@ def search():
 def reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
-    return render_template("reports_index.html", product_list=products, user=current_user)
+    categories = [{"id": c.id, "name": c.name, "total_inventory": 0} for c in Category.all()]
+
+    # Create a mapping from category ID to total inventory
+    category_inventory = {c["id"]: 0 for c in categories}
+
+    # Sum up inventory for each product's category
+    for product in products:
+        if product.category_id in category_inventory:
+            category_inventory[product.category_id] += product.inventory
+
+    # Update category objects with total inventory values
+    for category in categories:
+        category["total_inventory"] = category_inventory[category["id"]]
+
+    flag = True
+    return render_template("reports_index.html", product_list=products, user=current_user, categories=categories, quant=[c["total_inventory"] for c in categories], flag=flag)
 
 
 @app.get("/<int:product_id>")
@@ -201,7 +224,8 @@ def delete(product_id: int):
     products = Product.urgency_rank()
     categories = Category.all()
     category_id = request.args.get('category_id', default=0, type=int)
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
+    levels = Product.get_low_products()
+    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
 
 @app.delete("/delete_category/<int:category_id>")
 def delete_category(category_id: int):
@@ -212,7 +236,8 @@ def delete_category(category_id: int):
     products = Product.urgency_rank()
     categories = Category.all()
     category_id = request.args.get('category_id', default=0, type=int)
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
+    levels = Product.get_low_products()
+    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
 
 
 
@@ -229,10 +254,43 @@ def update_inventory(product_id: int):
         if product is None:
             return abort(404, description=f"Could not find product {product_id}")
         
-        product.update_stock(new_stock, donation)
+        product.update_stock(new_stock)
         product.mark_not_notified()
         EmailJob.process_emails(User.get_by_username('admin').email)
         return redirect("/" + str(product_id), 303)
+    else:
+        return abort(405, description="Method Not Allowed")
+
+@app.route("/update_mobile/inventory/<int:product_id>", methods=["POST"])
+@login_required #any user can update inventory
+def update_inventory_mobile(product_id: int):
+    if request.form.get('_method') == 'PATCH':
+        change_in_stock = request.form.get('stock', None, type=int)
+        if change_in_stock is None or change_in_stock < 0:
+            return abort(400, description="Stock count must be a positive integer") #technically it only needs to be nonnegative
+        
+        stock_type = request.form.get("stock_type", False)
+        if not stock_type in ('donation', 'purchased', 'taken'):
+            return abort(400, description=f"Unknown stock type \"{stock_type}\"")
+
+        product = Product.get_product(product_id)
+        if product is None:
+            return abort(404, description=f"Could not find product with id {product_id}")
+        
+        current_stock = product.inventory
+        if stock_type == 'donation':
+            product.update_stock(current_stock + change_in_stock, True)
+        elif stock_type == 'purchased':
+            product.update_stock(current_stock + change_in_stock, False)
+        elif stock_type == 'taken':
+            if change_in_stock > current_stock:
+                return abort(400, description=f"Cannot take {change_in_stock} units with only {current_stock} in stock")
+            else:
+                product.update_stock(current_stock - change_in_stock, False)
+
+        product.mark_not_notified()
+        EmailJob.process_emails(User.get_by_username('admin').email)
+        return redirect(f'/mobile-category?category_id={product.category.get_id()}', 303)
     else:
         return abort(405, description="Method Not Allowed")
 
@@ -322,14 +380,65 @@ def filter():
     levels = Product.get_low_products()
     return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
 
+@app.route("/update_donated/<int:product_id>", methods=["POST"])
+@login_required
+def update_donated(product_id: int):
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access this feature.')
+    product = Product.get_by_id(product_id)
+    amount: int = int(request.form.get("donated_amount"))
+    adjust_stock: bool = bool(request.form.get("adjust_stock"))
+    diff: int = amount - product.lifetime_donated
+    if adjust_stock and diff < 0 and -diff > product.inventory:
+        return abort(400, description="action would produce a negative stock level") 
+    product.set_donated(amount, adjust_stock)
+    return redirect(f"/{product_id}")
+
+@app.route("/update_purchased/<int:product_id>", methods=["POST"])
+@login_required
+def update_purchased(product_id: int):
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access this feature.')
+    product = Product.get_by_id(product_id)
+    amount: int = int(request.form.get("purchased_amount"))
+    adjust_stock: bool = bool(request.form.get("adjust_stock"))
+    diff: int = amount - product.lifetime_purchased
+    if adjust_stock and diff < 0 and -diff > product.inventory:
+        return abort(400, description="action would produce a negative stock level") 
+    product.set_purchased(amount, adjust_stock)
+    return redirect(f"/{product_id}")
+
 
 #MODALS
+@app.get("/load_update_donated/<int:product_id>")
+@login_required
+def load_update_donated(product_id: int):
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access this feature.')
+    product = Product.get_product(product_id)
+    return render_template("modals/update_donated.html",
+                           product=product)
+
+@app.get("/load_update_purchased/<int:product_id>")
+@login_required
+def load_update_purchased(product_id: int):
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can access this feature.')
+    product = Product.get_product(product_id)
+    return render_template("modals/update_purchased.html",
+                           product=product)
+
 @app.get("/load_update/<int:product_id>")
 @login_required
 def load_update(product_id: int):
     product = Product.get_product(product_id)
-    return render_template("modals/update_stock.html",
-                           product=product)
+    return render_template("modals/update_stock.html", product=product)
+
+@app.get("/load_update_mobile/<int:product_id>")
+@login_required
+def load_update_mobile(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/update_stock_mobile.html", product=product)
 
 @app.get("/load_update_all/<int:product_id>")
 @login_required
@@ -371,6 +480,28 @@ def update_settings():
     User.get_by_username('admin').update_email(email)
     return redirect("/settings")
 
+
+@app.get("/mobile")
+@login_required
+def render_mobile_home_page():
+    categories = [
+        Category.ALL_PRODUCTS_PLACEHOLDER,
+        *Category.all_alphabetized()
+    ]
+    return render_template("mobile_index.html", category_list=categories)
+
+@app.get("/mobile-category")
+@login_required
+def render_mobile_category_page():
+    category_id = request.args.get('category_id', type=int)
+    if category_id == Category.ALL_PRODUCTS_PLACEHOLDER['id']:
+        category_id = None
+    category = Category.ALL_PRODUCTS_PLACEHOLDER if category_id is None or category_id == 0 else Category.get_category(category_id)
+    products = Product.alphabetized_of_category(category_id)
+    return render_template("mobile_category.html", product_list=products, category=category)
+
+
+
 with app.app_context():
     if not User.get_by_username('admin'):
         User.add_user('admin', bcrypt.generate_password_hash(os.environ.get("ADMIN_PASSWORD")))
@@ -380,4 +511,4 @@ with app.app_context():
         User.add_user('volunteer', bcrypt.generate_password_hash(os.environ.get("VOLUNTEER_PASSWORD")))
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=False)
+    app.run(port=5000, debug=True)

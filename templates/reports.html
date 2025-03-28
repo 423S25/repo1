@@ -1,47 +1,41 @@
-<head>
-    <link rel="stylesheet" href="styles/reports.css">
-</head>
+{% include "nav.html" %}
 
-<div class="navigation">
-    <form class="inventory" action="/" method="get">
-        <button type="submit">INVENTORY</button>
-    </form>
-    <form class="reports">
-        <button type="submit">REPORTS</button>
-    </form>
-    <form class="logout" action="/logout" method="post">
-        <button type="submit" element="logout">
-            <img alt="User" src="icons/user.svg" class="logout-icon"/>SIGN OUT
-        </button>
-    </form>
-</div>
-
-<div class="urgency-placeholder">
-    <div></div>
-    <div></div>
-    <div></div>
-</div>
-<div class="scaffolding">
-    <div class="filter-parent"></div>
-    <div class="action-parent">
-
-        <input class="form-control" type="search"
-               name="search" placeholder="SEARCH INVENTORY"
-               hx-post="/search"
-               hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load"
-               hx-target="#search-results"
-               hx-indicator=".htmx-indicator">
-
-        <form action="/export_csv" method="get">
+<form action="/export_csv" method="get">
     <button  type="submit" class="product-button">EXPORT CSV</button>
 </form>
 
 
-    </div>
-    <h1>This is where the charts go</h1>
-    <div>
+</div>
+<div id="chart-container">
+    <canvas id="DonutChart"></canvas>
+</div>
 
-    </div>
+<script>
+    function getRandomColor() {
+        return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    }
+
+    var categories = {{ categories | tojson }};
+    var quant = {{ quant | tojson }};
+    var labels = categories.map(c => c.name);
+    var backgroundColors = labels.map(() => getRandomColor());
+
+    var ctx = document.getElementById('DonutChart').getContext('2d');
+    var myDonutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: quant,
+                backgroundColor: backgroundColors,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+</script>
 </div>
 
 
