@@ -1,0 +1,40 @@
+<form action="/export_csv" method="get">
+    <button  type="submit" class="product-button">EXPORT CSV</button>
+</form>
+
+
+
+<div id="chart-container">
+    <canvas id="DonutChart"></canvas>
+</div>
+
+
+<script>
+    function getRandomColor() {
+        return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    }
+
+    var categories = {{ categories | tojson }};
+    var quant = {{ quant | tojson }};
+    var labels = categories.map(c => c.name);
+    var backgroundColors = labels.map(() => getRandomColor());
+
+    var ctx = document.getElementById('DonutChart').getContext('2d');
+    var myDonutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: quant,
+                backgroundColor: backgroundColors,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+</script>
+
+
+
