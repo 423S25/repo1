@@ -1,47 +1,41 @@
+
 <form action="/export_csv" method="get">
-    <button type="submit" class="product-button">EXPORT CSV</button>
+    <button  type="submit" class="product-button">EXPORT CSV</button>
 </form>
 
 
+
 <div id="chart-container">
-    <canvas id="inventoryScatterChart"></canvas>
+    <canvas id="DonutChart"></canvas>
 </div>
 
+
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const ctx = document.getElementById("inventoryScatterChart").getContext("2d");
+    function getRandomColor() {
+        return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    }
 
-        const data = {
+    var categories = {{ categories | tojson }};
+    var quant = {{ quant | tojson }};
+    var labels = categories.map(c => c.name);
+    var backgroundColors = labels.map(() => getRandomColor());
+
+    var ctx = document.getElementById('DonutChart').getContext('2d');
+    var myDonutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
             datasets: [{
-                label: "Inventory vs Price",
-                data: [
-                    {x: 10, y: 20},
-                    {x: 15, y: 10},
-                    {x: 20, y: 30}
-                ],
-                backgroundColor: "rgba(75, 192, 192, 0.7)"
+                data: quant,
+                backgroundColor: backgroundColors,
             }]
-        };
-
-        new Chart(ctx, {
-            type: "scatter",
-            data: data,
-            options: {
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: "Price ($)"
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: "Inventory Count"
-                        }
-                    }
-                }
-            }
-        });
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
     });
 </script>
+
+
+

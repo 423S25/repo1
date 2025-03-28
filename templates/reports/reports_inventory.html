@@ -1,4 +1,52 @@
 <form action="/export_csv" method="get">
+    <button type="submit" class="product-button">EXPORT CSV</button>
+</form>
+
+
+<div id="scatter-chart-container">
+    <canvas id="inventoryScatterChart"></canvas>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById("inventoryScatterChart").getContext("2d");
+
+        const data = {
+            datasets: [{
+                label: "Inventory vs Price",
+                data: [
+                    {x: 10, y: 20},
+                    {x: 15, y: 10},
+                    {x: 20, y: 30}
+                ],
+                backgroundColor: "rgba(75, 192, 192, 0.7)"
+            }]
+        };
+
+        new Chart(ctx, {
+            type: "scatter",
+            data: data,
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Price ($)"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Inventory Count"
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<form action="/export_csv" method="get">
     <button  type="submit" class="product-button">EXPORT CSV</button>
 </form>
 
