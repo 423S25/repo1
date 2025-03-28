@@ -41,9 +41,8 @@
 </div>
 <div class="scaffolding">
     <div class="filter-parent">
-        <label for="category_id">Categories</label>
         {% set current_category = current_category | int %}
-        <select id="category_id" name="category_id"
+        <select class="filter-input" id="category_id" name="category_id"
                 hx-trigger="change"
                 hx-post="/filter"
                 hx-target="body"
@@ -53,7 +52,7 @@
                     {% if current_category is none or current_category == 0 %}
                     selected
                     {% endif %}>
-                All
+                Filters
             </option>
             {% for category in categories %}
                 <option value="{{ category.id }}"
@@ -66,8 +65,9 @@
             {% endfor %}
 
         </select>
+        <br>
         {% if current_category != 0 %}
-            <button hx-get="/load_edit_category/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
+            <button class="filter-edit-button" hx-get="/load_edit_category/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
                 Current Category
             </button>
         {% endif %}
