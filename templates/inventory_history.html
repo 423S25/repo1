@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "macros.html" import inventory_item_bar %}
 {% block content %}
 
     {% include 'nav.html' %}
@@ -29,19 +28,19 @@
     <h1>{{ product.product_name }}</h1>
     <h2>{{product.category.name}}</h2>
     <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <h3>Lifetime amount donated: {{ product.lifetime_donated }}</h3>
-        <button hx-get="/load_update_donated/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST
-        </button>
+    <div class="inventory-item-bar">
+        {% if product.inventory == 0 or product.ideal_stock == 0 %}
+            <div class="inventory-item-no-stock"></div>
+        {% elif product.inventory <= product.ideal_stock * 0.25 %}
+            <div style="width: {{product.inventory/product.ideal_stock*100}}%; background-color: var(--hrdc-theme-stock-urgent);"></div>
+        {% elif product.inventory <= product.ideal_stock * 0.5 %}
+            <div style="width: {{product.inventory/product.ideal_stock*100}}%; background-color: var(--hrdc-theme-stock-low);"></div>
+        {% elif product.inventory > product.ideal_stock %}
+            <div style="width: 100%; background-color: var(--hrdc-theme-stock-okay);"></div>
+        {% else %}
+            <div style="width: {{product.inventory/product.ideal_stock*100}}%; background-color: var(--hrdc-theme-stock-okay);"></div>
+        {% endif %}
     </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <h3>Lifetime amount purchased: {{ product.lifetime_purchased }}</h3>
-        <button hx-get="/load_update_purchased/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST
-        </button>
-    </div>
-    {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
     </div>
 
     <div class="column">
