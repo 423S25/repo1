@@ -69,13 +69,13 @@ def login():
     next = request.args.get('next')
     errors = [] #used to display errors on the login page
     if form.validate_on_submit(): #makes sure form is complete
-        user = User.get_by_username(form.username.data)
+        user = User.get_by_username(form.username.data.lower())
         if user is None:
-            errors.append("User not found.")
+            errors.append("User not found")
             return render_template('security/login.html', form=form, errors=errors)
         correct_password = bcrypt.check_password_hash(user.password, form.password.data)
         if not correct_password:
-            errors.append("Incorrect password.")
+            errors.append("Incorrect password")
             return render_template('security/login.html', form=form, errors=errors)
         login_success = login_user(user)
         if not login_success:
