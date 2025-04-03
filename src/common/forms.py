@@ -1,21 +1,23 @@
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, BooleanField, validators
 from flask_wtf import FlaskForm
-from flask import Response, make_response
+from flask import Response, make_response, redirect
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[validators.input_required()])
     password = PasswordField('Password', validators=[validators.input_required()])
     submit = SubmitField('Login')
 
-class ProductAddForm(FlaskForm):
+class ProductUpdateAllForm(FlaskForm):
     product_name = StringField('Product Name', validators=[validators.input_required()])
-    inventory = IntegerField('Inventory', validators=[validators.NumberRange(min=0)])
     ideal_stock = IntegerField('Ideal Stock', validators=[validators.NumberRange(min=1)])
     price = StringField('Price', validators=[validators.input_required()]) #string to allow '$' in entry
     unit_type = StringField('Unit Type', validators=[validators.input_required()])
+    submit = SubmitField('Login')
+
+class ProductAddForm(ProductUpdateAllForm):
+    inventory = IntegerField('Inventory', validators=[validators.NumberRange(min=0)])
     donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
-    submit = SubmitField('Login')
 
 class ProductUpdateInventoryForm(FlaskForm):
     _method = StringField('_method', validators=[validators.AnyOf(['PATCH', 'patch'])])
@@ -28,7 +30,8 @@ def clean_price_to_float(val: str | None) -> float | None:
         return None
     else:
         try:
-            return float(val.replace('$', ''))
+            price = float(val.replace('$', ''))
+            return None if price is None or price < 0 else price
         except:
             return None
 
@@ -59,11 +62,14 @@ def parse_errors(form: FlaskForm) -> list[str]:
 
     return errors_list
 
-def render_errors_as_html(errors: list[str]) -> str:
-    return "<ul>" + "".join(f"<li>{error}</li>" for error in errors) + "</ul>"
-
 def htmx_redirect(url: str) -> Response:
     response = make_response(url, 200)
     response.headers['HX-Redirect'] = url
+    return response
+
+def htmx_errors(errors: list[str]) -> Response:
+    html = "<ul>" + "".join(f"<li>{error}</li>" for error in errors) + "</ul>"
+    response = make_response(html, 400)
+    response.headers['Content-Type'] = 'text/html'
     return response
 

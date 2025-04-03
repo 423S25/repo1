@@ -7,12 +7,13 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, parse_errors, clean_price_to_float, render_errors_as_html, htmx_redirect
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect
 from src.common.email_job import EmailJob
 
 from user_agents import parse
 import io
 from PIL import Image
+from functools import wraps
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -60,6 +61,15 @@ def _db_connect():
 def _db_close(exc):
     if not db.is_closed():
         db.close()
+
+def admin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if current_user is None or current_user.username != 'admin':
+            return abort(401, description='Only admins can access this resource')
+        else:
+           return func(*args, **kwargs)
+    return wrapper
 
 
 
@@ -168,7 +178,7 @@ def inventory_history(product_id: int):
 
 # Admin settings page
 @app.get("/settings")
-@login_required
+@admin_required
 def get_settings():
     if current_user.username != 'admin':
         return abort(401, description='Only admins can access admin settings')
@@ -241,7 +251,7 @@ def login():
 
 # Add a new email to updates for admin only
 @app.post("/settings")
-@login_required
+@admin_required
 def update_settings():
     if current_user.username != 'admin':
         return abort(401, description='Only admins can access admin settings')
@@ -259,59 +269,47 @@ def update_settings():
 
 # Create a new product
 @app.get('/product_add')
-@login_required
+@admin_required
 def product_add_form():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
-    else:
-        form = ProductAddForm()
-        categories = Category.all_alphabetized()
-        return render_template('modals/product_add.html', form=form, categories=categories)
+    form = ProductAddForm()
+    categories = Category.all_alphabetized()
+    return render_template('modals/product_add.html', form=form, categories=categories)
 
 # Create a new product
 @app.post('/product_add')
-@login_required
+@admin_required
 def product_add_action():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
+    form = ProductAddForm()
+    form.validate()
+    form_errors: list[str] = parse_errors(form)
+
+    maybe_price_float = clean_price_to_float(form.price.data) #allow '$' in price field
+    if maybe_price_float is None:
+        form_errors.append('Price could not be converted to number')
+
+    if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
+        form_errors.append(f'No category with id {form.category_id.data}')
+
+    if len(form_errors) == 0: #add to database
+        Product.add_product(request.form.get("product_name"),
+            form.inventory.data,
+            form.category_id.data,
+            maybe_price_float,
+            form.unit_type.data,
+            form.ideal_stock.data,
+            form.donation.data,
+            None
+        )
+        Product.fill_days_left()
+        EmailJob.process_emails(User.get_by_username('admin').email)
+        return htmx_redirect('/')
     else:
-        form = ProductAddForm()
-        form.validate()
-        form_errors: list[str] = parse_errors(form)
-
-        maybe_price_float = clean_price_to_float(form.price.data) #allow '$' in price field
-        if maybe_price_float is None:
-            form_errors.append('Price could not be converted to number')
-
-        if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
-            form_errors.append(f'No category with id {form.category_id.data}')
-
-        if len(form_errors) == 0: #add to database
-            Product.add_product(request.form.get("product_name"),
-                form.inventory.data,
-                form.category_id.data,
-                maybe_price_float,
-                form.unit_type.data,
-                form.ideal_stock.data,
-                form.donation.data,
-                None
-            )
-            Product.fill_days_left()
-            EmailJob.process_emails(User.get_by_username('admin').email)
-            return htmx_redirect('/')
-        else:
-            return make_response(render_errors_as_html(form_errors), 400)
+        return htmx_errors(form_errors)
 
 # Delete a product
 @app.delete("/product_delete/<int:product_id>")
-@login_required
+@admin_required
 def delete(product_id: int):
-    #only admin can delete products
-    #TODO: display message or page to user when encountering 401 error
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
     Product.delete_product(product_id)
     return redirect('/')
 
@@ -369,7 +367,7 @@ def update_inventory(product_id: int):
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
         else:
-            return make_response(render_errors_as_html(form_errors), 400)
+            return htmx_errors(form_errors)
     else:
         return abort(405, description="Method Not Allowed")
 
@@ -385,52 +383,47 @@ def load_update_mobile(product_id: int):
 def update_inventory_mobile(product_id: int):
     return update_inventory(product_id)
 
+@app.get("/product_update_all/<int:product_id>")
+@admin_required
+def load_update_all(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_all.html", product=product, form=ProductUpdateAllForm())
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Update other aspects of a product
-@app.route("/update/<int:product_id>", methods=["POST"])
-@login_required #admin only
+# Update any/all aspect of a product
+@app.post("/product_update_all/<int:product_id>")
+@admin_required
 def update_all(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
-
     if request.form.get('_method') == 'PATCH':
+        form = ProductUpdateAllForm()
+        form_errors = parse_errors(form)
+
         product = Product.get_product(product_id)
         if product is None:
-            return abort(404, description=f"Could not find product {product_id}")
+            form_errors.append(f'No product found with id {product_id}')
 
-        product_name = request.form.get("product_name")
-        price = request.form.get("price")
-        unit_type = request.form.get("unit_type")
-        ideal_stock = request.form.get("ideal_stock")
+        price = clean_price_to_float(form.price.data)
+        if price is None:
+            form_errors.append(f'Price "{form.price.data}" cound not be converted to a number')
+        
+        if len(form_errors) == 0:
+            product_name = form.product_name.data
+            unit_type = form.unit_type.data
+            ideal_stock = form.ideal_stock.data
 
-        product.update_product(product_name, float(price), unit_type, int(ideal_stock))
-        Product.fill_days_left()
-        product.mark_not_notified()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect("/" + str(product_id), 303)
+            product.update_product(product_name, float(price), unit_type, int(ideal_stock))
+            Product.fill_days_left()
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/" + str(product_id))
+        else:
+            return htmx_errors(form_errors)
     else:
         return abort(405, description="Method Not Allowed")
 
 # Change a product's category
 @app.route("/update_category/<int:category_id>", methods=["POST"])
-@login_required #admin only
+@admin_required #admin only
 def update_category(category_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
-
     if request.form.get('_method') == 'PATCH':
         category = Category.get_category(category_id)
         if category is None:
@@ -446,10 +439,8 @@ def update_category(category_id: int):
 
 # Update the lifetime donated amount and maybe updates stock as well
 @app.route("/update_donated/<int:product_id>", methods=["POST"])
-@login_required
+@admin_required
 def update_donated(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'Cound not find product with id {product_id}')
@@ -463,10 +454,8 @@ def update_donated(product_id: int):
 
 # Update the lifetime purchased amount and maybe updates stock as well
 @app.route("/update_purchased/<int:product_id>", methods=["POST"])
-@login_required
+@admin_required
 def update_purchased(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'Cannot find product with id {product_id}')
@@ -488,11 +477,8 @@ def update_purchased(product_id: int):
 
 # Create a new category
 @app.route("/add_category", methods=["POST"])
-@login_required
+@admin_required
 def add_category():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
     if Category.get_category(request.form.get("category_name")) is None:
         Category.add_category(request.form.get("category_name"), (request.form.get("category_color")))
     else:
@@ -501,10 +487,8 @@ def add_category():
 
 # Delete a category
 @app.delete("/delete_category/<int:category_id>")
+@admin_required
 def delete_category(category_id: int):
-    #only admin can delete products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
     Category.delete_category(category_id)
     products = Product.urgency_rank()
     categories = Category.all()
@@ -521,10 +505,8 @@ def delete_category(category_id: int):
 
 
 @app.get("/export_csv")
-@login_required
+@admin_required
 def export_csv():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admin can export csv')
     csv_file = Product.get_csv()
     response = Response(csv_file, content_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
@@ -539,33 +521,27 @@ def export_csv():
 
 
 # Add new product modal for main table page
-@app.get("/add")
-@login_required
-def get_add():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
-    return render_template("add_form.html")
+# @app.get("/add")
+# @login_required
+# def get_add():
+#     #only admin can add products
+#     if current_user.username != 'admin':
+#         return abort(401, description='Only admins can add products')
+#     return render_template("add_form.html")
 
 # Form to update lifetime donated in product inventory_history.html
 @app.get("/load_update_donated/<int:product_id>")
-@login_required
+@admin_required
 def load_update_donated(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
-    return render_template("modals/update_donated.html",
-                           product=product)
+    return render_template("modals/update_donated.html", product=product)
 
 # Form to update lifetime purchased in product inventory_history.html
 @app.get("/load_update_purchased/<int:product_id>")
-@login_required
+@admin_required
 def load_update_purchased(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
-    return render_template("modals/update_purchased.html",
-                           product=product)
+    return render_template("modals/update_purchased.html", product=product)
 
 # # Form to update stock only for a given product in product inventory_history.html
 # @app.get("/load_update/<int:product_id>")
@@ -582,35 +558,31 @@ def load_update_purchased(product_id: int):
 #     return render_template("modals/update_stock_mobile.html", product=product)
 
 # Form to update any aspect of a product for admin only in product mobile_category.html
-@app.get("/load_update_all/<int:product_id>")
-@login_required
-def load_update_all(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
-    product = Product.get_product(product_id)
-    return render_template("modals/update_all.html", product=product)
+# @app.get("/load_update_all/<int:product_id>")
+# @login_required
+# def load_update_all(product_id: int):
+#     if current_user.username != 'admin':
+#         return abort(401, description='Only admins can access this feature.')
+#     product = Product.get_product(product_id)
+#     return render_template("modals/product_update_all.html", product=product)
 
 # Form to add a new product for admin only in main table page
 @app.get("/load_add")
-@login_required
+@admin_required
 def load_add():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
     categories = Category.all()
     return render_template("modals/product_add.html", categories=categories)
 
 # Form to add a new category for admin only in main table page
 @app.get("/load_add_category")
+@admin_required
 def load_add_color():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add categories')
     return render_template("modals/add_category.html")
 
 # Form to edit a category for admin only in main table page
 @app.get("/load_edit_category/<int:category_id>")
+@admin_required
 def load_edit_category(category_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can edit categories')
     category = Category.get_category(category_id)
     return render_template("modals/edit_category.html", category=category)
 
