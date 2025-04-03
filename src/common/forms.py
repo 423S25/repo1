@@ -1,4 +1,4 @@
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, BooleanField, validators
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, BooleanField, validators, ColorField
 from flask_wtf import FlaskForm
 from flask import Response, make_response, redirect
 
@@ -32,6 +32,13 @@ class ProductUpdatePurchasedForm(FlaskForm):
     purchased_amount = IntegerField('Purchased Amount', validators=[validators.NumberRange(min=0)])
     adjust_stock = BooleanField('Adjust Stock', default=False)
     submit = SubmitField('Submit')
+
+class CategoryAddForm(FlaskForm):
+    category_name = StringField('Category Name', validators=[validators.input_required()])
+    category_color = ColorField('Category Color', validators=[validators.input_required()])
+
+class CategoryUpdateAllForm(CategoryAddForm):
+    pass
 
 
 

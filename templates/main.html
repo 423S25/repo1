@@ -59,7 +59,7 @@
 
         </select>
         {% if current_category != 0 %}
-            <button hx-get="/load_edit_category/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
+            <button hx-get="/category_update/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
                 Current Category
             </button>
         {% endif %}
@@ -77,7 +77,7 @@
         <button class="product-button" hx-get="/product_add" hx-target="body" hx-swap="beforeend">
             NEW PRODUCT
         </button>
-        <button class="product-button" hx-get="/load_add_category" hx-target="body" hx-swap="beforeend">
+        <button class="product-button" hx-get="/category_add" hx-target="body" hx-swap="beforeend">
             NEW CATEGORY
         </button>
         {% block add %}
