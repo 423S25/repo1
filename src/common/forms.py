@@ -1,5 +1,6 @@
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, BooleanField, validators
 from flask_wtf import FlaskForm
+from flask import Response, make_response
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[validators.input_required()])
@@ -16,6 +17,12 @@ class ProductAddForm(FlaskForm):
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
     submit = SubmitField('Login')
 
+class ProductUpdateInventoryForm(FlaskForm):
+    _method = StringField('_method', validators=[validators.AnyOf(['PATCH', 'patch'])])
+    stock = IntegerField('Stock', validators=[validators.NumberRange(min=0)])
+
+
+
 def clean_price_to_float(val: str | None) -> float | None:
     if val is None:
         return None
@@ -25,8 +32,9 @@ def clean_price_to_float(val: str | None) -> float | None:
         except:
             return None
 
-# Make the form more human readable
+# Validates the form and makes the errors more human readable
 def parse_errors(form: FlaskForm) -> list[str]:
+    form.validate()
     errors_list: list[str] = []
 
     for field_name, error_msg_list in form.errors.items():
@@ -54,5 +62,8 @@ def parse_errors(form: FlaskForm) -> list[str]:
 def render_errors_as_html(errors: list[str]) -> str:
     return "<ul>" + "".join(f"<li>{error}</li>" for error in errors) + "</ul>"
 
-
+def htmx_redirect(url: str) -> Response:
+    response = make_response(url, 200)
+    response.headers['HX-Redirect'] = url
+    return response
 

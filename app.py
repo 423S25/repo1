@@ -7,10 +7,12 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm, ProductAddForm, parse_errors, clean_price_to_float, render_errors_as_html
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, parse_errors, clean_price_to_float, render_errors_as_html, htmx_redirect
 from src.common.email_job import EmailJob
 
 from user_agents import parse
+import io
+from PIL import Image
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,6 +29,7 @@ app.config['SECRET_KEY'] = secrets.token_urlsafe()
 app.config['SECRET_KEY'] = "asdf"
 app.config["SESSION_PROTECTION"] = "strong"
 UPLOAD_FOLDER = os.path.join("static", "images")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
 
 def is_mobile():
@@ -297,23 +300,12 @@ def product_add_action():
             )
             Product.fill_days_left()
             EmailJob.process_emails(User.get_by_username('admin').email)
-            return redirect("/")
+            return htmx_redirect('/')
         else:
             return make_response(render_errors_as_html(form_errors), 400)
 
-
-
-
-
-
-
-
-
-
-
-
 # Delete a product
-@app.delete("/delete/<int:product_id>")
+@app.delete("/product_delete/<int:product_id>")
 @login_required
 def delete(product_id: int):
     #only admin can delete products
@@ -324,7 +316,7 @@ def delete(product_id: int):
     return redirect('/')
 
 # Add an image for a product
-@app.post("/upload/<int:product_id>")
+@app.post("/product_upload_image/<int:product_id>")
 @login_required
 def upload_image(product_id: int):
     if 'file' not in request.files:
@@ -334,66 +326,78 @@ def upload_image(product_id: int):
     product = Product.get_product(product_id)
     if file.filename == '':
         return redirect('/' + str(product_id))
-    filename = file.filename
-    product.set_img_path(filename)
 
-    file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
+    is_valid_image = True
+    filename = file.filename
+    try:
+        img_stream = io.BytesIO(file.read())
+        image = Image.open(img_stream)
+        is_valid_image = image.verify() is None
+    except:
+        is_valid_image = False
+
+    if is_valid_image:
+        file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
+        product.set_img_path(filename)
+
     return redirect("/" + str(product_id))
 
+# Form to update stock only for a given product in product inventory_history.html
+@app.get("/product_update_inventory/<int:product_id>")
+@login_required
+def load_update(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f'No product found with id {product_id}')
+    return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
+
 # Update inventory only for desktop
-@app.route("/update/inventory/<int:product_id>", methods=["POST"])
+@app.post("/product_update_inventory/<int:product_id>")
 @login_required #any user can update inventory
 def update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        new_stock = request.form.get('stock', None, type=int)
-        donation = request.form.get("donation", False)
-        if new_stock is None or new_stock < 0:
-            return abort(400, description="Stock count must be a positive integer")
+        form = ProductUpdateInventoryForm()
+        form_errors = parse_errors(form)
 
         product = Product.get_product(product_id)
         if product is None:
-            return abort(404, description=f"Could not find product {product_id}")
+            form_errors.append(f"Could not find product {product_id}")
         
-        product.update_stock(new_stock)
-        product.mark_not_notified()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect("/" + str(product_id), 303)
+        if len(form_errors) == 0:
+            product.update_stock(form.stock.data)
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/" + str(product_id))
+        else:
+            return make_response(render_errors_as_html(form_errors), 400)
     else:
         return abort(405, description="Method Not Allowed")
+
+@app.get("/product_update_inventory_mobile/<int:product_id>")
+@login_required
+def load_update_mobile(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_stock_mobile.html", product=product, form=ProductUpdateInventoryForm())
 
 # Update inventory only for mobile
-@app.route("/update_mobile/inventory/<int:product_id>", methods=["POST"])
+@app.post("/product_update_inventory_mobile/<int:product_id>")
 @login_required #any user can update inventory
 def update_inventory_mobile(product_id: int):
-    if request.form.get('_method') == 'PATCH':
-        change_in_stock = request.form.get('stock', None, type=int)
-        if change_in_stock is None or change_in_stock < 0:
-            return abort(400, description="Stock count must be a positive integer") #technically it only needs to be nonnegative
-        
-        stock_type = request.form.get("stock_type", False)
-        if not stock_type in ('donation', 'purchased', 'taken'):
-            return abort(400, description=f"Unknown stock type \"{stock_type}\"")
+    return update_inventory(product_id)
 
-        product = Product.get_product(product_id)
-        if product is None:
-            return abort(404, description=f"Could not find product with id {product_id}")
-        
-        current_stock = product.inventory
-        if stock_type == 'donation':
-            product.update_stock(current_stock + change_in_stock, True)
-        elif stock_type == 'purchased':
-            product.update_stock(current_stock + change_in_stock, False)
-        elif stock_type == 'taken':
-            if change_in_stock > current_stock:
-                return abort(400, description=f"Cannot take {change_in_stock} units with only {current_stock} in stock")
-            else:
-                product.update_stock(current_stock - change_in_stock, False)
 
-        product.mark_not_notified()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect(f'/mobile-category?category_id={product.category.get_id()}', 303)
-    else:
-        return abort(405, description="Method Not Allowed")
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Update other aspects of a product
 @app.route("/update/<int:product_id>", methods=["POST"])
@@ -563,19 +567,19 @@ def load_update_purchased(product_id: int):
     return render_template("modals/update_purchased.html",
                            product=product)
 
-# Form to update stock only for a given product in product inventory_history.html
-@app.get("/load_update/<int:product_id>")
-@login_required
-def load_update(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/update_stock.html", product=product)
+# # Form to update stock only for a given product in product inventory_history.html
+# @app.get("/load_update/<int:product_id>")
+# @login_required
+# def load_update(product_id: int):
+#     product = Product.get_product(product_id)
+#     return render_template("modals/update_stock.html", product=product)
 
 # Form to update stock only on mobile for a given product in product mobile_category.html
-@app.get("/load_update_mobile/<int:product_id>")
-@login_required
-def load_update_mobile(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/update_stock_mobile.html", product=product)
+# @app.get("/load_update_mobile/<int:product_id>")
+# @login_required
+# def load_update_mobile(product_id: int):
+#     product = Product.get_product(product_id)
+#     return render_template("modals/update_stock_mobile.html", product=product)
 
 # Form to update any aspect of a product for admin only in product mobile_category.html
 @app.get("/load_update_all/<int:product_id>")

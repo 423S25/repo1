@@ -1,0 +1,11 @@
+<div id="mobile-modal" class="center-all" _="on closeMobileModal add .closing then wait for animationend then remove me">
+    <div class="box-shadow-small">
+        <form action="/product_update_inventory_mobile/{{ product.get_id() }}" method="POST">
+            {{ form.csrf_token }}
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="number" id="stock" name="stock" min="0" placeholder="Change in {{ product.unit_type }}" required>
+            <button type="submit">Update</button>
+        </form>
+        <button class="mobile-modal-close" _="on click trigger closeMobileModal">Close</button>
+    </div>
+</div>

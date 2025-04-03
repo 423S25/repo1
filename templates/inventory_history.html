@@ -16,7 +16,7 @@
     {% endif %}
         </label>
     </div>
-    <form action="/upload/{{ product.get_id() }}" method="POST" enctype="multipart/form-data">
+    <form action="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data">
         <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
     </form>
     <script>
@@ -45,7 +45,7 @@
     </div>
 
     <div class="column">
-    <button class="product-button" hx-get="/load_update/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+    <button class="product-button" hx-get="/product_update_inventory/{{ product.id }}" hx-target="body" hx-swap="beforeend">
             ADJUST STOCK
     </button>
 
@@ -57,7 +57,7 @@
 
 
         <div class="dropdown-content">
-            <a href="#" hx-delete="/delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
+            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
 
             <a hx-get="/load_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Info</a>
 
