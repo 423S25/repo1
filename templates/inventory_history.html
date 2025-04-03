@@ -31,13 +31,13 @@
     <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
     <div style="display: flex; align-items: center; gap: 10px;">
         <h3>Lifetime amount donated: {{ product.lifetime_donated }}</h3>
-        <button hx-get="/load_update_donated/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+        <button hx-get="/product_update_donated/{{ product.id }}" hx-target="body" hx-swap="beforeend">
             ADJUST
         </button>
     </div>
     <div style="display: flex; align-items: center; gap: 10px;">
         <h3>Lifetime amount purchased: {{ product.lifetime_purchased }}</h3>
-        <button hx-get="/load_update_purchased/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+        <button hx-get="/product_update_purchased/{{ product.id }}" hx-target="body" hx-swap="beforeend">
             ADJUST
         </button>
     </div>

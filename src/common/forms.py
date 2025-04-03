@@ -12,7 +12,7 @@ class ProductUpdateAllForm(FlaskForm):
     ideal_stock = IntegerField('Ideal Stock', validators=[validators.NumberRange(min=1)])
     price = StringField('Price', validators=[validators.input_required()]) #string to allow '$' in entry
     unit_type = StringField('Unit Type', validators=[validators.input_required()])
-    submit = SubmitField('Login')
+    submit = SubmitField('Submit')
 
 class ProductAddForm(ProductUpdateAllForm):
     inventory = IntegerField('Inventory', validators=[validators.NumberRange(min=0)])
@@ -22,6 +22,16 @@ class ProductAddForm(ProductUpdateAllForm):
 class ProductUpdateInventoryForm(FlaskForm):
     _method = StringField('_method', validators=[validators.AnyOf(['PATCH', 'patch'])])
     stock = IntegerField('Stock', validators=[validators.NumberRange(min=0)])
+
+class ProductUpdateDonatedForm(FlaskForm):
+    donated_amount = IntegerField('Donated Amount', validators=[validators.NumberRange(min=0)])
+    adjust_stock = BooleanField('Adjust Stock', default=False)
+    submit = SubmitField('Submit')
+
+class ProductUpdatePurchasedForm(FlaskForm):
+    purchased_amount = IntegerField('Purchased Amount', validators=[validators.NumberRange(min=0)])
+    adjust_stock = BooleanField('Adjust Stock', default=False)
+    submit = SubmitField('Submit')
 
 
 

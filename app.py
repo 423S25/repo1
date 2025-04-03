@@ -7,7 +7,7 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect
 from src.common.email_job import EmailJob
 
 from user_agents import parse
@@ -420,52 +420,64 @@ def update_all(product_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
-# Change a product's category
-@app.route("/update_category/<int:category_id>", methods=["POST"])
-@admin_required #admin only
-def update_category(category_id: int):
-    if request.form.get('_method') == 'PATCH':
-        category = Category.get_category(category_id)
-        if category is None:
-            return abort(404, description=f"Could not find product {category.id}")
+# Form to update lifetime donated in product inventory_history.html
+@app.get("/product_update_donated/<int:product_id>")
+@admin_required
+def load_update_donated(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_donated.html", product=product, form=ProductUpdateDonatedForm())
 
-        category_name = request.form.get("category_name")
-        category_color = request.form.get("category_color")
-        category.update_category(category_name, category_color)
-
-        return redirect("/", 303)
-    else:
-        return abort(405, description="Method Not Allowed")
+# Form to update lifetime purchased in product inventory_history.html
+@app.get("/product_update_purchased/<int:product_id>")
+@admin_required
+def load_update_purchased(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_purchased.html", product=product, form=ProductUpdatePurchasedForm())
 
 # Update the lifetime donated amount and maybe updates stock as well
-@app.route("/update_donated/<int:product_id>", methods=["POST"])
+@app.post("/product_update_donated/<int:product_id>")
 @admin_required
 def update_donated(product_id: int):
+    form = ProductUpdateDonatedForm()
+    form_errors = parse_errors(form)
+
     product = Product.get_product(product_id)
     if product is None:
-        return abort(404, description=f'Cound not find product with id {product_id}')
-    amount: int = int(request.form.get("donated_amount"))
-    adjust_stock: bool = bool(request.form.get("adjust_stock"))
+        form_errors.append(f'Cound not find product with id {product_id}')
+    amount: int = form.donated_amount.data
+    adjust_stock: bool = form.adjust_stock.data
     diff: int = amount - product.lifetime_donated
     if adjust_stock and diff < 0 and -diff > product.inventory:
-        return abort(400, description="action would produce a negative stock level") 
-    product.set_donated(amount, adjust_stock)
-    return redirect(f"/{product_id}")
+        form_errors.append("Action would produce a negative stock level")
+
+    if len(form_errors) == 0:
+        product.set_donated(amount, adjust_stock)
+        return htmx_redirect(f"/{product_id}")
+    else:
+        return htmx_errors(form_errors)
 
 # Update the lifetime purchased amount and maybe updates stock as well
-@app.route("/update_purchased/<int:product_id>", methods=["POST"])
+@app.post("/product_update_purchased/<int:product_id>")
 @admin_required
 def update_purchased(product_id: int):
+    form = ProductUpdatePurchasedForm()
+    form_errors = parse_errors(form)
+
     product = Product.get_product(product_id)
     if product is None:
-        return abort(404, description=f'Cannot find product with id {product_id}')
-    amount: int = int(request.form.get("purchased_amount"))
-    adjust_stock: bool = bool(request.form.get("adjust_stock"))
+        form_errors.append(f'Cannot find product with id {product_id}')
+    
+    amount: int = form.purchased_amount.data
+    adjust_stock: bool = form.adjust_stock.data
     diff: int = amount - product.lifetime_purchased
     if adjust_stock and diff < 0 and -diff > product.inventory:
-        return abort(400, description="action would produce a negative stock level") 
-    product.set_purchased(amount, adjust_stock)
-    return redirect(f"/{product_id}")
+        form_errors.append("Action would produce a negative stock level")
+
+    if len(form_errors) == 0:
+        product.set_purchased(amount, adjust_stock)
+        return htmx_redirect(f"/{product_id}")
+    else:
+        return htmx_errors(form_errors)
 
 
 
@@ -496,6 +508,23 @@ def delete_category(category_id: int):
     levels = Product.get_low_products()
     return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
 
+
+# Change a product's category
+@app.route("/update_category/<int:category_id>", methods=["POST"])
+@admin_required
+def update_category(category_id: int):
+    if request.form.get('_method') == 'PATCH':
+        category = Category.get_category(category_id)
+        if category is None:
+            return abort(404, description=f"Could not find product {category.id}")
+
+        category_name = request.form.get("category_name")
+        category_color = request.form.get("category_color")
+        category.update_category(category_name, category_color)
+
+        return redirect("/", 303)
+    else:
+        return abort(405, description="Method Not Allowed")
 
 
 ###
@@ -530,18 +559,18 @@ def export_csv():
 #     return render_template("add_form.html")
 
 # Form to update lifetime donated in product inventory_history.html
-@app.get("/load_update_donated/<int:product_id>")
-@admin_required
-def load_update_donated(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/update_donated.html", product=product)
+# @app.get("/load_update_donated/<int:product_id>")
+# @admin_required
+# def load_update_donated(product_id: int):
+#     product = Product.get_product(product_id)
+#     return render_template("modals/product_update_donated.html", product=product)
 
-# Form to update lifetime purchased in product inventory_history.html
-@app.get("/load_update_purchased/<int:product_id>")
-@admin_required
-def load_update_purchased(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/update_purchased.html", product=product)
+# # Form to update lifetime purchased in product inventory_history.html
+# @app.get("/load_update_purchased/<int:product_id>")
+# @admin_required
+# def load_update_purchased(product_id: int):
+#     product = Product.get_product(product_id)
+#     return render_template("modals/product_update_purchased.html", product=product)
 
 # # Form to update stock only for a given product in product inventory_history.html
 # @app.get("/load_update/<int:product_id>")
