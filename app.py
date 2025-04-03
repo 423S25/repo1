@@ -497,8 +497,6 @@ def search_products_mobile():
 
     return render_template('mobile_table.html', product_list=products)
 
-
-
 #####
 #
 # CATEGORIES
