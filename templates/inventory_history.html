@@ -29,23 +29,11 @@
     <h1>{{ product.product_name }}</h1>
     <h2>{{product.category.name}}</h2>
     <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <h3>Lifetime amount donated: {{ product.lifetime_donated }}</h3>
-        <button hx-get="/load_update_donated/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST
-        </button>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <h3>Lifetime amount purchased: {{ product.lifetime_purchased }}</h3>
-        <button hx-get="/load_update_purchased/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST
-        </button>
-    </div>
     {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
     </div>
 
     <div class="column">
-    <button class="product-button" hx-get="/load_update/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+    <button class="product-button" hx-get="/load_adjust_stock/{{ product.id }}" hx-target="body" hx-swap="beforeend">
             ADJUST STOCK
     </button>
 

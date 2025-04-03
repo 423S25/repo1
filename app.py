@@ -338,10 +338,6 @@ def update_category(category_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
-
-
-
-
 @app.route("/add_category", methods=["POST"])
 @login_required
 def add_category():
@@ -380,53 +376,35 @@ def filter():
     levels = Product.get_low_products()
     return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
 
-@app.route("/update_donated/<int:product_id>", methods=["POST"])
+@app.get("/load_add_items/<int:product_id>")
 @login_required
-def update_donated(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
-    product = Product.get_by_id(product_id)
-    amount: int = int(request.form.get("donated_amount"))
-    adjust_stock: bool = bool(request.form.get("adjust_stock"))
-    diff: int = amount - product.lifetime_donated
-    if adjust_stock and diff < 0 and -diff > product.inventory:
-        return abort(400, description="action would produce a negative stock level") 
-    product.set_donated(amount, adjust_stock)
-    return redirect(f"/{product_id}")
-
-@app.route("/update_purchased/<int:product_id>", methods=["POST"])
-@login_required
-def update_purchased(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
-    product = Product.get_by_id(product_id)
-    amount: int = int(request.form.get("purchased_amount"))
-    adjust_stock: bool = bool(request.form.get("adjust_stock"))
-    diff: int = amount - product.lifetime_purchased
-    if adjust_stock and diff < 0 and -diff > product.inventory:
-        return abort(400, description="action would produce a negative stock level") 
-    product.set_purchased(amount, adjust_stock)
-    return redirect(f"/{product_id}")
-
-
-#MODALS
-@app.get("/load_update_donated/<int:product_id>")
-@login_required
-def load_update_donated(product_id: int):
+def load_add_items(product_id: int):
     if current_user.username != 'admin':
         return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
-    return render_template("modals/update_donated.html",
-                           product=product)
+    return render_template("modals/add_items.html", product=product)
 
-@app.get("/load_update_purchased/<int:product_id>")
+@app.get("/load_adjust_stock/<int:product_id>")
 @login_required
-def load_update_purchased(product_id: int):
+def load_adjust_stock(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/adjust_stock.html", product=product)
+
+@app.post("/add_items/inventory/<int:product_id>")
+@login_required
+def add_items(product_id: int):
     if current_user.username != 'admin':
         return abort(401, description='Only admins can access this feature.')
     product = Product.get_product(product_id)
-    return render_template("modals/update_purchased.html",
-                           product=product)
+    if product is None:
+        return abort(404, description=f"Could not find product {product_id}")
+    amount = int(request.form.get("amount"))
+    if amount is None or amount < 1:
+        return abort(404, "must provide positive amount of items to add")
+    donation = bool(request.form.get("donation"))
+    product.add_items(amount, donation)
+    return redirect("/" + str(product_id), 303)
+    
 
 @app.get("/load_update/<int:product_id>")
 @login_required
@@ -458,7 +436,10 @@ def load_add():
 
 @app.get("/load_add_category")
 def load_add_color():
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can add categories')
     return render_template("modals/add_category.html")
+
 @app.get("/load_edit_category/<int:category_id>")
 def load_edit_category(category_id: int):
     category = Category.get_category(category_id)
@@ -511,4 +492,4 @@ with app.app_context():
         User.add_user('volunteer', bcrypt.generate_password_hash(os.environ.get("VOLUNTEER_PASSWORD")))
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(port=5000)

@@ -267,23 +267,14 @@ class Product(Model):
         self.save()
         InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
 
-    #1. sets the lifetime_donated
-    #2. if adjust_inventory is set, it will add/subtract from stock as well
-    def set_donated(self, new_amount: int, adjust_inventory: bool):
-        old_amount = self.lifetime_donated
-        if adjust_inventory:
-            self.inventory = self.inventory + (new_amount - old_amount)
-        self.lifetime_donated = new_amount
+    def add_items(self, amount: int, donation: bool):
+        if donation:
+            self.lifetime_donated += amount
+        else:
+            self.lifetime_purchased += amount
+        self.inventory += amount
         self.save()
-
-    #1. sets the lifetime_purchased
-    #2. if adjust_inventory is set, it will add/subtract from stock as well
-    def set_purchased(self, new_amount: int, adjust_inventory: bool):
-        old_amount = self.lifetime_purchased
-        if adjust_inventory:
-            self.inventory = self.inventory + (new_amount - old_amount)
-        self.lifetime_purchased = new_amount
-        self.save()
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
 
     # Increment price
     def increment_price(self, increase: float):
