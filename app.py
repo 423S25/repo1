@@ -194,17 +194,6 @@ def render_mobile_home_page():
     ]
     return render_template("mobile_index.html", category_list=categories)
 
-# The mobile category pages
-@app.get("/mobile-category")
-@login_required
-def render_mobile_category_page():
-    category_id = request.args.get('category_id', type=int)
-    if category_id == Category.ALL_PRODUCTS_PLACEHOLDER['id']:
-        category_id = None
-    category = Category.ALL_PRODUCTS_PLACEHOLDER if category_id is None or category_id == 0 else Category.get_category(category_id)
-    products = Product.alphabetized_of_category(category_id)
-    return render_template("mobile_category.html", product_list=products, category=category)
-
 ###
 # Login and logout POST endpoints
 ###
@@ -487,6 +476,28 @@ def update_purchased(product_id: int):
         return htmx_redirect(f"/{product_id}")
     else:
         return htmx_errors(form_errors)
+
+###
+# Search and filter products
+###
+
+@app.get("/product_search_filter")
+@login_required
+def search_products_mobile():
+    print('FORM!', request.args)
+    product_name_fragment = request.args.get('product_name')
+    product_category_id = 0
+    try:
+        product_category_id = int(request.args.get('product_category_id'))
+    except:
+        pass
+    product_sort_method = request.args.get('product-sort-method')
+
+    products = Product.search_filter_and_sort(product_name_fragment, product_category_id, product_sort_method)
+
+    return render_template('mobile_table.html', product_list=products)
+
+
 
 #####
 #

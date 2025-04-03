@@ -101,6 +101,24 @@ class Product(Model):
         return list(Product.select().where(Product.product_name.ilike(f'%{product}%')))
 
     @staticmethod
+    def search_filter_and_sort(product_name_fragment: str = '', product_category_id: int = 0, product_sort_method: str = None) -> list['Product']:
+        query = Product.select()
+
+        if len(product_name_fragment) > 0:
+            query = query.where(Product.product_name.ilike(f'%{product_name_fragment}%'))
+        if product_category_id != 0:
+            query = query.where(Product.category_id == product_category_id)
+        
+        products = list(query)
+
+        if product_sort_method == 'least_recent':
+            return list(sorted(products, key=lambda p: p.last_updated))
+        elif product_sort_method == 'most_recent':
+            return list(reversed(sorted(products, key=lambda p: p.last_updated)))
+        else: #default to best match
+            return products
+
+    @staticmethod
     #overloaded with category id for filter
     def urgency_rank(category_id: int = None) -> list['Product']:
         query = Product.select(Product, Category).join(Category)
@@ -190,16 +208,13 @@ class Product(Model):
         return res
     
     # Deletes the chosen product
-    @classmethod
-    def delete_product(cls, product_id):
+    @staticmethod
+    def delete_product(product_id):
         product = Product.get_product(product_id)
         product.delete_instance()
         InventorySnapshot.delete_snapshots_for_product(product_id)
 
     
-    ########################################
-    ########### INSTANCE METHODS ###########
-    ########################################
     @classmethod
     def get_csv(cls):
         output = io.StringIO()
@@ -211,6 +226,10 @@ class Product(Model):
                              product.price, product.unit_type, product.ideal_stock, product.days_left, product.lifetime_donated, product.lifetime_purchased])
         output.seek(0)
         return output.getvalue()
+    
+    ########################################
+    ########### INSTANCE METHODS ###########
+    ########################################
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:

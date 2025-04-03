@@ -1,42 +1,70 @@
-.grid-land {
-    padding: 20px;
-    gap: 20px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-}
-@media only screen and (min-width: 500px) {
-    .grid-land {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-@media only screen and (min-width: 800px) {
-    .grid-land {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-@media only screen and (min-width: 1000px) {
-    .grid-land {
-        grid-template-columns: repeat(5, 1fr);
-    }
-}
-.category-btn {
-    aspect-ratio: 1 / 1;
-    border: none;
-    border-radius: 0;
+.mobile-product-row {
+    margin: 20px;
+    width: calc(100% - 40px);
+    --row-height: 100px;
+    height: var(--row-height);
     background-color: var(--hrdc-theme-really-light-grey);
-    text-decoration: none;
-    font-family: 'Gotham Book', sans-serif;
-    flex-direction: column;
-    text-align: center;
+    display: flex;
 }
-.category-btn:hover, .category-btn:focus {
+.mobile-product-row > img {
+    height: calc(var(--row-height) - 16px);
+    width: calc(var(--row-height) - 16px);
+    padding: 8px;
+    flex-shrink: 0;
     background-color: var(--hrdc-theme-light-grey);
 }
-.category-btn > img {
-    width: 50%;
+.mobile-product-row-rhs {
+    width: 100%;
+    height: calc(var(--row-height) - 20px);
+    padding: 10px;
+    position: relative;
 }
-.category-btn > span {
-    font-size: 1.25em;
+.mobile-product-row-adjust {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-family: 'Gotham Book', sans-serif;
+    width: calc(100% - 30px);
+    background-color: var(--hrdc-theme-teal);
+    color: white;
+    border-radius: 0;
+    border: none;
+    text-transform: uppercase;
+    font-size: 1.1em;
+    padding: 5px;
+    text-align: center;
+}
+.mobile-product-row-name {
     color: var(--hrdc-theme-dark-teal);
+    font-family: 'Gotham Book', sans-serif;
     text-transform: uppercase;
 }
+.none-in-category, .result-count {
+    margin: 0 20px;
+    margin-top: 0;
+    font-family: 'Gotham Book', sans-serif;
+    text-align: center;
+    display: inline-block;
+    width: calc(100% - 40px);
+}
+.none-in-category {
+    color: var(--hrdc-theme-alert);
+}
+.result-count {
+    color: var(--hrdc-theme-medium-grey);
+    font-size: 0.8em;
+}
+
+.inventory-row-cont {
+    height: 20px;
+    display: flex;
+    align-items: center;
+}
+.inventory-row-cont > span {
+    display: inline-block;
+    flex-shrink: 0;
+    color: var(--hrdc-theme-dark-teal);
+    font-family: 'Gotham Book', sans-serif;
+    font-size: 0.8em;
+}
+
