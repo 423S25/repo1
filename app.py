@@ -1,5 +1,5 @@
 import os, secrets
-from flask import Flask, request, Response, render_template, redirect, abort, flash, url_for
+from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
 
 from src.model.product import Category
 from src.model.product import Product, InventorySnapshot, db
@@ -7,7 +7,7 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm
+from src.common.forms import LoginForm, ProductAddForm, parse_errors, clean_price_to_float, render_errors_as_html
 from src.common.email_job import EmailJob
 
 from user_agents import parse
@@ -255,30 +255,62 @@ def update_settings():
 
 
 # Create a new product
-@app.route("/add", methods=["POST"])
+@app.get('/product_add')
 @login_required
-def add():
+def product_add_form():
     #only admin can add products
     if current_user.username != 'admin':
         return abort(401, description='Only admins can add products')
-    elif Product.get_product(request.form.get("product_name")) is not None:
-        return abort(400, description=f'Product with name "{request.form.get('product_name')}" already exists')
-    elif request.form.get("category_id") == '':
-        return abort(400, description='No category provided')
     else:
-        Product.add_product(request.form.get("product_name"),
-            int(request.form.get("inventory")),
-            int(request.form.get("category_id")),
-            float(request.form.get("price")),
-            request.form.get("unit_type"),
-            int(request.form.get("ideal_stock")),
-            bool(request.form.get("donation")),
-            None
-        )
+        form = ProductAddForm()
+        categories = Category.all_alphabetized()
+        return render_template('modals/product_add.html', form=form, categories=categories)
 
-        Product.fill_days_left()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect("/")
+# Create a new product
+@app.post('/product_add')
+@login_required
+def product_add_action():
+    #only admin can add products
+    if current_user.username != 'admin':
+        return abort(401, description='Only admins can add products')
+    else:
+        form = ProductAddForm()
+        form.validate()
+        form_errors: list[str] = parse_errors(form)
+
+        maybe_price_float = clean_price_to_float(form.price.data) #allow '$' in price field
+        if maybe_price_float is None:
+            form_errors.append('Price could not be converted to number')
+
+        if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
+            form_errors.append(f'No category with id {form.category_id.data}')
+
+        if len(form_errors) == 0: #add to database
+            Product.add_product(request.form.get("product_name"),
+                form.inventory.data,
+                form.category_id.data,
+                maybe_price_float,
+                form.unit_type.data,
+                form.ideal_stock.data,
+                form.donation.data,
+                None
+            )
+            Product.fill_days_left()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return redirect("/")
+        else:
+            return make_response(render_errors_as_html(form_errors), 400)
+
+
+
+
+
+
+
+
+
+
+
 
 # Delete a product
 @app.delete("/delete/<int:product_id>")
@@ -561,7 +593,7 @@ def load_add():
     if current_user.username != 'admin':
         return abort(401, description='Only admins can add products')
     categories = Category.all()
-    return render_template("modals/add.html", categories=categories)
+    return render_template("modals/product_add.html", categories=categories)
 
 # Form to add a new category for admin only in main table page
 @app.get("/load_add_category")

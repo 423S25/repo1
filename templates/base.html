@@ -13,12 +13,21 @@
     <title>HRDC Inventory Management System</title>
     <link rel="stylesheet" href="styles/base.css">
     <link rel="stylesheet" href="styles/index.css">
-    <link rel="stylesheet" href="styles/login.css">
     <link rel="stylesheet" href="styles/product.css">
     <link rel="stylesheet" href="styles/reports.css">
+    <script>
+        htmx.on("htmx:beforeSwap", (e) => {
+            // Allow 422 and 400 responses to swap
+            // We treat these as form validation errors
+            if (e.detail.xhr.status === 422 || e.detail.xhr.status === 400) {
+                e.detail.shouldSwap = true;
+                e.detail.isError = false;
+            }
+        });
+    </script>
 </head>
 
-<body>
+<body hx-ext="debug">
 
 <div class="header">
     <img class="logo" src="icons/logo_white.png">
