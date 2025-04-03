@@ -79,8 +79,10 @@ class Product(Model):
 
     @staticmethod
     def get_low_products():
-        product_levels = [0,0,0]
+        product_levels = [0, 0, 0]
         for product in Product.all():
+            if product.ideal_stock == 0: #should never happen, but keeps the server from crashing
+                continue
             if product.inventory / product.ideal_stock <= 0.25:
                 product_levels[0] += 1
             elif (product.inventory / product.ideal_stock > 0.25) and (product.inventory / product.ideal_stock <= 0.5):
