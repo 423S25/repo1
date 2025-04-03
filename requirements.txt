@@ -9,3 +9,4 @@ sendgrid==6.11.0
 user_agents==2.2.0
 WTForms==3.2.1
 setuptools==78.1.0
+pillow==11.1.0

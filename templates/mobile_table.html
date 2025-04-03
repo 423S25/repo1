@@ -13,15 +13,16 @@
         {% if not product.image_path %}
             <img src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
         {% else %}
-            <img src="{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
+            <img src="images/{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
         {% endif %}
-        <div class="mobile-product-row-rhs">
-            <span class="mobile-product-row-name">{{ product.product_name }}</span>
-            <div class="inventory-row-cont">
+        <div role="button" hx-get="/product_update_inventory_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend" class="mobile-product-row-rhs">
+            <span class="mobile-product-row-name">{{ product.product_name }}</span><br>
+            <span class="mobile-product-last-updated">{{ product.category.name }}</span><br>
+            <span class="mobile-product-last-updated">{{ product.human_last_updated() }} Ago</span>
+            <div class="inventory-row-cont mobile-inventory-row-cont">
                 {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
                 <span>{{ product.inventory }}/{{ product.ideal_stock }}</span>
             </div>
-            <a class="mobile-product-row-adjust" hx-get="/load_update_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Stock</a>
         </div>
     </div>
 {% endfor %}

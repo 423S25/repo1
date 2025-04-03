@@ -115,7 +115,7 @@
     outline: none;
 }
 
-#mobile-modal input[type="submit"] {
+#mobile-modal button[type="submit"] {
     width: 100%;
     background-color: var(--hrdc-theme-teal);
     color: white;
@@ -134,4 +134,17 @@
     border-radius: 5px;
     text-transform: uppercase;
     padding: 5px;
+}
+.mobile-modal-header {
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: black;
+    margin-bottom: 10px;
+    display: inline-block;
+    font-size: 0.8em;
+    width: 100%;
+    text-align: center;
+}
+.mobile-modal-header > span {
+    color: var(--hrdc-theme-teal);
 }

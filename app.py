@@ -192,7 +192,9 @@ def render_mobile_home_page():
         Category.ALL_PRODUCTS_PLACEHOLDER,
         *Category.all_alphabetized()
     ]
-    return render_template("mobile_index.html", category_list=categories)
+    products = Product.alphabetized_of_category()
+    products = list(sorted(products, key=lambda p: p.last_updated))
+    return render_template("mobile_index.html", category_list=categories, product_list=products)
 
 ###
 # Login and logout POST endpoints
@@ -372,7 +374,23 @@ def load_update_mobile(product_id: int):
 @app.post("/product_update_inventory_mobile/<int:product_id>")
 @login_required #any user can update inventory
 def update_inventory_mobile(product_id: int):
-    return update_inventory(product_id)
+    if request.form.get('_method') == 'PATCH':
+        form = ProductUpdateInventoryForm()
+        form_errors = parse_errors(form)
+
+        product = Product.get_product(product_id)
+        if product is None:
+            form_errors.append(f"Could not find product {product_id}")
+        
+        if len(form_errors) == 0:
+            product.update_stock(form.stock.data)
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/mobile")
+        else:
+            return htmx_errors(form_errors)
+    else:
+        return abort(405, description="Method Not Allowed")
 
 ###
 # Update any/all aspects of product
@@ -484,14 +502,13 @@ def update_purchased(product_id: int):
 @app.get("/product_search_filter")
 @login_required
 def search_products_mobile():
-    print('FORM!', request.args)
     product_name_fragment = request.args.get('product_name')
+    product_sort_method = request.args.get('product_sort_method')
     product_category_id = 0
     try:
         product_category_id = int(request.args.get('product_category_id'))
     except:
         pass
-    product_sort_method = request.args.get('product-sort-method')
 
     products = Product.search_filter_and_sort(product_name_fragment, product_category_id, product_sort_method)
 

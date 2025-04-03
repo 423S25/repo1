@@ -3,6 +3,7 @@ import datetime
 from typing import Optional
 import io
 import csv
+from dateutil.relativedelta import relativedelta
 
 db = SqliteDatabase('inventory.db')
 
@@ -111,12 +112,20 @@ class Product(Model):
         
         products = list(query)
 
-        if product_sort_method == 'least_recent':
-            return list(sorted(products, key=lambda p: p.last_updated))
+        if product_sort_method == 'alpha_a_z' or (product_sort_method == 'best_match' and len(product_name_fragment) == 0):
+            return list(sorted(products, key=lambda p: p.product_name.lower()))
+        elif product_sort_method == 'alpha_z_a':
+            return list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
+        elif product_sort_method == 'best_match':
+            return list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
+        elif product_sort_method == 'lowest_stock':
+            return list(sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
+        elif product_sort_method == 'highest_stock':
+            return list(reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
         elif product_sort_method == 'most_recent':
             return list(reversed(sorted(products, key=lambda p: p.last_updated)))
-        else: #default to best match
-            return products
+        else: #default to least recent
+            return list(sorted(products, key=lambda p: p.last_updated))
 
     @staticmethod
     #overloaded with category id for filter
@@ -135,7 +144,7 @@ class Product(Model):
     def alphabetized_of_category(category_id: int = None) -> list['Product']:
         query = Product.select(Product, Category).join(Category)
 
-        if category_id is not None:
+        if category_id is not None and category_id != 0:
             query = query.where(Product.category_id == category_id)
 
         query = query.order_by(Product.product_name)
@@ -230,6 +239,20 @@ class Product(Model):
     ########################################
     ########### INSTANCE METHODS ###########
     ########################################
+
+    # Returns a human string for how long it has been since the product was updated (e.g., "2 days" or "1 week")
+    def human_last_updated(self) -> str:
+        delta = relativedelta(datetime.datetime.now(), self.last_updated)
+        if delta.weeks > 0:
+            return f"{delta.weeks} {'week' if delta.weeks == 1 else 'weeks'}"
+        elif delta.days > 0:
+            return f"{delta.days} {'day' if delta.days == 1 else 'days'}"
+        elif delta.hours > 0:
+            return f"{delta.hours} {'hour' if delta.hours == 1 else 'hours'}"
+        elif delta.minutes > 0:
+            return f"{delta.minutes} {'minute' if delta.minutes == 1 else 'minutes'}"
+        else:
+            return f"{delta.seconds} {'second' if delta.seconds == 1 else 'seconds'}"
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:

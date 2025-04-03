@@ -3,7 +3,8 @@
 {% block content %}
 
 <link rel="stylesheet" href="styles/mobile_base.css"/>
-<link rel="stylesheet" href="styles/mobile_index.css"/>
+<link rel="stylesheet" href="styles/mobile_table.css"/>
+<link rel="stylesheet" href="styles/mobile_modal.css"/>
 
 <form hx-get="/product_search_filter" hx-trigger="change, input from:input delay:300ms" hx-target="#product-list" hx-swap="innerHTML">   
     <div class="mobile-form-container">
@@ -20,11 +21,11 @@
     <select name="product_sort_method" class="mobile-select box-shadow-small">
         <option value="least_recent">Least Recently Updated</option>
         <option value="most_recent">Most Recently Updated</option>
-        <option>Lowest Stock</option>
-        <option>Highest Stock</option>
-        <option>Alphabetical (A-Z)</option>
-        <option>Alphabetical (Z-A)</option>
-        <option>Best Match</option>
+        <option value="lowest_stock">Lowest Stock Percentage</option>
+        <option value="highest_stock">Highest Stock Percentage</option>
+        <option value="alpha_a_z">Alphabetical (A-Z)</option>
+        <option value="alpha_z_a">Alphabetical (Z-A)</option>
+        <option value="best_match">Best Match</option>
     </select>
 </form>
 
