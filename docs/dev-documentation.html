@@ -11,7 +11,7 @@
 <body>
     <div class="header-color">
         <h1>Developer Documentation</h1>
-        <h2>Last Updated 22 Mar 2025</h2>
+        <h2>Last Updated 28 Mar 2025</h2>
 
         <div class="navigation-bar">
             <a href="./index.html">
@@ -47,7 +47,9 @@
                     <li><code>STAFF_PASSWORD</code></li>
                     <li><code>VOLUNTEER_PASSWORD</code></li>
                     <li><code>SENDGRID_KEY</code>- this is used for email notifications.
-                    Reach out to a developer if you need this and they can get you the correct key.</li>
+                    Reach out to a developer if you need this and they can get you the correct key. We
+                can't store this on github because SendGrid won't allow it to be stored
+                on a public repository.</li>
                 </ul>
             </li>
             <li>Run <code>python app.py</code> in the root project directory to start the site.</li>
@@ -85,7 +87,7 @@
             <li><i>Staff</i>: can update inventory, but cannot add or delete items</li>
             <li><i>Volunteer</i>: currently the same as <i>Staff</i></li>
         </ul>
-        <p>On local deployments, the passwords are pulled from your .env file (see the getting started secion). 
+        <p>On local deployments, the passwords are pulled from your .env file (see the "Getting Started" section). 
             If you are developing and sick of re-signing in after every
             server restart, consider temporarily changing <code>app.config['SECRET_KEY']</code> to a constant value.
         </p>
@@ -131,9 +133,10 @@
 
         <h3>How to release a new version</h3>
         <p>To release a new version of this software,
-            update the code and send the updated code to the server.
+            update the code and send the updated code to the server. Our staging
+            environment is based off of the latest version of the main branch of the 
+            repository.
         </p>
-        
 
 
         <h3>Additional considerations</h3>

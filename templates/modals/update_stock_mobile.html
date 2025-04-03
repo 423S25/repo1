@@ -1,0 +1,22 @@
+<div id="mobile-modal" class="center-all" _="on closeMobileModal add .closing then wait for animationend then remove me">
+    <div class="box-shadow-small">
+        <form action="/update_mobile/inventory/{{ product.get_id() }}" method="POST">
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="number" id="stock" name="stock" min="0" placeholder="Change in {{ product.unit_type }}" required>
+            <label class="mobile-modal-radio-container">Adding Donated Inventory
+                <input type="radio" name="stock_type" value="donation" checked>
+                <span class="mobile-modal-radio-dot"></span>
+            </label>
+            <label class="mobile-modal-radio-container">Adding Purchased Inventory
+                <input type="radio" name="stock_type" value="purchased">
+                <span class="mobile-modal-radio-dot"></span>
+            </label>
+            <label class="mobile-modal-radio-container">Removing Inventory
+                <input type="radio" name="stock_type" value="taken">
+                <span class="mobile-modal-radio-dot"></span>
+            </label>
+            <input type="submit" value="Update"/>
+        </form>
+        <button class="mobile-modal-close" _="on click trigger closeMobileModal">Close</button>
+    </div>
+</div>

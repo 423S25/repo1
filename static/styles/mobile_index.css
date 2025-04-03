@@ -1,0 +1,42 @@
+.grid-land {
+    padding: 20px;
+    gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+@media only screen and (min-width: 500px) {
+    .grid-land {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media only screen and (min-width: 800px) {
+    .grid-land {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+@media only screen and (min-width: 1000px) {
+    .grid-land {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+.category-btn {
+    aspect-ratio: 1 / 1;
+    border: none;
+    border-radius: 0;
+    background-color: var(--hrdc-theme-really-light-grey);
+    text-decoration: none;
+    font-family: 'Gotham Book', sans-serif;
+    flex-direction: column;
+    text-align: center;
+}
+.category-btn:hover, .category-btn:focus {
+    background-color: var(--hrdc-theme-light-grey);
+}
+.category-btn > img {
+    width: 50%;
+}
+.category-btn > span {
+    font-size: 1.25em;
+    color: var(--hrdc-theme-dark-teal);
+    text-transform: uppercase;
+}

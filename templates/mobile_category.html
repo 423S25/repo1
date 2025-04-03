@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "macros.html" import inventory_item_bar %}
+{% block content %}
+<link rel="stylesheet" href="styles/mobile_base.css"/>
+<link rel="stylesheet" href="styles/mobile_category.css"/>
+<link rel="stylesheet" href="styles/mobile_update_stock.css"/>
+
+<div class="back-row">
+    <a href="/mobile">
+        <img src="icons/arrow_left.svg" alt="Left Arrow"><span>Back</span>
+    </a>
+</div>
+
+{% if product_list|length != 0 %}
+    <div class="mobile-form-container">
+        <img src="icons/search_icon.svg" alt="Search Icon"/>
+        <input class="mobile-form-control" placeholder="Search {{ category.name }}"/>
+    </div>
+{% endif %}
+
+<div class="grid-land">
+    {% if product_list|length == 0 %}
+        <span class="none-in-category">No items with category &quot;{{ category.name }}&quot;</span>
+    {% endif %}
+    {% for product in product_list %}
+        <div class="product-row box-shadow-small">
+            {% if not product.image_path %}
+                <img src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
+            {% else %}
+                <img src="{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
+            {% endif %}
+            <div class="product-row-rhs">
+                <span class="product-row-name">{{ product.product_name }}</span>
+                <div class="inventory-row-cont">
+                    {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
+                    <span>{{ product.inventory }}/{{ product.ideal_stock }}</span>
+                </div>
+                <a class="product-row-adjust" hx-get="/load_update_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Stock</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
