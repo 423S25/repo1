@@ -1,10 +1,10 @@
 <div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
-	<div class="modal-underlay" _="on click trigger closeModal"></div>
-	<div class="modal-content">
-		<form action="/update/{{ product.get_id() }}" method="POST" id="updateInventoryForm">
+    <div class="modal-underlay" _="on click trigger closeModal"></div>
+    <div class="modal-content">
+        <form action="/update/{{ product.get_id() }}" method="POST" id="updateInventoryForm">
             <input type="hidden" name="_method" value="PATCH">
 
-			<label for="product_name">Product Name</label>
+            <label for="product_name">Product Name</label>
             <input type="text" id="product_name" name="product_name" value="{{ product.name }}" required>
 
 
@@ -17,10 +17,10 @@
             <label for="ideal_stock">Ideal Stock</label>
             <input type="number" id="ideal_stock" name="ideal_stock" value="{{ product.ideal_stock }}" required>
 
-            <button type="submit">Update Product</button>
-		</form>
-		<br>
-		<br>
-		<button class="btn danger" _="on click trigger closeModal">Close</button>
-	</div>
+            <br>
+            <br>
+            <button class="product-button" type="submit">Update Product</button>
+            <button class="close-button" _="on click trigger closeModal">Close</button>
+        </form>
+    </div>
 </div>
