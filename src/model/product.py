@@ -40,7 +40,11 @@ class Category(Model):
                 return Category.get_by_id(name_or_id)
         except DoesNotExist:
             return None
-
+        
+    @classmethod
+    def get_by_color(cls, hex_code: str) -> Optional['Category']:
+        return cls.get_or_none(cls.color == hex_code)
+    
     @staticmethod
     def delete_category(category_id):
         category = Category.get_category(category_id)

@@ -572,8 +572,12 @@ def update_category(category_id: int):
         if category is None:
             form_errors.append(f"Could not find category {category_id}")
 
+        possible_color_conflicting_category = Category.get_by_color(form.category_color.data)
+        if possible_color_conflicting_category is not None and possible_color_conflicting_category.get_id() != category.get_id():
+            form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
+
         possible_conflicting_category = Category.get_category(form.category_name.data)
-        if category.name != form.category_name.data and possible_conflicting_category is not None:
+        if possible_conflicting_category.get_id() != category.get_id() and possible_conflicting_category is not None:
             form_errors.append(f'Category already exists with name "{form.category_name.data}"')
 
         if len(form_errors) == 0:
