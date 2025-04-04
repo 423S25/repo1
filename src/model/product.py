@@ -9,12 +9,19 @@ db = SqliteDatabase('inventory.db')
 
 
 class Category(Model):
+    ALL_PRODUCTS_PLACEHOLDER = {"name": "All Products", "color": "black", "image_path": None, "id": 0}
+    
     name = CharField(unique=True)
     color = CharField(unique=True)
+    image_path = CharField(null=True)
 
     @staticmethod
     def all() -> list['Category']:
         return list(Category.select())
+    
+    @staticmethod
+    def all_alphabetized() -> list['Category']:
+        return list(Category.select().order_by(Category.name))
 
     @staticmethod
     def add_category(name: str, color: str) -> 'Category':
@@ -68,7 +75,8 @@ class Product(Model):
     #notified once (half inventory) = 1
     #notified twice (half and 1/4 inventory) = 2
     notified = IntegerField(default=0)
-    donation = BooleanField(default=False)
+    lifetime_donated = IntegerField(default=0)
+    lifetime_purchased = IntegerField(default=0)
 
     ########################################
     ############# CLASS METHODS ############
@@ -152,6 +160,8 @@ class Product(Model):
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
+            lifetime_donated = stock if donation else 0,
+            lifetime_purchased = stock if not donation else 0,
             defaults={
                 'inventory': stock,
                 'price': price,
@@ -224,9 +234,11 @@ class Product(Model):
     def get_csv(cls):
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Name', 'Category', 'Inventory', 'Price', 'Unit Type', 'Ideal Stock', 'Days Left'])
+        writer.writerow(['Name', 'Category', 'Inventory', 'Price', 'Unit Type', 'Ideal Stock',\
+                          'Days Left', 'Lifetime amount donated', 'Lifetime amount purchased'])
         for product in cls.select():
-            writer.writerow([product.product_name, product.category.name, product.inventory, product.price, product.unit_type, product.ideal_stock, product.days_left])
+            writer.writerow([product.product_name, product.category.name, product.inventory, \
+                             product.price, product.unit_type, product.ideal_stock, product.days_left, product.lifetime_donated, product.lifetime_purchased])
         output.seek(0)
         return output.getvalue()
     
@@ -304,7 +316,25 @@ class Product(Model):
         self.donation = donation
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory, self.donation)
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
+
+    #1. sets the lifetime_donated
+    #2. if adjust_inventory is set, it will add/subtract from stock as well
+    def set_donated(self, new_amount: int, adjust_inventory: bool):
+        old_amount = self.lifetime_donated
+        if adjust_inventory:
+            self.inventory = self.inventory + (new_amount - old_amount)
+        self.lifetime_donated = new_amount
+        self.save()
+
+    #1. sets the lifetime_purchased
+    #2. if adjust_inventory is set, it will add/subtract from stock as well
+    def set_purchased(self, new_amount: int, adjust_inventory: bool):
+        old_amount = self.lifetime_purchased
+        if adjust_inventory:
+            self.inventory = self.inventory + (new_amount - old_amount)
+        self.lifetime_purchased = new_amount
+        self.save()
 
     # Increment price
     def increment_price(self, increase: float):
@@ -380,7 +410,7 @@ class InventorySnapshot(Model):
     def create_snapshot(product_id: int, inventory: int, donation: bool) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
-            inventory=inventory, 
+            inventory=inventory,
             donation=donation
         )
         return snapshot
