@@ -51,7 +51,7 @@
     display: grid;
 }
 
-.category-submit-button, .category-danger-button
+.category-submit-button
 {
     background-color: var(--hrdc-theme-teal);
     border: none;
@@ -64,7 +64,7 @@
     font-family: 'Gotham Book';
 }
 
-.category-submit-button:hover, button.category-danger-button:hover
+.category-submit-button:hover
 {
     background-color: var(--hrdc-theme-green-yellow);
     border: none;
@@ -75,4 +75,20 @@
     padding: 1em 1em;
     font-weight: bold;
     font-family: 'Gotham Book';
+}
+
+button.category-danger-button
+{
+    background-color: #ffffff;
+    border-style: none;
+}
+
+.close-icon
+{
+    width: 2rem;
+}
+
+.close-icon:active
+{
+    filter: brightness(0) invert(1);
 }

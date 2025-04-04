@@ -39,14 +39,6 @@ body {
     color: var(--hrdc-theme-dark-teal);
 }
 
-.inventory {
-    border-bottom: 3px solid var(--hrdc-theme-green-yellow);
-}
-
-.inventory:hover {
-    border-bottom: 3px solid #ffffff;
-}
-
 
 .logout {
     margin-left: auto;

@@ -1,6 +1,9 @@
 <div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
 	<div class="modal-underlay" _="on click trigger closeModal"></div>
 	<div class="modal-content">
+		<button class="category-danger-button" _="on click trigger closeModal">
+			<img alt="Close" src="icons/close.svg" class="close-icon"/>
+		</button>
 		<div class="add-category-header">ADD CATEGORY</div><br><br>
 		<form class="add-category-form" hx-post="/add_category" hx-target="body" hx-swap="outerHTML">
 		<label class="category-name-label" for="category_name">Category Name:</label><br>
@@ -10,8 +13,6 @@
 
 
     	<button class="category-submit-button" hx-post="/add_category" hx-target="body" hx-swap="outerHTML">Submit</button>
-		<br>
-		<button class="category-danger-button" _="on click trigger closeModal">Close</button>
     </form>
 	</div>
 </div>

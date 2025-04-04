@@ -170,7 +170,6 @@ input#donation
 	color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
-    color: var(--hrdc-theme-teal);
     box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
 	display: grid;
     transform: scale(1.5);
@@ -188,9 +187,39 @@ input#donation
     padding: 1em 3.3em;
 }
 
-button#add-product-label, button.btn-danger
+button#add-product-label
 {
 	background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    display: grid;
+    padding: 1rem 1rem;
+}
+
+button.btn-danger
+{
+    background-color: #ffffff;
+    border-style: none;
+}
+
+.close-icon
+{
+    width: 2rem;
+}
+
+.close-icon:active
+{
+    filter: brightness(0) invert(1);
+}
+
+button#add-product-label:hover
+{
+	background-color: var(--hrdc-theme-green-yellow);
     border: none;
     color: white;
     text-decoration: none;
