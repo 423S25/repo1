@@ -19,9 +19,11 @@ class ProductAddForm(ProductUpdateAllForm):
     donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
 
+# also for mobile
 class ProductUpdateInventoryForm(FlaskForm):
     _method = StringField('_method', validators=[validators.AnyOf(['PATCH', 'patch'])])
     stock = IntegerField('Stock', validators=[validators.NumberRange(min=0)])
+    submit = SubmitField('Submit')
 
 class ProductUpdateDonatedForm(FlaskForm):
     donated_amount = IntegerField('Donated Amount', validators=[validators.NumberRange(min=0)])
