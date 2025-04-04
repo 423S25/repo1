@@ -127,7 +127,7 @@ def reports():
 
     value = request.args.get('value')
     return render_template("reports_index.html", product_list=products, user=current_user,
-                           categories=categories, quant=[c["total_inventory"] for c in categories], value=value)
+                           categories=categories, quant=[c["total_inventory"] for c in categories], flag=True, value=value)
 
 
 @app.get("/<int:product_id>")
