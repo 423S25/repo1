@@ -347,9 +347,9 @@
       "id": "e77dc31a-a4a3-4633-b91f-cfb8261aaadf",
       "comment": "",
       "command": "click",
-      "target": "css=form > #category_id",
+      "target": "css=form #category_id",
       "targets": [
-        ["css=form > #category_id", "css:finder"],
+        ["css=form #category_id", "css:finder"],
         ["xpath=(//select[@id='category_id'])[2]", "xpath:attributes"],
         ["xpath=//div[@id='modal']/div[2]/form/select", "xpath:idRelative"],
         ["xpath=//form/select", "xpath:position"]
@@ -359,7 +359,7 @@
       "id": "b3afa0a9-7cb1-414a-8a4f-9b4dd4f388ab",
       "comment": "",
       "command": "select",
-      "target": "css=form > #category_id",
+      "target": "css=form #category_id",
       "targets": [],
       "value": "label=test-cat"
     }, {
