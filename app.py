@@ -1,5 +1,5 @@
 import os, secrets
-from flask import Flask, request, Response, render_template, redirect, abort, url_for
+from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
 
 from src.model.product import Category
 from src.model.product import Product, InventorySnapshot, db
@@ -30,7 +30,7 @@ app.config['SECRET_KEY'] = secrets.token_urlsafe()
 app.config['SECRET_KEY'] = "asdf"
 app.config["SESSION_PROTECTION"] = "strong"
 UPLOAD_FOLDER = os.path.join("static", "images")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True) #NOTE: maybe remove when presistent storage gets added
 app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
 
 def is_mobile():
@@ -172,14 +172,6 @@ def inventory_history(product_id: int):
         filepath = product.image_path
     )
 
-# Admin settings page
-@app.get("/settings")
-@admin_required
-def get_settings():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access admin settings')
-    return render_template("settings.html", user=current_user)
-
 ###
 # Served mobile HTML pages
 ###
@@ -228,14 +220,19 @@ def login():
         return redirect(next or url_for("home"))
     return render_template('security/login.html', form=form, errors=errors)
 
+# Admin settings page
+@app.get("/settings")
+@admin_required
+def get_settings():
+    return render_template("settings.html", user=current_user)
+
 # Add a new email to updates for admin only
 @app.post("/settings")
 @admin_required
 def update_settings():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access admin settings')
     email = request.form.get("email")
-    User.get_by_username('admin').update_email(email)
+    if email is not None and email != '' and '@' in email:
+        User.get_by_username('admin').update_email(email)
     return redirect("/settings")
 
 #####
@@ -271,6 +268,10 @@ def product_add_action():
     if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
         form_errors.append(f'No category with id {form.category_id.data}')
 
+    CATEGORY_MESSAGE = '"Category Id" must be an integer'
+    if CATEGORY_MESSAGE in form_errors:
+        form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
+
     if len(form_errors) == 0: #add to database
         Product.add_product(request.form.get("product_name"),
             form.inventory.data,
@@ -296,7 +297,7 @@ def product_add_action():
 @admin_required
 def delete(product_id: int):
     Product.delete_product(product_id)
-    return redirect('/')
+    return htmx_redirect('/')
 
 ###
 # Set image of product
@@ -307,27 +308,24 @@ def delete(product_id: int):
 @login_required
 def upload_image(product_id: int):
     if 'file' not in request.files:
-        return redirect('/' + str(product_id))
+        return make_response('No file in form', 400)
 
     file = request.files['file']
     product = Product.get_product(product_id)
     if file.filename == '':
-        return redirect('/' + str(product_id))
+        return make_response('Filename could not be found', 400)
 
-    is_valid_image = True
-    filename = file.filename
     try:
-        img_stream = io.BytesIO(file.read())
-        image = Image.open(img_stream)
-        is_valid_image = image.verify() is None
-    except:
-        is_valid_image = False
+        img = Image.open(io.BytesIO(file.read()))
+        img.verify() # Verify it's an image
+        file.seek(0) # Reset file pointer after reading
 
-    if is_valid_image:
+        filename = file.filename
         file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
         product.set_img_path(filename)
-
-    return redirect("/" + str(product_id))
+        return htmx_redirect("../" + str(product_id))
+    except:
+        return make_response('File is not an image', 400)
 
 ###
 # Set stock/inventory of product
@@ -416,6 +414,10 @@ def update_all(product_id: int):
         price = clean_price_to_float(form.price.data)
         if price is None:
             form_errors.append(f'Price "{form.price.data}" cound not be converted to a number')
+
+        possible_conflicing_product = Product.get_product(form.product_name.data)
+        if product.product_name != form.product_name.data and possible_conflicing_product is not None:
+            form_errors.append(f'Product already exists with name "{form.product_name.data}"')
         
         if len(form_errors) == 0:
             product_name = form.product_name.data
@@ -462,7 +464,7 @@ def update_donated(product_id: int):
         form_errors.append(f'Cound not find product with id {product_id}')
     amount: int = form.donated_amount.data
     adjust_stock: bool = form.adjust_stock.data
-    diff: int = amount - product.lifetime_donated
+    diff: int = amount - (product.lifetime_donated or 0) # product.lifetime_donated can be None
     if adjust_stock and diff < 0 and -diff > product.inventory:
         form_errors.append("Action would produce a negative stock level")
 
@@ -485,7 +487,7 @@ def update_purchased(product_id: int):
     
     amount: int = form.purchased_amount.data
     adjust_stock: bool = form.adjust_stock.data
-    diff: int = amount - product.lifetime_purchased
+    diff: int = amount - (product.lifetime_purchased or 0) # product.lifetime_donated can be None
     if adjust_stock and diff < 0 and -diff > product.inventory:
         form_errors.append("Action would produce a negative stock level")
 
@@ -499,7 +501,7 @@ def update_purchased(product_id: int):
 # Search and filter products
 ###
 
-@app.get("/product_search_filter")
+@app.get("/product_search_filter_mobile")
 @login_required
 def search_products_mobile():
     product_name_fragment = request.args.get('product_name')
@@ -568,7 +570,11 @@ def update_category(category_id: int):
 
         category = Category.get_category(category_id)
         if category is None:
-            form_errors.append(f"Could not find product {category.id}")
+            form_errors.append(f"Could not find category {category_id}")
+
+        possible_conflicting_category = Category.get_category(form.category_name.data)
+        if category.name != form.category_name.data and possible_conflicting_category is not None:
+            form_errors.append(f'Category already exists with name "{form.category_name.data}"')
 
         if len(form_errors) == 0:
             category_name = form.category_name.data

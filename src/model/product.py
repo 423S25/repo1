@@ -220,8 +220,9 @@ class Product(Model):
     @staticmethod
     def delete_product(product_id):
         product = Product.get_product(product_id)
-        product.delete_instance()
-        InventorySnapshot.delete_snapshots_for_product(product_id)
+        if product is not None:
+            product.delete_instance()
+            InventorySnapshot.delete_snapshots_for_product(product_id)
 
     
     @classmethod
