@@ -3,8 +3,7 @@ import datetime
 from typing import Optional
 import io
 import csv
-
-from unicodedata import category
+from dateutil.relativedelta import relativedelta
 
 db = SqliteDatabase('inventory.db')
 
@@ -34,9 +33,13 @@ class Category(Model):
                 return Category.get_by_id(name_or_id)
         except DoesNotExist:
             return None
-
+        
     @classmethod
-    def delete_category(cls, category_id):
+    def get_by_color(cls, hex_code: str) -> Optional['Category']:
+        return cls.get_or_none(cls.color == hex_code)
+    
+    @staticmethod
+    def delete_category(category_id):
         category = Category.get_category(category_id)
         category.delete_instance()
 
@@ -73,8 +76,10 @@ class Product(Model):
 
     @staticmethod
     def get_low_products():
-        product_levels = [0,0,0]
+        product_levels = [0, 0, 0]
         for product in Product.all():
+            if product.ideal_stock == 0: #should never happen, but keeps the server from crashing
+                continue
             if product.inventory / product.ideal_stock <= 0.25:
                 product_levels[0] += 1
             elif (product.inventory / product.ideal_stock > 0.25) and (product.inventory / product.ideal_stock <= 0.5):
@@ -93,6 +98,32 @@ class Product(Model):
         return list(Product.select().where(Product.product_name.ilike(f'%{product}%')))
 
     @staticmethod
+    def search_filter_and_sort(product_name_fragment: str = '', product_category_id: int = 0, product_sort_method: str = None) -> list['Product']:
+        query = Product.select()
+
+        if len(product_name_fragment) > 0:
+            query = query.where(Product.product_name.ilike(f'%{product_name_fragment}%'))
+        if product_category_id != 0:
+            query = query.where(Product.category_id == product_category_id)
+        
+        products = list(query)
+
+        if product_sort_method == 'alpha_a_z' or (product_sort_method == 'best_match' and len(product_name_fragment) == 0):
+            return list(sorted(products, key=lambda p: p.product_name.lower()))
+        elif product_sort_method == 'alpha_z_a':
+            return list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
+        elif product_sort_method == 'best_match':
+            return list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
+        elif product_sort_method == 'lowest_stock':
+            return list(sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
+        elif product_sort_method == 'highest_stock':
+            return list(reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
+        elif product_sort_method == 'most_recent':
+            return list(reversed(sorted(products, key=lambda p: p.last_updated)))
+        else: #default to least recent
+            return list(sorted(products, key=lambda p: p.last_updated))
+
+    @staticmethod
     #overloaded with category id for filter
     def urgency_rank(category_id: int = None) -> list['Product']:
         query = Product.select(Product, Category).join(Category)
@@ -101,6 +132,18 @@ class Product(Model):
             query = query.where(Product.category_id == category_id)
 
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
+
+        return list(query)
+    
+    @staticmethod
+    #overloaded with category id for filter
+    def alphabetized_of_category(category_id: int = None) -> list['Product']:
+        query = Product.select(Product, Category).join(Category)
+
+        if category_id is not None and category_id != 0:
+            query = query.where(Product.category_id == category_id)
+
+        query = query.order_by(Product.product_name)
 
         return list(query)
 
@@ -169,16 +212,14 @@ class Product(Model):
         return res
     
     # Deletes the chosen product
-    @classmethod
-    def delete_product(cls, product_id):
+    @staticmethod
+    def delete_product(product_id):
         product = Product.get_product(product_id)
-        product.delete_instance()
-        InventorySnapshot.delete_snapshots_for_product(product_id)
+        if product is not None:
+            product.delete_instance()
+            InventorySnapshot.delete_snapshots_for_product(product_id)
 
     
-    ########################################
-    ########### INSTANCE METHODS ###########
-    ########################################
     @classmethod
     def get_csv(cls):
         output = io.StringIO()
@@ -188,32 +229,24 @@ class Product(Model):
             writer.writerow([product.product_name, product.category.name, product.inventory, product.price, product.unit_type, product.ideal_stock, product.days_left])
         output.seek(0)
         return output.getvalue()
+    
+    ########################################
+    ########### INSTANCE METHODS ###########
+    ########################################
 
-    def get_donated_inventory(self) -> int:
-        snapshots = InventorySnapshot.product_snapshots_chronological(self.get_id())
-        prev_inventory = 0
-        donated = 0
-        for record in snapshots:
-            if record.inventory < prev_inventory or not record.donation:
-                prev_inventory = record.inventory
-                continue
-            increase = record.inventory - prev_inventory
-            donated += increase
-            prev_inventory = record.inventory
-        return donated
-                
-    def get_purchased_inventory(self) -> int:
-        snapshots = InventorySnapshot.product_snapshots_chronological(self.get_id())
-        prev_inventory = 0
-        purchased = 0
-        for record in snapshots:
-            if record.inventory < prev_inventory or record.donation:
-                prev_inventory = record.inventory
-                continue
-            increase = record.inventory - prev_inventory
-            purchased += increase
-            prev_inventory = record.inventory
-        return purchased
+    # Returns a human string for how long it has been since the product was updated (e.g., "2 days" or "1 week")
+    def human_last_updated(self) -> str:
+        delta = relativedelta(datetime.datetime.now(), self.last_updated)
+        if delta.weeks > 0:
+            return f"{delta.weeks} {'week' if delta.weeks == 1 else 'weeks'}"
+        elif delta.days > 0:
+            return f"{delta.days} {'day' if delta.days == 1 else 'days'}"
+        elif delta.hours > 0:
+            return f"{delta.hours} {'hour' if delta.hours == 1 else 'hours'}"
+        elif delta.minutes > 0:
+            return f"{delta.minutes} {'minute' if delta.minutes == 1 else 'minutes'}"
+        else:
+            return f"{delta.seconds} {'second' if delta.seconds == 1 else 'seconds'}"
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:

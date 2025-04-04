@@ -1,5 +1,5 @@
 import os, secrets
-from flask import Flask, request, Response, render_template, redirect, abort, flash, url_for
+from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
 
 from src.model.product import Category
 from src.model.product import Product, InventorySnapshot, db
@@ -7,8 +7,13 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm
 from src.common.email_job import EmailJob
+
+from user_agents import parse
+import io
+from PIL import Image
+from functools import wraps
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,6 +30,7 @@ app.config['SECRET_KEY'] = secrets.token_urlsafe()
 app.config['SECRET_KEY'] = "asdf"
 app.config["SESSION_PROTECTION"] = "strong"
 UPLOAD_FOLDER = os.path.join("static", "images")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True) #NOTE: maybe remove when presistent storage gets added
 app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
 
 
@@ -53,32 +59,20 @@ def _db_close(exc):
     if not db.is_closed():
         db.close()
 
-@app.post("/logout")
-def logout():
-    logout_user()
-    return redirect(url_for("login"))
+def admin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if current_user is None or current_user.username != 'admin':
+            return abort(401, description='Only admins can access this resource')
+        else:
+           return func(*args, **kwargs)
+    return wrapper
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    form = LoginForm()
-    next = request.args.get('next')
-    errors = [] #used to display errors on the login page
-    if form.validate_on_submit(): #makes sure form is complete
-        user = User.get_by_username(form.username.data)
-        if user is None:
-            errors.append("User not found.")
-            return render_template('security/login.html', form=form, errors=errors)
-        correct_password = bcrypt.check_password_hash(user.password, form.password.data)
-        if not correct_password:
-            errors.append("Incorrect password.")
-            return render_template('security/login.html', form=form, errors=errors)
-        login_success = login_user(user)
-        if not login_success:
-            errors.append("Login failed")
-            return render_template('security/login.html', form=form, errors=errors)
-        return redirect(next or url_for("home"))
-    return render_template('security/login.html', form=form, errors=errors)
+###
+# Served HTML pages
+###
 
+# The index page with the main product table
 @app.get("/")
 @login_required #any user can access home page
 def home():
@@ -93,19 +87,9 @@ def home():
     categories = Category.all()
     levels = Product.get_low_products()
     return render_template("index.html", product_list=products, user=current_user,
-                           categories=categories, current_category=category_id, levels=levels)
+                           categories=categories, current_category=category_id, levels=levels, flag = flag)
 
-@app.get("/search")
-def search():
-    category_id = request.args.get('category_id', default=0, type=int)
-    search_term = request.args.get('q', '')
-    if search_term:
-        products = Product.search(search_term)
-    else:
-        products = Product.all()
-    categories = Category.all()
-    return render_template("table.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
-
+# The reports page for an overview of all products
 @app.get("/reports")
 @login_required
 def reports():
@@ -125,11 +109,38 @@ def reports():
     for category in categories:
         category["total_inventory"] = category_inventory[category["id"]]
 
-    value = request.args.get('value')
-    return render_template("reports_index.html", product_list=products, user=current_user,
-                           categories=categories, quant=[c["total_inventory"] for c in categories], flag=True, value=value)
+    flag = True
+    return render_template("reports_index.html", product_list=products, user=current_user, categories=categories, quant=[c["total_inventory"] for c in categories], flag=flag)
 
+# The search function for the main table page. Re-serves index.html
+@app.get("/search")
+def search():
+    category_id = request.args.get('category_id', default=0, type=int)
+    search_term = request.args.get('q', '')
+    if search_term:
+        products = Product.search(search_term)
+    else:
+        products = Product.all()
+    categories = Category.all()
+    return render_template("table.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
 
+# The filter function for the main table page. Re-serves index.html
+@app.post("/filter")
+@login_required
+def filter():
+    category_id = int(request.form.get('category_id'))
+    # Fills the days left for each product with product.get_days_until_out
+    Product.fill_days_left()
+    # Loads products in urgency order using where for category filter
+    if category_id == 0:
+        products = Product.urgency_rank()
+    else:
+        products = Product.urgency_rank(category_id)
+    categories = Category.all()
+    levels = Product.get_low_products()
+    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
+
+# The individual page for each product
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
 def inventory_history(product_id: int):
@@ -155,237 +166,447 @@ def inventory_history(product_id: int):
         filepath = product.image_path
     )
 
+###
+# Served mobile HTML pages
+###
 
-@app.post("/upload/<int:product_id>")
+# The mobile home page
+@app.get("/mobile")
+@login_required
+def render_mobile_home_page():
+    categories = [
+        Category.ALL_PRODUCTS_PLACEHOLDER,
+        *Category.all_alphabetized()
+    ]
+    products = Product.alphabetized_of_category()
+    products = list(sorted(products, key=lambda p: p.last_updated))
+    return render_template("mobile_index.html", category_list=categories, product_list=products)
+
+###
+# Login and logout POST endpoints
+###
+
+# Logout a user
+@app.post("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
+
+# Login a user
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    next = request.args.get('next')
+    errors = [] #used to display errors on the login page
+    if form.validate_on_submit(): #makes sure form is complete
+        user = User.get_by_username(form.username.data.lower())
+        if user is None:
+            errors.append("User not found")
+            return render_template('security/login.html', form=form, errors=errors)
+        correct_password = bcrypt.check_password_hash(user.password, form.password.data)
+        if not correct_password:
+            errors.append("Incorrect password")
+            return render_template('security/login.html', form=form, errors=errors)
+        login_success = login_user(user)
+        if not login_success:
+            errors.append("Login failed")
+            return render_template('security/login.html', form=form, errors=errors)
+        return redirect(next or url_for("home"))
+    return render_template('security/login.html', form=form, errors=errors)
+
+# Admin settings page
+@app.get("/settings")
+@admin_required
+def get_settings():
+    return render_template("settings.html", user=current_user)
+
+# Add a new email to updates for admin only
+@app.post("/settings")
+@admin_required
+def update_settings():
+    email = request.form.get("email")
+    if email is not None and email != '' and '@' in email:
+        User.get_by_username('admin').update_email(email)
+    return redirect("/settings")
+
+#####
+#
+# PRODUCTS
+#
+#####
+
+###
+# Create/add product
+###
+
+# Create a new product
+@app.get('/product_add')
+@admin_required
+def product_add_form():
+    form = ProductAddForm()
+    categories = Category.all_alphabetized()
+    return render_template('modals/product_add.html', form=form, categories=categories)
+
+# Create a new product
+@app.post('/product_add')
+@admin_required
+def product_add_action():
+    form = ProductAddForm()
+    form.validate()
+    form_errors: list[str] = parse_errors(form)
+
+    maybe_price_float = clean_price_to_float(form.price.data) #allow '$' in price field
+    if maybe_price_float is None:
+        form_errors.append('Price could not be converted to number')
+
+    if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
+        form_errors.append(f'No category with id {form.category_id.data}')
+
+    CATEGORY_MESSAGE = '"Category Id" must be an integer'
+    if CATEGORY_MESSAGE in form_errors:
+        form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
+
+    if len(form_errors) == 0: #add to database
+        Product.add_product(request.form.get("product_name"),
+            form.inventory.data,
+            form.category_id.data,
+            maybe_price_float,
+            form.unit_type.data,
+            form.ideal_stock.data,
+            form.donation.data,
+            None
+        )
+        Product.fill_days_left()
+        EmailJob.process_emails(User.get_by_username('admin').email)
+        return htmx_redirect('/')
+    else:
+        return htmx_errors(form_errors)
+
+###
+# Delete product
+###
+
+# Delete a product
+@app.delete("/product_delete/<int:product_id>")
+@admin_required
+def delete(product_id: int):
+    Product.delete_product(product_id)
+    return htmx_redirect('/')
+
+###
+# Set image of product
+###
+
+# Add an image for a product
+@app.post("/product_upload_image/<int:product_id>")
 @login_required
 def upload_image(product_id: int):
     if 'file' not in request.files:
-        return redirect('/' + str(product_id))
+        return make_response('No file in form', 400)
 
     file = request.files['file']
     product = Product.get_product(product_id)
     if file.filename == '':
-        return redirect('/' + str(product_id))
-    filename = file.filename
-    product.set_img_path(filename)
+        return make_response('Filename could not be found', 400)
 
-    file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
-    return redirect("/" + str(product_id))
+    try:
+        img = Image.open(io.BytesIO(file.read()))
+        img.verify() # Verify it's an image
+        file.seek(0) # Reset file pointer after reading
 
+        filename = file.filename
+        file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
+        product.set_img_path(filename)
+        return htmx_redirect("../" + str(product_id))
+    except:
+        return make_response('File is not an image', 400)
 
-@app.get("/add")
+###
+# Set stock/inventory of product
+###
+
+# Form to update stock only for a given product in product inventory_history.html
+@app.get("/product_update_inventory/<int:product_id>")
 @login_required
-def get_add():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
-    return render_template("add_form.html")
+def load_update(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f'No product found with id {product_id}')
+    return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
 
-
-
-@app.route("/add", methods=["POST"])
-@login_required
-def add():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
-    if Product.get_product(request.form.get("product_name")) is None and request.form.get("category_id") != '':
-        Product.add_product(request.form.get("product_name"), \
-                            int(request.form.get("inventory")), \
-                            int(request.form.get("category_id")), \
-                            float(request.form.get("price")), \
-                            request.form.get("unit_type"), \
-                            int(request.form.get("ideal_stock")), \
-                            bool(request.form.get("donation")),
-                            None)
-
-        Product.fill_days_left()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect("/")
-    else:
-        abort(400)
-
-
-@app.delete("/delete/<int:product_id>")
-@login_required
-def delete(product_id: int):
-    #only admin can delete products
-    #TODO: display message or page to user when encountering 401 error
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
-    Product.delete_product(product_id)
-    products = Product.urgency_rank()
-    categories = Category.all()
-    category_id = request.args.get('category_id', default=0, type=int)
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
-
-@app.delete("/delete_category/<int:category_id>")
-def delete_category(category_id: int):
-    #only admin can delete products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
-    Category.delete_category(category_id)
-    products = Product.urgency_rank()
-    categories = Category.all()
-    category_id = request.args.get('category_id', default=0, type=int)
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
-
-
-
-@app.route("/update/inventory/<int:product_id>", methods=["POST"])
+# Update inventory only for desktop
+@app.post("/product_update_inventory/<int:product_id>")
 @login_required #any user can update inventory
 def update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        new_stock = request.form.get('stock', None, type=int)
-        donation = request.form.get("donation", False)
-        if new_stock is None or new_stock < 0:
-            return abort(400, description="Stock count must be a positive integer")
+        form = ProductUpdateInventoryForm()
+        form_errors = parse_errors(form)
 
         product = Product.get_product(product_id)
         if product is None:
-            return abort(404, description=f"Could not find product {product_id}")
+            form_errors.append(f"Could not find product {product_id}")
         
-        product.update_stock(new_stock, donation)
-        product.mark_not_notified()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect("/" + str(product_id), 303)
+        if len(form_errors) == 0:
+            product.update_stock(form.stock.data)
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/" + str(product_id))
+        else:
+            return htmx_errors(form_errors)
     else:
         return abort(405, description="Method Not Allowed")
 
-@app.route("/update/<int:product_id>", methods=["POST"])
-@login_required #admin only
-def update_all(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
+@app.get("/product_update_inventory_mobile/<int:product_id>")
+@login_required
+def load_update_mobile(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_stock_mobile.html", product=product, form=ProductUpdateInventoryForm())
 
+# Update inventory only for mobile
+@app.post("/product_update_inventory_mobile/<int:product_id>")
+@login_required #any user can update inventory
+def update_inventory_mobile(product_id: int):
     if request.form.get('_method') == 'PATCH':
+        form = ProductUpdateInventoryForm()
+        form_errors = parse_errors(form)
+
         product = Product.get_product(product_id)
         if product is None:
-            return abort(404, description=f"Could not find product {product_id}")
-
-        product_name = request.form.get("product_name")
-        price = request.form.get("price")
-        unit_type = request.form.get("unit_type")
-        ideal_stock = request.form.get("ideal_stock")
-
-        product.update_product(product_name, float(price), unit_type, int(ideal_stock))
-        Product.fill_days_left()
-        product.mark_not_notified()
-        EmailJob.process_emails(User.get_by_username('admin').email)
-        return redirect("/" + str(product_id), 303)
+            form_errors.append(f"Could not find product {product_id}")
+        
+        if len(form_errors) == 0:
+            product.update_stock(form.stock.data)
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/mobile")
+        else:
+            return htmx_errors(form_errors)
     else:
         return abort(405, description="Method Not Allowed")
 
+###
+# Update any/all aspects of product
+###
 
-@app.route("/update_category/<int:category_id>", methods=["POST"])
-@login_required #admin only
-def update_category(category_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can delete products')
+@app.get("/product_update_all/<int:product_id>")
+@admin_required
+def load_update_all(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_all.html", product=product, form=ProductUpdateAllForm())
 
+@app.post("/product_update_all/<int:product_id>")
+@admin_required
+def update_all(product_id: int):
     if request.form.get('_method') == 'PATCH':
+        form = ProductUpdateAllForm()
+        form_errors = parse_errors(form)
+
+        product = Product.get_product(product_id)
+        if product is None:
+            form_errors.append(f'No product found with id {product_id}')
+
+        price = clean_price_to_float(form.price.data)
+        if price is None:
+            form_errors.append(f'Price "{form.price.data}" cound not be converted to a number')
+
+        possible_conflicing_product = Product.get_product(form.product_name.data)
+        if product.product_name != form.product_name.data and possible_conflicing_product is not None:
+            form_errors.append(f'Product already exists with name "{form.product_name.data}"')
+        
+        if len(form_errors) == 0:
+            product_name = form.product_name.data
+            unit_type = form.unit_type.data
+            ideal_stock = form.ideal_stock.data
+
+            product.update_product(product_name, float(price), unit_type, int(ideal_stock))
+            Product.fill_days_left()
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/" + str(product_id))
+        else:
+            return htmx_errors(form_errors)
+    else:
+        return abort(405, description="Method Not Allowed")
+
+###
+# Update lifetime stats of product
+###
+
+# Form to update lifetime donated in product inventory_history.html
+@app.get("/product_update_donated/<int:product_id>")
+@admin_required
+def load_update_donated(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_donated.html", product=product, form=ProductUpdateDonatedForm())
+
+# Form to update lifetime purchased in product inventory_history.html
+@app.get("/product_update_purchased/<int:product_id>")
+@admin_required
+def load_update_purchased(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_purchased.html", product=product, form=ProductUpdatePurchasedForm())
+
+# Update the lifetime donated amount and maybe updates stock as well
+@app.post("/product_update_donated/<int:product_id>")
+@admin_required
+def update_donated(product_id: int):
+    form = ProductUpdateDonatedForm()
+    form_errors = parse_errors(form)
+
+    product = Product.get_product(product_id)
+    if product is None:
+        form_errors.append(f'Cound not find product with id {product_id}')
+    amount: int = form.donated_amount.data
+    adjust_stock: bool = form.adjust_stock.data
+    diff: int = amount - (product.lifetime_donated or 0) # product.lifetime_donated can be None
+    if adjust_stock and diff < 0 and -diff > product.inventory:
+        form_errors.append("Action would produce a negative stock level")
+
+    if len(form_errors) == 0:
+        product.set_donated(amount, adjust_stock)
+        return htmx_redirect(f"/{product_id}")
+    else:
+        return htmx_errors(form_errors)
+
+# Update the lifetime purchased amount and maybe updates stock as well
+@app.post("/product_update_purchased/<int:product_id>")
+@admin_required
+def update_purchased(product_id: int):
+    form = ProductUpdatePurchasedForm()
+    form_errors = parse_errors(form)
+
+    product = Product.get_product(product_id)
+    if product is None:
+        form_errors.append(f'Cannot find product with id {product_id}')
+    
+    amount: int = form.purchased_amount.data
+    adjust_stock: bool = form.adjust_stock.data
+    diff: int = amount - (product.lifetime_purchased or 0) # product.lifetime_donated can be None
+    if adjust_stock and diff < 0 and -diff > product.inventory:
+        form_errors.append("Action would produce a negative stock level")
+
+    if len(form_errors) == 0:
+        product.set_purchased(amount, adjust_stock)
+        return htmx_redirect(f"/{product_id}")
+    else:
+        return htmx_errors(form_errors)
+
+###
+# Search and filter products
+###
+
+@app.get("/product_search_filter_mobile")
+@login_required
+def search_products_mobile():
+    product_name_fragment = request.args.get('product_name')
+    product_sort_method = request.args.get('product_sort_method')
+    product_category_id = 0
+    try:
+        product_category_id = int(request.args.get('product_category_id'))
+    except:
+        pass
+
+    products = Product.search_filter_and_sort(product_name_fragment, product_category_id, product_sort_method)
+
+    return render_template('mobile_table.html', product_list=products)
+
+#####
+#
+# CATEGORIES
+#
+#####
+
+###
+# Create a new category
+###
+
+# Form to add a new category for admin only in main table page
+@app.get("/category_add")
+@admin_required
+def load_add_category():
+    return render_template("modals/category_add.html", form=CategoryAddForm())
+
+# Create a new category
+@app.post("/category_add")
+@admin_required
+def add_category():
+    form = CategoryAddForm()
+    form_errors = parse_errors(form)
+
+    existing_category = Category.get_category(form.category_name.data)
+    if existing_category is not None:
+        form_errors.append(f'There already is a category with name "{form.category_name.data}"')
+
+    if len(form_errors) == 0:
+        Category.add_category(form.category_name.data, form.category_color.data)
+        return htmx_redirect('/')
+    else:
+        return htmx_errors(form_errors)
+
+###
+# Update/change any/all fields of a category
+###
+
+# Form to edit a category for admin only in main table page
+@app.get("/category_update/<int:category_id>")
+@admin_required
+def load_edit_category(category_id: int):
+    category = Category.get_category(category_id)
+    return render_template("modals/category_update_all.html", category=category, form=CategoryUpdateAllForm())
+
+# Change a product's category
+@app.post("/category_update/<int:category_id>")
+@admin_required
+def update_category(category_id: int):
+    if request.form.get('_method') == 'PATCH':
+        form = CategoryUpdateAllForm()
+        form_errors = parse_errors(form)
+
         category = Category.get_category(category_id)
         if category is None:
-            return abort(404, description=f"Could not find product {category.id}")
+            form_errors.append(f"Could not find category {category_id}")
 
-        category_name = request.form.get("category_name")
-        category_color = request.form.get("category_color")
-        category.update_category(category_name, category_color)
+        possible_color_conflicting_category = Category.get_by_color(form.category_color.data)
+        if possible_color_conflicting_category is not None and possible_color_conflicting_category.get_id() != category.get_id():
+            form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
 
-        return redirect("/", 303)
+        possible_conflicting_category = Category.get_category(form.category_name.data)
+        if possible_conflicting_category.get_id() != category.get_id() and possible_conflicting_category is not None:
+            form_errors.append(f'Category already exists with name "{form.category_name.data}"')
+
+        if len(form_errors) == 0:
+            category_name = form.category_name.data
+            category_color = form.category_color.data
+            category.update_category(category_name, category_color)
+
+            return htmx_redirect("/")
+        else:
+            return htmx_errors(form_errors)
     else:
         return abort(405, description="Method Not Allowed")
 
+###
+# Delete a category
+###
 
+# Delete a category
+@app.delete("/category_delete/<int:category_id>")
+@admin_required
+def delete_category(category_id: int):
+    Category.delete_category(category_id)
+    return htmx_redirect('/')
 
-
-
-@app.route("/add_category", methods=["POST"])
-@login_required
-def add_category():
-    #only admin can add products
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
-    if Category.get_category(request.form.get("category_name")) is None:
-        Category.add_category(request.form.get("category_name"), (request.form.get("category_color")))
-    else:
-        abort(400)
-    return redirect("/")
-
+###
+# Downloads/Exports
+###
 
 @app.get("/export_csv")
-@login_required
+@admin_required
 def export_csv():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admin can export csv')
     csv_file = Product.get_csv()
     response = Response(csv_file, content_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
     return response
-
-@app.post("/filter")
-@login_required
-def filter():
-    category_id = int(request.form.get('category_id'))
-    # Fills the days left for each product with product.get_days_until_out
-    Product.fill_days_left()
-    # Loads products in urgency order using where for category filter
-    if category_id == 0:
-        products = Product.urgency_rank()
-    else:
-        products = Product.urgency_rank(category_id)
-    categories = Category.all()
-    levels = Product.get_low_products()
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
-
-
-#MODALS
-@app.get("/load_update/<int:product_id>")
-@login_required
-def load_update(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/update_stock.html",
-                           product=product)
-
-@app.get("/load_update_all/<int:product_id>")
-@login_required
-def load_update_all(product_id: int):
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access this feature.')
-    product = Product.get_product(product_id)
-    return render_template("modals/update_all.html",
-                           product=product)
-@app.get("/load_add")
-@login_required
-def load_add():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can add products')
-    categories = Category.all()
-    return render_template("modals/add.html", categories=categories)
-
-@app.get("/load_add_category")
-def load_add_color():
-    return render_template("modals/add_category.html")
-@app.get("/load_edit_category/<int:category_id>")
-def load_edit_category(category_id: int):
-    category = Category.get_category(category_id)
-    return render_template("modals/edit_category.html", category=category)
-
-@app.get("/settings")
-@login_required
-def get_settings():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access admin settings')
-    return render_template("settings.html", user=current_user)
-
-@app.post("/settings")
-@login_required
-def update_settings():
-    if current_user.username != 'admin':
-        return abort(401, description='Only admins can access admin settings')
-    email = request.form.get("email")
-    User.get_by_username('admin').update_email(email)
-    return redirect("/settings")
 
 with app.app_context():
     if not User.get_by_username('admin'):
