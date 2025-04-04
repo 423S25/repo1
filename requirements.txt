@@ -10,3 +10,4 @@ user_agents==2.2.0
 WTForms==3.2.1
 setuptools==78.1.0
 pillow==11.1.0
+python-dateutil==2.9.0.post0
