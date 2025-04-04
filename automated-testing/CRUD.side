@@ -378,9 +378,9 @@
       "id": "9fdf942c-1066-4bce-b956-05d3fb158255",
       "comment": "",
       "command": "click",
-      "target": "css=button#add-product-label:nth-child(22)",
+      "target": "css=button#add-product-label",
       "targets": [
-        ["css=button#add-button-label:nth-child(22)", "css:finder"],
+        ["css=button#add-button-label", "css:finder"],
         ["xpath=//div[@id='modal']/div[2]/form/button", "xpath:idRelative"],
         ["xpath=//div[5]/div[2]/form/button", "xpath:position"],
         ["xpath=//button[contains(.,'Submit')]", "xpath:innerText"]

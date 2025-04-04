@@ -45,10 +45,11 @@
                 <label id="add-donation-label" for="donation">Donation:</label> 
                 <input type="checkbox" id="donation" name="donation"> 
             </div>
+
+            <div class="modal-buttons">
+                <button id="add-product-label" hx-post="/add" hx-target="body" hx-swap="outerHTML">Submit</button>
+            </div>
     </form>
     
-    <div class="buttons">
-        <button id="add-product-label" hx-post="/add" hx-target="body" hx-swap="outerHTML">Submit</button>
-    </div>
 
 </div>
