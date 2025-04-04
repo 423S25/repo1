@@ -1,6 +1,8 @@
 # HRDC Inventory Management System
 Group 1's project for ESOF 423- an inventory management system (IMS) for the HRDC.
 
+The staging environment can be found [here.](https://hrdc-ims-staging.fly.dev/?) You can log in as
+`admin`, `staff`, or `volunteer`. The password for each is `password` (this is just to make the app easily accessible, and will change for the final app).
 # User Documentation
 
 View our [project website](https://423s25.github.io/repo1/) for full user documentation.
@@ -18,7 +20,7 @@ To contribute to the project:
 7. tag someone for a review (probably not necessary for smaller changes)
 8. once someone approves, merge it
 
-Full developer documentation can be found [here](https://423s25.github.io/repo1/).
+Full developer documentation can be found [here](https://423s25.github.io/repo1/dev-documentation.html).
 
 # Maintainers
 
