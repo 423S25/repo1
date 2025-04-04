@@ -2,13 +2,13 @@
 <div class="report-navigation">
     <p>Choose Report Type:</p>
     <form action="/reports" method="get">
-            <button class="current-report" type="submit" name="value" value="inventory">All Products</button>
+        <button class="current-report" type="submit" name="value" value="inventory">All Products</button>
     </form>
     <form action="/reports" method="get">
-            <button type="submit" name="value" value="categories">Categories</button>
+        <button type="submit" name="value" value="categories">Categories</button>
     </form>
     <form action="/reports" method="get">
-            <button type="submit" name="value" value="product">Product Info</button>
+        <button type="submit" name="value" value="product">Product Info</button>
     </form>
 </div>
 {% include "/reports/reports_inventory.html" %}
@@ -16,27 +16,27 @@
 <div class="report-navigation">
     <p>Choose Report Type:</p>
     <form action="/reports" method="get">
-            <button type="submit" name="value" value="inventory">All Products</button>
+        <button type="submit" name="value" value="inventory">All Products</button>
     </form>
     <form action="/reports" method="get">
-            <button class="current-report" type="submit" name="value" value="categories">Categories</button>
+        <button class="current-report" type="submit" name="value" value="categories">Categories</button>
     </form>
     <form action="/reports" method="get">
-            <button type="submit" name="value" value="product">Product Info</button>
+        <button type="submit" name="value" value="product">Product Info</button>
     </form>
 </div>
 {% include "/reports/reports_categories.html" %}
 {% elif value == "product" %}
-    <div class="report-navigation">
+<div class="report-navigation">
     <p>Choose Report Type:</p>
     <form action="/reports" method="get">
-            <button type="submit" name="value" value="inventory">All Products</button>
+        <button type="submit" name="value" value="inventory">All Products</button>
     </form>
     <form action="/reports" method="get">
-            <button type="submit" name="value" value="categories">Categories</button>
+        <button type="submit" name="value" value="categories">Categories</button>
     </form>
     <form action="/reports" method="get">
-            <button class="current-report" type="submit" name="value" value="product">Product Info</button>
+        <button class="current-report" type="submit" name="value" value="product">Product Info</button>
     </form>
 </div>
 {% include "/reports/reports_product.html" %}
