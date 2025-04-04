@@ -33,6 +33,9 @@ UPLOAD_FOLDER = os.path.join("static", "images")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True) #NOTE: maybe remove when presistent storage gets added
 app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
 
+def is_mobile():
+    user_agent = parse(request.user_agent.string)
+    return user_agent.is_mobile or user_agent.is_tablet
 
 with db:
     db.create_tables([Category, Product, InventorySnapshot])
@@ -87,7 +90,7 @@ def home():
     categories = Category.all()
     levels = Product.get_low_products()
     return render_template("index.html", product_list=products, user=current_user,
-                           categories=categories, current_category=category_id, levels=levels, flag = flag)
+                           categories=categories, current_category=category_id, levels=levels, flag = True)
 
 # The reports page for an overview of all products
 @app.get("/reports")
