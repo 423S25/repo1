@@ -401,6 +401,12 @@ def update_inventory_mobile(product_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
+@app.get("/product_update_inventory_options/<int:product_id>")
+@login_required
+def load_adjust_stock(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_stock_options.html", product=product)
+
 ###
 # Update any/all aspects of product
 ###
