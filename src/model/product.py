@@ -312,8 +312,12 @@ class Product(Model):
     # Add to the current available inventory of a product with [`new_stock`] units
     def add_items(self, amount: int, donation: bool):
         if donation:
+            if self.lifetime_donated is None:
+                self.lifetime_donated = 0
             self.lifetime_donated += amount
         else:
+            if self.lifetime_purchased is None:
+                self.lifetime_purchased = 0
             self.lifetime_purchased += amount
         self.inventory += amount
         self.save()
