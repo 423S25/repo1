@@ -409,7 +409,7 @@ def post_product_add_inventory(product_id: int):
 
 @app.get("/product_update_inventory_options/<int:product_id>")
 @login_required
-def get_product_update_inventory(product_id: int):
+def get_product_update_inventory_options(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_stock_options.html", product=product)
 

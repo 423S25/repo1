@@ -171,7 +171,8 @@ class Product(Model):
                 'days_left': days_left
             }
         )
-        InventorySnapshot.create_snapshot(product.get_id(), product.inventory, product.donation)
+        product: Product = product
+        InventorySnapshot.create_snapshot(product.get_id(), product.inventory, donation)
         return product
 
 

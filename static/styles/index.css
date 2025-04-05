@@ -139,6 +139,19 @@ body {
     font-family: 'Gotham Book';
 }
 
+.close-button {
+    background-color: var(--hrdc-theme-red);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin-left: auto;
+}
+
 .close-button:hover {
     background-color: var(--hrdc-theme-green-yellow);
     border: none;
