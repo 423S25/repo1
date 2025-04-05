@@ -364,7 +364,7 @@ def update_inventory(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data)
+            product.update_stock(form.stock.data, False) #assume is not donation for now    
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -392,7 +392,7 @@ def update_inventory_mobile(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data)
+            product.update_stock(form.stock.data, False) #assume is not donation for now
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/mobile")
