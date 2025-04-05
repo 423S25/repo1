@@ -139,6 +139,18 @@ body {
     font-family: 'Gotham Book';
 }
 
+.close-button:hover {
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
 .urgency-banners {
     height: 60px;
     padding: var(--main-padding);

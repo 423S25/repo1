@@ -7,7 +7,7 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm
 from src.common.email_job import EmailJob
 
 from user_agents import parse
@@ -343,18 +343,18 @@ def upload_image(product_id: int):
 ###
 
 # Form to update stock only for a given product in product inventory_history.html
-@app.get("/product_update_inventory/<int:product_id>") #OKAY
+@app.get("/product_update_inventory/<int:product_id>")
 @login_required
-def load_update(product_id: int):
+def load_add_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
     return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
 
 # Update inventory only for desktop
-@app.post("/product_update_inventory/<int:product_id>") #OKAY
+@app.post("/product_update_inventory/<int:product_id>")
 @login_required
-def update_inventory(product_id: int):
+def add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateInventoryForm()
         form_errors = parse_errors(form)
@@ -364,7 +364,38 @@ def update_inventory(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data, False) #assume is not donation for now    
+            product.update_stock(form.stock.data, False) #assume is not donation for now
+            product.mark_not_notified()
+            EmailJob.process_emails(User.get_by_username('admin').email)
+            return htmx_redirect("/" + str(product_id))
+        else:
+            return htmx_errors(form_errors)
+    else:
+        return abort(405, description="Method Not Allowed")
+
+# Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
+@app.get("/product_add_inventory/<int:product_id>")
+@login_required
+def load_update_inventory(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f'No product found with id {product_id}')
+    return render_template("modals/product_add_stock.html", product=product, form=ProductAddInventoryForm())
+
+# Update inventory only for desktop
+@app.post("/product_add_inventory/<int:product_id>")
+@login_required
+def update_inventory(product_id: int):
+    if request.form.get('_method') == 'PATCH':
+        form = ProductAddInventoryForm()
+        form_errors = parse_errors(form)
+
+        product = Product.get_product(product_id)
+        if product is None:
+            form_errors.append(f"Could not find product {product_id}")
+        
+        if len(form_errors) == 0:
+            product.update_stock(form.stock.data, form.donation.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))

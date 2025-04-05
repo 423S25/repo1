@@ -25,6 +25,9 @@ class ProductUpdateInventoryForm(FlaskForm):
     stock = IntegerField('Stock', validators=[validators.NumberRange(min=0)])
     submit = SubmitField('Submit')
 
+class ProductAddInventoryForm(ProductUpdateInventoryForm):
+    donation = BooleanField('Donation', default=False)
+
 class ProductUpdateDonatedForm(FlaskForm):
     donated_amount = IntegerField('Donated Amount', validators=[validators.NumberRange(min=0)])
     adjust_stock = BooleanField('Adjust Stock', default=False)
