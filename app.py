@@ -231,7 +231,7 @@ def login():
         if not login_success:
             errors.append("Login failed")
             return render_template('security/login.html', form=form, errors=errors)
-        return redirect(next or url_for("home"))
+        return redirect(next or url_for("get_index"))
     return render_template('security/login.html', form=form, errors=errors)
 
 # Admin settings page
