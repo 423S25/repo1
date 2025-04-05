@@ -4,7 +4,7 @@ from flask import Flask, request, Response, render_template, redirect, abort, ur
 from src.model.product import Category
 from src.model.product import Product, InventorySnapshot, db
 from src.model.user import User, user_db
-from flask_login import LoginManager, login_required, login_user, current_user, logout_user
+from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
 from flask_bcrypt import Bcrypt
 
 from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm
@@ -65,8 +65,8 @@ def _db_close(exc):
 def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if current_user is None or current_user.username != 'admin':
-            return abort(401, description='Only admins can access this resource')
+        if not current_user.is_authenticated or getattr(current_user, "username", None) != "admin":
+            return abort(401, description="Only admins can access this resource")
         else:
            return func(*args, **kwargs)
     return wrapper
@@ -79,6 +79,9 @@ def admin_required(func):
 @app.get("/") #OKAY
 @login_required #any user can access home page
 def home():
+    if is_mobile():
+        return redirect('/mobile')
+    
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order
@@ -343,18 +346,18 @@ def upload_image(product_id: int):
 ###
 
 # Form to update stock only for a given product in product inventory_history.html
-@app.get("/product_update_inventory/<int:product_id>")
+@app.get("/product_update_inventory/<int:product_id>") #TODO
 @login_required
-def load_add_inventory(product_id: int):
+def load_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
     return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
 
 # Update inventory only for desktop
-@app.post("/product_update_inventory/<int:product_id>")
+@app.post("/product_update_inventory/<int:product_id>") #TODO
 @login_required
-def add_inventory(product_id: int):
+def update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateInventoryForm()
         form_errors = parse_errors(form)
@@ -364,7 +367,7 @@ def add_inventory(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data, False) #assume is not donation for now
+            product.update_stock(form.stock.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -374,18 +377,18 @@ def add_inventory(product_id: int):
         return abort(405, description="Method Not Allowed")
 
 # Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
-@app.get("/product_add_inventory/<int:product_id>")
+@app.get("/product_add_inventory/<int:product_id>") #TODO
 @login_required
-def load_update_inventory(product_id: int):
+def load_add_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
     return render_template("modals/product_add_stock.html", product=product, form=ProductAddInventoryForm())
 
 # Add inventory only for desktop
-@app.post("/product_add_inventory/<int:product_id>")
+@app.post("/product_add_inventory/<int:product_id>") #TODO
 @login_required
-def update_inventory(product_id: int):
+def add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductAddInventoryForm()
         form_errors = parse_errors(form)
@@ -395,7 +398,7 @@ def update_inventory(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.add_stock(form.stock.data, form.donation.data)
+            product.add_items(form.stock.data, form.donation.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -404,14 +407,20 @@ def update_inventory(product_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
-@app.get("/product_update_inventory_mobile/<int:product_id>")
+@app.get("/product_update_inventory_options/<int:product_id>") #TODO
+@login_required
+def load_adjust_stock(product_id: int):
+    product = Product.get_product(product_id)
+    return render_template("modals/product_update_stock_options.html", product=product)
+
+@app.get("/product_update_inventory_mobile/<int:product_id>") #TODO
 @login_required
 def load_update_mobile(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_stock_mobile.html", product=product, form=ProductUpdateInventoryForm())
 
 # Update inventory only for mobile
-@app.post("/product_update_inventory_mobile/<int:product_id>")
+@app.post("/product_update_inventory_mobile/<int:product_id>") #TODO
 @login_required
 def update_inventory_mobile(product_id: int):
     if request.form.get('_method') == 'PATCH':
@@ -423,7 +432,7 @@ def update_inventory_mobile(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data, False) #assume is not donation for now
+            product.update_stock(form.stock.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/mobile")
@@ -432,23 +441,17 @@ def update_inventory_mobile(product_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
-@app.get("/product_update_inventory_options/<int:product_id>")
-@login_required
-def load_adjust_stock(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/product_update_stock_options.html", product=product)
-
 ###
 # Update any/all aspects of product
 ###
 
-@app.get("/product_update_all/<int:product_id>")
+@app.get("/product_update_all/<int:product_id>") #OKAY
 @admin_required
 def load_update_all(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_all.html", product=product, form=ProductUpdateAllForm())
 
-@app.post("/product_update_all/<int:product_id>")
+@app.post("/product_update_all/<int:product_id>") #OKAY
 @admin_required
 def update_all(product_id: int):
     if request.form.get('_method') == 'PATCH':
@@ -487,21 +490,21 @@ def update_all(product_id: int):
 ###
 
 # Form to update lifetime donated in product inventory_history.html
-@app.get("/product_update_donated/<int:product_id>")
+@app.get("/product_update_donated/<int:product_id>") #OKAY
 @admin_required
 def load_update_donated(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_donated.html", product=product, form=ProductUpdateDonatedForm())
 
 # Form to update lifetime purchased in product inventory_history.html
-@app.get("/product_update_purchased/<int:product_id>")
+@app.get("/product_update_purchased/<int:product_id>") #OKAY
 @admin_required
 def load_update_purchased(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_purchased.html", product=product, form=ProductUpdatePurchasedForm())
 
 # Update the lifetime donated amount and maybe updates stock as well
-@app.post("/product_update_donated/<int:product_id>")
+@app.post("/product_update_donated/<int:product_id>") #OKAY
 @admin_required
 def update_donated(product_id: int):
     form = ProductUpdateDonatedForm()
@@ -523,7 +526,7 @@ def update_donated(product_id: int):
         return htmx_errors(form_errors)
 
 # Update the lifetime purchased amount and maybe updates stock as well
-@app.post("/product_update_purchased/<int:product_id>")
+@app.post("/product_update_purchased/<int:product_id>") #OKAY
 @admin_required
 def update_purchased(product_id: int):
     form = ProductUpdatePurchasedForm()
@@ -549,7 +552,7 @@ def update_purchased(product_id: int):
 # Search and filter products
 ###
 
-@app.get("/product_search_filter_mobile")
+@app.get("/product_search_filter_mobile") #TODO
 @login_required
 def search_products_mobile():
     product_name_fragment = request.args.get('product_name')
@@ -591,6 +594,10 @@ def add_category():
     if existing_category is not None:
         form_errors.append(f'There already is a category with name "{form.category_name.data}"')
 
+    possible_color_conflicting_category = Category.get_by_color(form.category_color.data)
+    if possible_color_conflicting_category is not None:
+        form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
+
     if len(form_errors) == 0:
         Category.add_category(form.category_name.data, form.category_color.data)
         return htmx_redirect('/')
@@ -602,14 +609,14 @@ def add_category():
 ###
 
 # Form to edit a category for admin only in main table page
-@app.get("/category_update/<int:category_id>")
+@app.get("/category_update/<int:category_id>") #OKAY
 @admin_required
 def load_edit_category(category_id: int):
     category = Category.get_category(category_id)
     return render_template("modals/category_update_all.html", category=category, form=CategoryUpdateAllForm())
 
 # Change a product's category
-@app.post("/category_update/<int:category_id>")
+@app.post("/category_update/<int:category_id>") #OKAY
 @admin_required
 def update_category(category_id: int):
     if request.form.get('_method') == 'PATCH':
@@ -625,7 +632,7 @@ def update_category(category_id: int):
             form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
 
         possible_conflicting_category = Category.get_category(form.category_name.data)
-        if possible_conflicting_category.get_id() != category.get_id() and possible_conflicting_category is not None:
+        if possible_conflicting_category is not None and possible_conflicting_category.get_id() != category.get_id():
             form_errors.append(f'Category already exists with name "{form.category_name.data}"')
 
         if len(form_errors) == 0:
@@ -644,7 +651,7 @@ def update_category(category_id: int):
 ###
 
 # Delete a category
-@app.delete("/category_delete/<int:category_id>")
+@app.delete("/category_delete/<int:category_id>") #OKAY
 @admin_required
 def delete_category(category_id: int):
     Category.delete_category(category_id)
