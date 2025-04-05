@@ -382,7 +382,7 @@ def load_update_inventory(product_id: int):
         return abort(404, description=f'No product found with id {product_id}')
     return render_template("modals/product_add_stock.html", product=product, form=ProductAddInventoryForm())
 
-# Update inventory only for desktop
+# Add inventory only for desktop
 @app.post("/product_add_inventory/<int:product_id>")
 @login_required
 def update_inventory(product_id: int):
@@ -395,7 +395,7 @@ def update_inventory(product_id: int):
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data, form.donation.data)
+            product.add_stock(form.stock.data, form.donation.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
