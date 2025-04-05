@@ -10,10 +10,3 @@
     height: 600px;
     margin: auto;
 }
-.reports {
-    border-bottom: 3px solid var(--hrdc-theme-green-yellow);
-}
-
-.reports:hover {
-    border-bottom: 3px solid #ffffff;
-}

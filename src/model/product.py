@@ -168,8 +168,7 @@ class Product(Model):
                 'unit_type': unit_type,
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
-                'days_left': days_left,
-                'donation': donation
+                'days_left': days_left
             }
         )
         InventorySnapshot.create_snapshot(product.get_id(), product.inventory, product.donation)
@@ -311,12 +310,11 @@ class Product(Model):
 
 
     # Sets the current available stock of a product to [`new_stock`] units
-    def update_stock(self, new_stock: int, donation: bool):
+    def update_stock(self, new_stock: int):
         self.inventory = new_stock
-        self.donation = donation
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory, False) #setting stock, so it is not a donation
 
     #1. sets the lifetime_donated
     #2. if adjust_inventory is set, it will add/subtract from stock as well

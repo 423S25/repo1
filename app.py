@@ -76,7 +76,7 @@ def admin_required(func):
 ###
 
 # The index page with the main product table
-@app.get("/")
+@app.get("/") #OKAY
 @login_required #any user can access home page
 def home():
     # Fills the days left for each product with product.get_days_until_out
@@ -100,8 +100,8 @@ def home():
     )
 
 # The reports page for an overview of all products
-@app.get("/reports")
-@login_required
+@app.get("/reports") #OKAY
+@admin_required
 def reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
@@ -130,7 +130,7 @@ def reports():
     )
 
 # The search function for the main table page. Re-serves index.html
-@app.get("/search")
+@app.get("/search") #OKAY
 def search():
     category_id = request.args.get('category_id', default=0, type=int)
     search_term = request.args.get('q', '')
@@ -142,7 +142,7 @@ def search():
     return render_template("table.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
 
 # The filter function for the main table page. Re-serves index.html
-@app.post("/filter")
+@app.post("/filter") #OKAY
 @login_required
 def filter():
     category_id = int(request.form.get('category_id'))
@@ -158,7 +158,7 @@ def filter():
     return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
 
 # The individual page for each product
-@app.get("/<int:product_id>")
+@app.get("/<int:product_id>") #OKAY
 @login_required #any user can access this page
 def inventory_history(product_id: int):
 
@@ -188,7 +188,7 @@ def inventory_history(product_id: int):
 ###
 
 # The mobile home page
-@app.get("/mobile")
+@app.get("/mobile") #TODO
 @login_required
 def render_mobile_home_page():
     categories = [
@@ -204,13 +204,13 @@ def render_mobile_home_page():
 ###
 
 # Logout a user
-@app.post("/logout")
+@app.post("/logout") #OKAY
 def logout():
     logout_user()
     return redirect(url_for("login"))
 
 # Login a user
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST"]) #OKAY
 def login():
     form = LoginForm()
     next = request.args.get('next')
@@ -232,13 +232,13 @@ def login():
     return render_template('security/login.html', form=form, errors=errors)
 
 # Admin settings page
-@app.get("/settings")
+@app.get("/settings") #OKAY
 @admin_required
 def get_settings():
     return render_template("settings.html", user=current_user)
 
 # Add a new email to updates for admin only
-@app.post("/settings")
+@app.post("/settings") #OKAY
 @admin_required
 def update_settings():
     email = request.form.get("email")
@@ -257,7 +257,7 @@ def update_settings():
 ###
 
 # Create a new product
-@app.get('/product_add')
+@app.get('/product_add') #OKAY
 @admin_required
 def product_add_form():
     form = ProductAddForm()
@@ -265,7 +265,7 @@ def product_add_form():
     return render_template('modals/product_add.html', form=form, categories=categories)
 
 # Create a new product
-@app.post('/product_add')
+@app.post('/product_add') #OKAY
 @admin_required
 def product_add_action():
     form = ProductAddForm()
@@ -304,7 +304,7 @@ def product_add_action():
 ###
 
 # Delete a product
-@app.delete("/product_delete/<int:product_id>")
+@app.delete("/product_delete/<int:product_id>") #OKAY
 @admin_required
 def delete(product_id: int):
     Product.delete_product(product_id)
@@ -315,7 +315,7 @@ def delete(product_id: int):
 ###
 
 # Add an image for a product
-@app.post("/product_upload_image/<int:product_id>")
+@app.post("/product_upload_image/<int:product_id>") #OKAY
 @login_required
 def upload_image(product_id: int):
     if 'file' not in request.files:
@@ -343,7 +343,7 @@ def upload_image(product_id: int):
 ###
 
 # Form to update stock only for a given product in product inventory_history.html
-@app.get("/product_update_inventory/<int:product_id>")
+@app.get("/product_update_inventory/<int:product_id>") #OKAY
 @login_required
 def load_update(product_id: int):
     product = Product.get_product(product_id)
@@ -352,8 +352,8 @@ def load_update(product_id: int):
     return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
 
 # Update inventory only for desktop
-@app.post("/product_update_inventory/<int:product_id>")
-@login_required #any user can update inventory
+@app.post("/product_update_inventory/<int:product_id>") #OKAY
+@login_required
 def update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateInventoryForm()
@@ -381,7 +381,7 @@ def load_update_mobile(product_id: int):
 
 # Update inventory only for mobile
 @app.post("/product_update_inventory_mobile/<int:product_id>")
-@login_required #any user can update inventory
+@login_required
 def update_inventory_mobile(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateInventoryForm()
