@@ -78,7 +78,7 @@ def admin_required(func):
 # The index page with the main product table
 @app.get("/")
 @login_required #any user can access home page
-def home():
+def get_index():
     if is_mobile():
         return redirect('/mobile')
     
@@ -105,7 +105,7 @@ def home():
 # The reports page for an overview of all products
 @app.get("/reports")
 @admin_required
-def reports():
+def get_reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
     categories = [{"id": c.id, "name": c.name, "total_inventory": 0} for c in Category.all()]
@@ -134,7 +134,7 @@ def reports():
 
 # The search function for the main table page. Re-serves index.html
 @app.get("/search")
-def search():
+def get_search():
     category_id = request.args.get('category_id', default=0, type=int)
     search_term = request.args.get('q', '')
     if search_term:
@@ -147,7 +147,7 @@ def search():
 # The filter function for the main table page. Re-serves index.html
 @app.post("/filter")
 @login_required
-def filter():
+def post_filter():
     category_id = int(request.form.get('category_id'))
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
@@ -163,7 +163,7 @@ def filter():
 # The individual page for each product
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
-def inventory_history(product_id: int):
+def post_product_page(product_id: int):
 
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
@@ -193,7 +193,7 @@ def inventory_history(product_id: int):
 # The mobile home page
 @app.get("/mobile")
 @login_required
-def render_mobile_home_page():
+def get_mobile_index():
     categories = [
         Category.ALL_PRODUCTS_PLACEHOLDER,
         *Category.all_alphabetized()
@@ -243,7 +243,7 @@ def get_settings():
 # Add a new email to updates for admin only
 @app.post("/settings")
 @admin_required
-def update_settings():
+def post_settings():
     email = request.form.get("email")
     if email is not None and email != '' and '@' in email:
         User.get_by_username('admin').update_email(email)
@@ -262,7 +262,7 @@ def update_settings():
 # Create a new product
 @app.get('/product_add')
 @admin_required
-def product_add_form():
+def get_product_add():
     form = ProductAddForm()
     categories = Category.all_alphabetized()
     return render_template('modals/product_add.html', form=form, categories=categories)
@@ -270,7 +270,7 @@ def product_add_form():
 # Create a new product
 @app.post('/product_add')
 @admin_required
-def product_add_action():
+def post_product_add():
     form = ProductAddForm()
     form.validate()
     form_errors: list[str] = parse_errors(form)
@@ -309,7 +309,7 @@ def product_add_action():
 # Delete a product
 @app.delete("/product_delete/<int:product_id>")
 @admin_required
-def delete(product_id: int):
+def post_delete_product(product_id: int):
     Product.delete_product(product_id)
     return htmx_redirect('/')
 
@@ -320,7 +320,7 @@ def delete(product_id: int):
 # Add an image for a product
 @app.post("/product_upload_image/<int:product_id>")
 @login_required
-def upload_image(product_id: int):
+def post_product_upload_image(product_id: int):
     if 'file' not in request.files:
         return make_response('No file in form', 400)
 
@@ -348,7 +348,7 @@ def upload_image(product_id: int):
 # Form to update stock only for a given product in product inventory_history.html
 @app.get("/product_update_inventory/<int:product_id>")
 @login_required
-def load_update_inventory(product_id: int):
+def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
@@ -357,7 +357,7 @@ def load_update_inventory(product_id: int):
 # Update inventory only for desktop
 @app.post("/product_update_inventory/<int:product_id>")
 @login_required
-def update_inventory(product_id: int):
+def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateInventoryForm()
         form_errors = parse_errors(form)
@@ -379,7 +379,7 @@ def update_inventory(product_id: int):
 # Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
 @app.get("/product_add_inventory/<int:product_id>")
 @login_required
-def load_add_inventory(product_id: int):
+def get_product_add_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
@@ -388,7 +388,7 @@ def load_add_inventory(product_id: int):
 # Add inventory only for desktop
 @app.post("/product_add_inventory/<int:product_id>")
 @login_required
-def add_inventory(product_id: int):
+def post_product_add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductAddInventoryForm()
         form_errors = parse_errors(form)
@@ -409,20 +409,20 @@ def add_inventory(product_id: int):
 
 @app.get("/product_update_inventory_options/<int:product_id>")
 @login_required
-def load_adjust_stock(product_id: int):
+def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_stock_options.html", product=product)
 
 @app.get("/product_update_inventory_mobile/<int:product_id>")
 @login_required
-def load_update_mobile(product_id: int):
+def get_product_update_inventory_mobile(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_stock_mobile.html", product=product, form=ProductUpdateInventoryForm())
 
 # Update inventory only for mobile
 @app.post("/product_update_inventory_mobile/<int:product_id>")
 @login_required
-def update_inventory_mobile(product_id: int):
+def post_product_update_inventory_mobile(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateInventoryForm()
         form_errors = parse_errors(form)
@@ -447,13 +447,13 @@ def update_inventory_mobile(product_id: int):
 
 @app.get("/product_update_all/<int:product_id>")
 @admin_required
-def load_update_all(product_id: int):
+def get_product_update_all(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_all.html", product=product, form=ProductUpdateAllForm())
 
 @app.post("/product_update_all/<int:product_id>")
 @admin_required
-def update_all(product_id: int):
+def post_product_update_all(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductUpdateAllForm()
         form_errors = parse_errors(form)
@@ -492,21 +492,21 @@ def update_all(product_id: int):
 # Form to update lifetime donated in product inventory_history.html
 @app.get("/product_update_donated/<int:product_id>")
 @admin_required
-def load_update_donated(product_id: int):
+def get_product_update_donated(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_donated.html", product=product, form=ProductUpdateDonatedForm())
 
 # Form to update lifetime purchased in product inventory_history.html
 @app.get("/product_update_purchased/<int:product_id>")
 @admin_required
-def load_update_purchased(product_id: int):
+def get_product_update_purchased(product_id: int):
     product = Product.get_product(product_id)
     return render_template("modals/product_update_purchased.html", product=product, form=ProductUpdatePurchasedForm())
 
 # Update the lifetime donated amount and maybe updates stock as well
 @app.post("/product_update_donated/<int:product_id>")
 @admin_required
-def update_donated(product_id: int):
+def post_product_update_donated(product_id: int):
     form = ProductUpdateDonatedForm()
     form_errors = parse_errors(form)
 
@@ -528,7 +528,7 @@ def update_donated(product_id: int):
 # Update the lifetime purchased amount and maybe updates stock as well
 @app.post("/product_update_purchased/<int:product_id>")
 @admin_required
-def update_purchased(product_id: int):
+def post_product_update_purchased(product_id: int):
     form = ProductUpdatePurchasedForm()
     form_errors = parse_errors(form)
 
@@ -554,7 +554,7 @@ def update_purchased(product_id: int):
 
 @app.get("/product_search_filter_mobile")
 @login_required
-def search_products_mobile():
+def get_product_search_filter_mobile():
     product_name_fragment = request.args.get('product_name')
     product_sort_method = request.args.get('product_sort_method')
     product_category_id = 0
@@ -580,13 +580,13 @@ def search_products_mobile():
 # Form to add a new category for admin only in main table page
 @app.get("/category_add")
 @admin_required
-def load_add_category():
+def get_category_add():
     return render_template("modals/category_add.html", form=CategoryAddForm())
 
 # Create a new category
 @app.post("/category_add")
 @admin_required
-def add_category():
+def post_category_add():
     form = CategoryAddForm()
     form_errors = parse_errors(form)
 
@@ -611,14 +611,14 @@ def add_category():
 # Form to edit a category for admin only in main table page
 @app.get("/category_update/<int:category_id>")
 @admin_required
-def load_edit_category(category_id: int):
+def get_category_update(category_id: int):
     category = Category.get_category(category_id)
     return render_template("modals/category_update_all.html", category=category, form=CategoryUpdateAllForm())
 
 # Change a product's category
 @app.post("/category_update/<int:category_id>")
 @admin_required
-def update_category(category_id: int):
+def post_category_update(category_id: int):
     if request.form.get('_method') == 'PATCH':
         form = CategoryUpdateAllForm()
         form_errors = parse_errors(form)
@@ -653,7 +653,7 @@ def update_category(category_id: int):
 # Delete a category
 @app.delete("/category_delete/<int:category_id>")
 @admin_required
-def delete_category(category_id: int):
+def category_delete(category_id: int):
     Category.delete_category(category_id)
     return htmx_redirect('/')
 
