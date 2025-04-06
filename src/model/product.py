@@ -153,9 +153,27 @@ class Product(Model):
         if amount is None or amount == '0':
             pass
         else:
-            levels = Product.get_low_products()
-            print(levels)
-
+            if amount == '1':
+                filtered_ids = []
+                for product in query:
+                    ratio = product.inventory / product.ideal_stock
+                    if ratio <= 0.25:
+                        filtered_ids.append(product.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+            elif amount == '2':
+                filtered_ids = []
+                for product in query:
+                    ratio = product.inventory / product.ideal_stock
+                    if ratio <= 0.5:
+                        filtered_ids.append(product.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+            elif amount == '3':
+                filtered_ids = []
+                for product in query:
+                    ratio = product.inventory / product.ideal_stock
+                    if ratio > 0.5:
+                        filtered_ids.append(product.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
 
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
         return list(query)
