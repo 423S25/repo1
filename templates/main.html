@@ -41,7 +41,8 @@
                 hx-post="/filter"
                 hx-target="body"
                 hx-swap="outerHTML"
-                hx-vals='js:{category_id: document.getElementById("category_id").value}'>
+                hx-vals='js:{category_id: document.getElementById("category_id").value}'
+                hx-include=".filter-parent">
             <option value="0"
                     {% if current_category is none or current_category == 0 %}
                     selected
@@ -73,8 +74,32 @@
                 hx-post="/filter"
                 hx-target="body"
                 hx-swap="outerHTML"
-                hx-vals='js:{category_id: document.getElementById("category_id").value}'>
-
+                hx-vals='js:{price: document.getElementById("price").value}'
+                hx-include=".filter-parent">
+            <option value="0"
+                    {% if current_price is none or current_price == 0 %}
+                    selected
+                    {% endif %}>
+                All
+            </option>
+            <option value="1"
+                    {% if current_price == '1' %}
+                    selected
+                    {% endif %}>
+                Under $5
+            </option>
+            <option value="2"
+                    {% if current_price == '2' %}
+                    selected
+                    {% endif %}>
+                Under $10
+            </option>
+            <option value="3"
+                    {% if current_price == '3' %}
+                    selected
+                    {% endif %}>
+                Over $10
+            </option>
         </select>
         <p>Amount:</p>
         <select class="filter-input" id="amount" name="amount"
@@ -82,8 +107,32 @@
                 hx-post="/filter"
                 hx-target="body"
                 hx-swap="outerHTML"
-                hx-vals='js:{category_id: document.getElementById("category_id").value}'>
-
+                hx-vals='js:{amount: document.getElementById("amount").value}'
+                hx-include=".filter-parent">
+             <option value="0"
+                    {% if current_amount is none or current_amount == 0 %}
+                    selected
+                    {% endif %}>
+                All
+            </option>
+            <option value="1"
+                    {% if current_amount == '1' %}
+                    selected
+                    {% endif %}>
+                Under 25%
+            </option>
+            <option value="2"
+                    {% if current_amount == '2' %}
+                    selected
+                    {% endif %}>
+                Under 50%
+            </option>
+            <option value="3"
+                    {% if current_amount == '3' %}
+                    selected
+                    {% endif %}>
+                Over 50%
+            </option>
         </select>
 
     </div>

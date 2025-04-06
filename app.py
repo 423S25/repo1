@@ -112,13 +112,17 @@ def post_filter():
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order using where for category filter
-    if category_id == 0:
-        products = Product.urgency_rank()
-    else:
-        products = Product.urgency_rank(category_id)
+    products = Product.urgency_rank(category_id, price, amount)
     categories = Category.all()
     levels = Product.get_low_products()
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
+    return render_template("index.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id,
+                           current_price=price,
+                           current_amount=amount,
+                           levels=levels)
 
 
 
