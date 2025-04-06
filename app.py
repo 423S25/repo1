@@ -106,7 +106,9 @@ def get_index():
 @app.post("/filter")
 @login_required
 def post_filter():
-    category_id = int(request.form.get('category_id'))
+    category_id = request.form.get('category_id')
+    price = request.form.get('price')
+    amount = request.form.get('amount')
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order using where for category filter

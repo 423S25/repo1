@@ -133,11 +133,18 @@ class Product(Model):
 
     @staticmethod
     #overloaded with category id for filter
-    def urgency_rank(category_id: int = None) -> list['Product']:
+    def urgency_rank(category_id: int = None, price: int = None, amout: int = None) -> list['Product']:
         query = Product.select(Product, Category).join(Category)
 
         if category_id is not None:
             query = query.where(Product.category_id == category_id)
+            print(1)
+        if price is not None:
+            query = query.where(Product.price == price)
+            print(0)
+        if amout is not None:
+            levels = Product.get_low_products()
+            print(levels)
 
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
 
