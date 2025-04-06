@@ -1,0 +1,20 @@
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+	<div class="modal-underlay" _="on click trigger closeModal"></div>
+	<div class="modal-content">
+		<button class="category-danger-button" _="on click trigger closeModal">
+			<img alt="Close" src="icons/close.svg" class="close-icon" />
+		</button>
+		<div class="add-category-header">ADD CATEGORY</div><br><br>
+		<form class="add-category-form" hx-post="/category_add" hx-target="#modal-errors" hx-swap="innerHTML">
+			{{ form.csrf_token }}
+			<label class="category-name-label" for="category_name">Category Name:</label><br>
+			<input class="category-name-input" type="text" id="category_name" name="category_name" required>
+
+			<input class="category-color-input" type="color" id="category_color" name="category_color" required>
+
+
+			<button class="category-submit-button" type="submit">Submit</button>
+		</form>
+		<div id="modal-errors"></div>
+	</div>
+</div>

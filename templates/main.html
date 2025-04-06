@@ -1,13 +1,5 @@
 {% include "nav.html" %}
 
-<!--
-    endpoint: the endpoing to hit to update (e.g., /update/<endpoint>/<id>)
-    id: the product id (e.g., /update/<endpoint>/<id>)
-    value: the current value to display
-    param: the param/input name
-    human_desc: a human-readable attribute name
--->
-
 <div class="urgency-banners">
     <div>
         <div class="shadow">
@@ -41,9 +33,8 @@
 </div>
 <div class="scaffolding">
     <div class="filter-parent">
-        <label for="category_id">Categories</label>
         {% set current_category = current_category | int %}
-        <select id="category_id" name="category_id"
+        <select class="filter-input" id="category_id" name="category_id"
                 hx-trigger="change"
                 hx-post="/filter"
                 hx-target="body"
@@ -53,7 +44,7 @@
                     {% if current_category is none or current_category == 0 %}
                     selected
                     {% endif %}>
-                All
+                Filters
             </option>
             {% for category in categories %}
                 <option value="{{ category.id }}"
@@ -66,8 +57,9 @@
             {% endfor %}
 
         </select>
+        <br>
         {% if current_category != 0 %}
-            <button hx-get="/load_edit_category/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
+            <button class="filter-edit-button" hx-get="/category_update/{{ current_category }}" hx-target="body" hx-swap="beforeend">Edit
                 Current Category
             </button>
         {% endif %}
@@ -82,10 +74,10 @@
                hx-trigger="input changed delay:300ms"
                hx-target="main"
                hx-swap="innerHTML">
-        <button class="product-button" hx-get="/load_add" hx-target="body" hx-swap="beforeend">
+        <button class="product-button" hx-get="/product_add" hx-target="body" hx-swap="beforeend">
             NEW PRODUCT
         </button>
-        <button class="product-button" hx-get="/load_add_category" hx-target="body" hx-swap="beforeend">
+        <button class="product-button" hx-get="/category_add" hx-target="body" hx-swap="beforeend">
             NEW CATEGORY
         </button>
         {% block add %}
@@ -96,23 +88,4 @@
     </main>
 </div>
 
-
-
-{% macro updatable_table_cell(endpoint, id, value, param, human_desc) %}
-    <td>
-        <span class="static">{{ value }}</span>
-        <button onclick="toEditCell(this)" class="in-cell-action static hidden" title="Edit {{ human_desc }}">
-            <img src="icons/pencil.svg" alt="Edit Icon"/>
-        </button>
-        <form class="edit" style="display: none;" hx-patch="update/{{ endpoint }}/{{ id }}" hx-target="body">
-            <input onkeypress="onInputEnter(this, event)" name="{{ param }}" value="{{ value }}"/>
-            <button onclick="event.preventDefault(); toStaticCell(this);" class="in-cell-action" title="Cancel Changes">
-                <img src="icons/close.svg" alt="Close Icon"/>
-            </button>
-            <button type="submit" class="in-cell-action" title="Save {{ human_desc }}">
-                <img src="icons/checkmark.svg" alt="Checkmark Icon"/>
-            </button>
-        </form>
-    </td>
-{% endmacro %}
 

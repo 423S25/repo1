@@ -1,0 +1,13 @@
+<div id="mobile-modal" class="center-all" _="on closeMobileModal add .closing then wait for animationend then remove me">
+    <div class="box-shadow-small">
+        <span class="mobile-modal-header">Update stock for <span>{{ product.product_name }}</span></span>
+        <form hx-post="/product_update_inventory_mobile/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
+            {{ form.csrf_token }}
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="number" id="stock" name="stock" min="0" placeholder="New stock in {{ product.unit_type }}" required>
+            <button type="submit">Update</button>
+        </form>
+        <div id="modal-errors"></div>
+        <button class="mobile-modal-close" _="on click trigger closeMobileModal">Close</button>
+    </div>
+</div>
