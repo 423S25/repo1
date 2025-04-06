@@ -4,6 +4,8 @@ from typing import Optional
 import io
 import csv
 from dateutil.relativedelta import relativedelta
+import xml.etree.ElementTree as ET
+import re
 
 db = SqliteDatabase('inventory.db')
 
@@ -24,11 +26,15 @@ class Category(Model):
         return list(Category.select().order_by(Category.name))
 
     @staticmethod
-    def add_category(name: str, color: str) -> 'Category':
+    def add_category(name: str, color: str, icon_path : str) -> 'Category':
+        colored_icon_path = Category.change_svg_color(icon_path, color, name)
         category = Category.create(
             name=name,
-            color = color
+            color = color,
+            image_path = colored_icon_path
+
         )
+
         return category
 
     @staticmethod
@@ -54,6 +60,25 @@ class Category(Model):
         self.name = category_name
         self.color = category_color
         self.save()
+
+    @staticmethod
+    def change_svg_color(input_svg: str, new_color: str, name : str):
+
+        tree = ET.parse("static/" + input_svg)
+        root = tree.getroot()
+
+        namespace = {'svg': 'http://www.w3.org/2000/svg'}
+        ET.register_namespace('', namespace['svg'])
+
+        for style in root.findall(".//{http://www.w3.org/2000/svg}style"):
+            if style.text:
+                new_style_text = re.sub(r'#([0-9a-fA-F]{3,6})', new_color, style.text, flags=re.IGNORECASE)
+                style.text = new_style_text
+
+        output_path = "icons/category_icons/" + name + ".svg"
+        tree.write("static/" + output_path)
+
+        return output_path
 
 
     class Meta:

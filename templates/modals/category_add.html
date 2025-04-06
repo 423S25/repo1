@@ -11,10 +11,29 @@
 			<input class="category-name-input" type="text" id="category_name" name="category_name" required>
 
 			<input class="category-color-input" type="color" id="category_color" name="category_color" required>
-
+			<div class="icon-container">
+			{% for icon in icons %}
+				<button type="button" class="icon-button" data-icon="{{ icon }}">
+					<img src="{{ icon }}" class="icon">
+				</button>
+			{% endfor %}
+			</div>
+			<input type="hidden" id="selected_icon" name="selected_icon">
 
 			<button class="category-submit-button" type="submit">Submit</button>
 		</form>
 		<div id="modal-errors"></div>
+
+					<script>document.querySelectorAll(".icon-button").forEach(button => {
+						button.addEventListener("click", function() {
+        				let selectedIcon = this.getAttribute("data-icon");
+        				document.getElementById("selected_icon").value = selectedIcon;
+
+
+        			document.querySelectorAll(".icon-button").forEach(btn => btn.classList.remove("selected"));
+        				this.classList.add("selected");
+    				});
+				});
+			</script>
 	</div>
 </div>

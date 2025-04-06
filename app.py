@@ -581,7 +581,8 @@ def get_product_search_filter_mobile():
 @app.get("/category_add")
 @admin_required
 def get_category_add():
-    return render_template("modals/category_add.html", form=CategoryAddForm())
+    icons = ["icons/cat_icons/Cleaning.svg", "icons/cat_icons/Hygiene.svg", "icons/cat_icons/Kitchen.svg", "icons/cat_icons/Paper.svg"]
+    return render_template("modals/category_add.html", form=CategoryAddForm(), icons = icons)
 
 # Create a new category
 @app.post("/category_add")
@@ -589,7 +590,7 @@ def get_category_add():
 def post_category_add():
     form = CategoryAddForm()
     form_errors = parse_errors(form)
-
+    selected_icon = request.form.get("selected_icon")
     existing_category = Category.get_category(form.category_name.data)
     if existing_category is not None:
         form_errors.append(f'There already is a category with name "{form.category_name.data}"')
@@ -599,7 +600,7 @@ def post_category_add():
         form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
 
     if len(form_errors) == 0:
-        Category.add_category(form.category_name.data, form.category_color.data)
+        Category.add_category(form.category_name.data, form.category_color.data, selected_icon)
         return htmx_redirect('/')
     else:
         return htmx_errors(form_errors)
