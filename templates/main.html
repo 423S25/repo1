@@ -1,33 +1,37 @@
 {% include "nav.html" %}
 
 <div class="urgency-banners">
-    <form method="GET" action="/">
+    <form method="POST" action="/filter">
+        <input type="hidden" name="amount" value="1">
         <div class="shadow">
             <div class="red_rectangle"></div>
             <div class="banner">
                 <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[0] }}</p>
-                <button></button>
+                <button>Low Stock Products</button>
             </div>
         </div>
     </form>
-    <div>
+    <form method="POST" action="/filter">
+        <input type="hidden" name="amount" value="2">
         <div class="shadow">
             <div class="orange_rectangle"></div>
             <div class="banner">
                 <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[1] }}</p>
-                <p style="font-size: .75rem">Medium Stock Products</p>
+                <button>Medium Stock Products</button>
             </div>
         </div>
-    </div>
+    </form>
     <div>
-
-        <div class="shadow">
-            <div class="green_rectangle"></div>
-            <div class="banner">
-                <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[2] }}</p>
-                <p style="font-size: .75rem">Well Stocked Products</p>
+        <form method="POST" action="/filter">
+            <input type="hidden" name="amount" value="3">
+            <div class="shadow">
+                <div class="green_rectangle"></div>
+                <div class="banner">
+                    <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[2] }}</p>
+                    <button>Well Stocked Products</button>
+                </div>
             </div>
-        </div>
+        </form>
     </div>
 
 </div>

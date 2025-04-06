@@ -164,7 +164,7 @@ class Product(Model):
                 filtered_ids = []
                 for product in query:
                     ratio = product.inventory / product.ideal_stock
-                    if ratio <= 0.5:
+                    if ratio <= 0.5 and ratio > 0.25:
                         filtered_ids.append(product.id)
                 query = Product.select().where(Product.id.in_(filtered_ids))
             elif amount == '3':
