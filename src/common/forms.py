@@ -41,9 +41,11 @@ class ProductUpdatePurchasedForm(FlaskForm):
 class CategoryAddForm(FlaskForm):
     category_name = StringField('Category Name', validators=[validators.input_required()])
     category_color = ColorField('Category Color', validators=[validators.input_required()])
+    selected_icon = ColorField('Selected Icon', validators=[validators.input_required()])
 
-class CategoryUpdateAllForm(CategoryAddForm):
-    pass
+class CategoryUpdateAllForm(FlaskForm):
+    category_name = StringField('Category Name', validators=[validators.input_required()])
+    category_color = ColorField('Category Color', validators=[validators.input_required()])
 
 
 

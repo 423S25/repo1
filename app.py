@@ -590,7 +590,6 @@ def get_category_add():
 def post_category_add():
     form = CategoryAddForm()
     form_errors = parse_errors(form)
-    selected_icon = request.form.get("selected_icon")
     existing_category = Category.get_category(form.category_name.data)
     if existing_category is not None:
         form_errors.append(f'There already is a category with name "{form.category_name.data}"')
@@ -600,7 +599,7 @@ def post_category_add():
         form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
 
     if len(form_errors) == 0:
-        Category.add_category(form.category_name.data, form.category_color.data, selected_icon)
+        Category.add_category(form.category_name.data, form.category_color.data, form.selected_icon.data)
         return htmx_redirect('/')
     else:
         return htmx_errors(form_errors)
