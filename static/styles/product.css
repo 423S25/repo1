@@ -165,15 +165,15 @@ input#product_name, input#inventory, input#price, input#unit_type, input#ideal_s
     padding: 0.7em 0.7em;
 }
 
-/* input#donation
+input#donation
 {
-	color: #ff1c1c;
+	color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
     box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
 	display: grid;
     transform: scale(1.5);
-} */
+}
 
 .add-category-id
 {
