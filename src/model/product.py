@@ -172,7 +172,7 @@ class Product(Model):
             }
         )
         product: Product = product
-        InventorySnapshot.create_snapshot(product.get_id(), product.inventory, donation)
+        InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
         return product
 
 
@@ -322,32 +322,14 @@ class Product(Model):
             self.lifetime_purchased += amount
         self.inventory += amount
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory, donation)
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
 
     # Sets the current available stock of a product to [`new_stock`] units
     def update_stock(self, new_stock: int):
         self.inventory = new_stock
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory, False) #setting stock, so it is not a donation
-
-    #1. sets the lifetime_donated
-    #2. if adjust_inventory is set, it will add/subtract from stock as well
-    def set_donated(self, new_amount: int, adjust_inventory: bool):
-        old_amount = self.lifetime_donated
-        if adjust_inventory:
-            self.inventory = self.inventory + (new_amount - old_amount)
-        self.lifetime_donated = new_amount
-        self.save()
-
-    #1. sets the lifetime_purchased
-    #2. if adjust_inventory is set, it will add/subtract from stock as well
-    def set_purchased(self, new_amount: int, adjust_inventory: bool):
-        old_amount = self.lifetime_purchased
-        if adjust_inventory:
-            self.inventory = self.inventory + (new_amount - old_amount)
-        self.lifetime_purchased = new_amount
-        self.save()
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
 
     # Increment price
     def increment_price(self, increase: float):
@@ -386,7 +368,6 @@ class Product(Model):
 class InventorySnapshot(Model):
     product_id = IntegerField(null=False)
     inventory = IntegerField(null=False)
-    donation = BooleanField(default=False)
     timestamp = DateTimeField(default=datetime.datetime.now)
     ignored = BooleanField(default=False) # To be used if a value was added in error
 
@@ -420,11 +401,10 @@ class InventorySnapshot(Model):
 
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int, donation: bool) -> 'InventorySnapshot':
+    def create_snapshot(product_id: int, inventory: int) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
             inventory=inventory,
-            donation=donation
         )
         return snapshot
     

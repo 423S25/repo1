@@ -60,6 +60,21 @@ input#submit
     margin-bottom: 10%;
 }
 
+input#submit:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    width: 6em;
+    height: 4em;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin-left: 60%;
+    margin-bottom: 10%;
+}
+
 li
 {
     color: var(--hrdc-theme-teal);
