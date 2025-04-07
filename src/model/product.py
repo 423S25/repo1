@@ -49,6 +49,10 @@ class Category(Model):
     def delete_category(category_id):
         category = Category.get_category(category_id)
         category.delete_instance()
+        #delete products in category
+        products = Product.select().where(Product.category == category_id)
+        for prod in products:
+            Product.delete_by_id(prod.get_id())
 
     def update_category(self, category_name: str, category_color: str):
         self.name = category_name
