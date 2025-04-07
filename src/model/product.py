@@ -59,6 +59,7 @@ class Category(Model):
     def update_category(self, category_name: str, category_color: str):
         self.name = category_name
         self.color = category_color
+        self.image_path = self.change_svg_color(self.image_path, category_color, category_name)
         self.save()
 
     @staticmethod
