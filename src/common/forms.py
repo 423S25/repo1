@@ -84,6 +84,9 @@ def parse_errors(form: FlaskForm) -> list[str]:
             else:
                 errors_list.append(error_msg)
 
+    if 'Field "Selected Icon" is required' in errors_list:
+        errors_list[errors_list.index('Field "Selected Icon" is required')] = "Please Select an Icon"
+
     return errors_list
 
 def htmx_redirect(url: str) -> Response:
