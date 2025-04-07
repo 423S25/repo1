@@ -26,7 +26,8 @@ login_manager.init_app(app)
 
 bcrypt = Bcrypt(app)
 
-app.config['SECRET_KEY'] = os.environ.get("APP_SECRET_KEY", "default")
+app.config['SECRET_KEY'] = secrets.token_urlsafe()
+app.config['SECRET_KEY'] = "asdf"
 app.config["SESSION_PROTECTION"] = "strong"
 UPLOAD_FOLDER = os.path.join("static", "images")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True) #NOTE: maybe remove when presistent storage gets added
