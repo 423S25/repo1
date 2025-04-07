@@ -167,7 +167,11 @@ input#product_name, input#inventory, input#price, input#unit_type, input#ideal_s
 
 input#donation
 {
+<<<<<<< Updated upstream
 	color: #ffffff;
+=======
+	color: #f5f5f5;
+>>>>>>> Stashed changes
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
     box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.14) inset;
@@ -197,7 +201,6 @@ button#add-product-label
     font-size: 14px;
     font-weight: bold;
     font-family: 'Gotham Book';
-    display: grid;
     padding: 1rem 1rem;
 }
 
@@ -238,6 +241,7 @@ button#add-product-label:hover
     grid-gap: 5px;
     justify-content: center;
     grid-column: 1 / -1;
+    margin-right: 10%;
 }
 
 @keyframes fadeIn {
