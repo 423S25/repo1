@@ -54,4 +54,4 @@ jobs:
         echo "DISPLAY=:99" >> "$GITHUB_ENV"
 
     - name: Run Selenium tests
-      run: selenium-side-runner -c "browserName=chrome goog:chromeOptions.args=[\"--headless\"]" automated-testing/CRUD.side
+      run: selenium-side-runner -c "browserName=chrome goog:chromeOptions.args=[\"--headless\"]" automated-testing/e2e/CRUD.side
