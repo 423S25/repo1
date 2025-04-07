@@ -1,8 +1,7 @@
-import os, secrets
+import os
 from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
 
-from src.model.product import Category
-from src.model.product import Product, InventorySnapshot, db
+from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
 from flask_bcrypt import Bcrypt
@@ -37,7 +36,7 @@ def is_mobile():
     return user_agent.is_mobile or user_agent.is_tablet
 
 with db:
-    db.create_tables([Category, Product, InventorySnapshot])
+    db.create_tables([Category, Product, InventorySnapshot, StockUnit])
 
 with user_db:
     user_db.create_tables([User])

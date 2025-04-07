@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 db = SqliteDatabase('inventory.db')
 
 
+
 class Category(Model):
     ALL_PRODUCTS_PLACEHOLDER = {"name": "All Products", "color": "black", "image_path": None, "id": 0}
     
@@ -55,6 +56,53 @@ class Category(Model):
         self.color = category_color
         self.save()
 
+
+    class Meta:
+        database = db
+
+
+
+class StockUnit(Model):
+    product_id = IntegerField(null=False)
+    name = CharField(null=False)
+    price = FloatField(null=False)
+    multiplier = IntegerField(null=False)
+    
+    @staticmethod
+    def add_stock_unit(product_id: int, name: str, price: float, multiplier: int) -> 'StockUnit':
+        category = Category.create(
+            name=name,
+            price=price,
+            product_id=product_id,
+            multiplier=multiplier
+        )
+        return category
+
+    @staticmethod
+    def get_stock_unit(name_or_id: str | int) -> Optional['StockUnit']:
+        try:
+            if type(name_or_id) is str:
+                return Category.get(Category.name == name_or_id)
+            else:
+                return Category.get_by_id(name_or_id)
+        except DoesNotExist:
+            return None
+        
+    @staticmethod
+    def all_of_product(product_id: int) -> list['StockUnit']:
+        return list(StockUnit.select().where(
+            StockUnit.product_id==product_id
+        ))
+    
+    @staticmethod
+    def delete_stock_units_for_product(product_id: int):
+        StockUnit.delete().where(StockUnit.product_id == product_id).execute()
+       
+    @staticmethod
+    def delete_stock_unit(name_or_id: str | int):
+        stock_unit = StockUnit.get_stock_unit(name_or_id)
+        if stock_unit is not None:
+            stock_unit.delete_instance()
 
     class Meta:
         database = db
@@ -228,6 +276,7 @@ class Product(Model):
         if product is not None:
             product.delete_instance()
             InventorySnapshot.delete_snapshots_for_product(product_id)
+            StockUnit.delete_stock_units_for_product(product_id)
 
     
     @classmethod
