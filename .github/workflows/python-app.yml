@@ -49,6 +49,7 @@ jobs:
 
     - name: Setup Fluxbox and Xvfb #see https://github.com/SeleniumHQ/selenium/issues/15327
       run: |
+        sudo apt-get update
         sudo apt-get -y install fluxbox
         Xvfb :99 &
         fluxbox -display :99 &
