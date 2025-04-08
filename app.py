@@ -84,6 +84,7 @@ def get_index():
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order
+    page_number = request.args.get('page', default=1, type=int)
     category_id = request.args.get('category_id', default=0, type=int)  # Default to 0 if no category is selected
     if category_id == 0:
         products = Product.urgency_rank()
@@ -91,14 +92,21 @@ def get_index():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    page_flag = False
+    if (page_number*10) < len(products):
+        page_flag = True
+    products_paginated = products[:(page_number*10)]
     return render_template(
         "index.html",
-        product_list=products,
+        product_list=products_paginated,
         user=current_user,
         categories=categories,
         current_category=category_id,
         levels=levels,
-        flag=False
+        flag=False,
+        page_flag = page_flag,
+        page=page_number
+
     )
 
 # The reports page for an overview of all products
@@ -148,6 +156,7 @@ def get_search():
 @login_required
 def post_filter():
     category_id = int(request.form.get('category_id'))
+    page_number = request.args.get('page', default=1, type=int)
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order using where for category filter
@@ -157,7 +166,12 @@ def post_filter():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
+    return render_template("index.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id,
+                           levels=levels)
 
 # The individual page for each product
 @app.get("/<int:product_id>")
