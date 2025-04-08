@@ -4,7 +4,14 @@
         <form hx-post="/product_update_inventory_mobile/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
             {{ form.csrf_token }}
             <input type="hidden" name="_method" value="PATCH">
-            <input type="number" id="stock" name="stock" min="0" placeholder="New stock in {{ product.unit_type }}" required>
+            {% for stock_unit in stock_unit_list %}
+                <label for="stock_count_{{ loop.index }}">{{ stock_unit.name }} (&times;{{ stock_unit.multiplier }})</label>
+                <input type="number" min="0" name="stock_count_{{ loop.index }}" id="stock_count_{{ loop.index }}"/>
+                <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
+                <input type="hidden" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
+                <input type="hidden" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/>
+                <input type="hidden" name="stock_price_{{ loop.index }}" value="{{ stock_unit.price }}"/>
+            {% endfor %}
             <button type="submit">Update</button>
         </form>
         <div id="modal-errors"></div>

@@ -435,22 +435,29 @@ def post_product_add_inventory(product_id: int):
 @login_required
 def get_product_update_inventory_mobile(product_id: int):
     product = Product.get_product(product_id)
-    return render_template("modals/product_update_stock_mobile.html", product=product, form=ProductUpdateInventoryForm())
+    return render_template(
+        "modals/product_update_stock_mobile.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=StockUnit.all_of_product(product_id)
+    )
 
 # Update inventory only for mobile
 @app.post("/product_update_inventory_mobile/<int:product_id>")
 @login_required
 def post_product_update_inventory_mobile(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        form = ProductUpdateInventoryForm()
+        form = FlaskForm()
         form_errors = parse_errors(form)
+
+        stock_unit_submissions = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)
         if product is None:
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data)
+            product.update_stock(stock_unit_submissions)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/mobile")
