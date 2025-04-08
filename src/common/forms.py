@@ -22,7 +22,6 @@ class ProductAddForm(ProductUpdateAllForm):
 # also for mobile
 class ProductUpdateInventoryForm(FlaskForm):
     _method = StringField('_method', validators=[validators.AnyOf(['PATCH', 'patch'])])
-    stock = IntegerField('Stock', validators=[validators.NumberRange(min=0)])
     submit = SubmitField('Submit')
 
 class ProductAddInventoryForm(ProductUpdateInventoryForm):
@@ -97,10 +96,10 @@ def htmx_errors(errors: list[str]) -> Response:
 
 # Parses the stock units in the form, appending any errors to the list and returning the successfully parsed units
 def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bool) -> list[StockUnitSubmission]:
+    assert not isinstance(form, FlaskForm), 'form should be from `request.form`, not the form class itself'
     index = 1
     stock_units: list[StockUnitSubmission] = []
     while f'stock_name_{index}' in form and f'stock_multiplier_{index}' in form and f'stock_price_{index}' in form:
-        print('pulling stock unit', index)
         name = form[f'stock_name_{index}']
         if name is None or name == '':
             continue

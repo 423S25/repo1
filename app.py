@@ -1,18 +1,18 @@
 import os
-from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
-
-from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
-from src.model.user import User, user_db
-from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
-from flask_bcrypt import Bcrypt
-
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
-from src.common.email_job import EmailJob
-
 from user_agents import parse
 import io
 from PIL import Image
 from functools import wraps
+
+from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
+from flask_wtf import FlaskForm
+from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
+from flask_bcrypt import Bcrypt
+
+from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
+from src.model.user import User, user_db
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -268,7 +268,6 @@ def get_product_add():
         form=form,
         categories=categories,
         stock_unit_list=[StockUnit.PLACEHOLDER],
-        stock_unit_selection=False,
         stock_unit_count=True
     )
 
@@ -349,27 +348,42 @@ def post_product_upload_image(product_id: int):
 
 # Form to update stock only for a given product in product inventory_history.html
 @app.get("/product_update_inventory/<int:product_id>")
-@login_required
+@admin_required
 def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
-    return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
+    stock_units = StockUnit.all_of_product(product_id)
+    stock_unit_ids = list(map(lambda x: x.get_id(), stock_units))
+    stock_unit_counts = [0] * len(stock_units)
+    for unit_id, count in product.get_inventory_breakdown():
+        try:
+            index = stock_unit_ids.index(unit_id)
+            stock_unit_counts[index] = count
+        except:
+            pass
+    return render_template(
+        "modals/product_update_stock.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=stock_units,
+        stock_unit_count_list=stock_unit_counts
+    )
 
 # Update inventory only for desktop
 @app.post("/product_update_inventory/<int:product_id>")
-@login_required
+@admin_required
 def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        form = ProductUpdateInventoryForm()
-        form_errors = parse_errors(form)
+        form_errors = []
+        stock_units = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)
         if product is None:
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data)
+            product.update_stock(stock_units)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -380,27 +394,35 @@ def post_product_update_inventory(product_id: int):
 
 # Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
 @app.get("/product_add_inventory/<int:product_id>")
-@login_required
+@admin_required
 def get_product_add_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
-    return render_template("modals/product_add_stock.html", product=product, form=ProductAddInventoryForm())
+    stock_units = StockUnit.all_of_product(product_id)
+    return render_template(
+        "modals/product_add_stock.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=stock_units,
+        stock_unit_count=True
+    )
 
 # Add inventory only for desktop
 @app.post("/product_add_inventory/<int:product_id>")
-@login_required
+@admin_required
 def post_product_add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductAddInventoryForm()
         form_errors = parse_errors(form)
+        stock_unit_submissions = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)
         if product is None:
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.add_items(form.stock.data, form.donation.data)
+            product.add_stock(stock_unit_submissions, form.donation.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -408,12 +430,6 @@ def post_product_add_inventory(product_id: int):
             return htmx_errors(form_errors)
     else:
         return abort(405, description="Method Not Allowed")
-
-@app.get("/product_update_inventory_options/<int:product_id>")
-@login_required
-def get_product_update_inventory_options(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/product_update_stock_options.html", product=product)
 
 @app.get("/product_update_inventory_mobile/<int:product_id>")
 @login_required
@@ -457,7 +473,6 @@ def get_product_update_all(product_id: int):
         product=product,
         form=ProductUpdateAllForm(),
         stock_unit_list=stock_units,
-        stock_unit_selection=False,
         stock_unit_count=False
     )
 
@@ -477,7 +492,6 @@ def post_product_update_all(product_id: int):
             form_errors.append(f'Product already exists with name "{form.product_name.data}"')
 
         stock_units = parse_stock_units(request.form, form_errors, False)
-        print('UNITS', stock_units)
         
         if len(form_errors) == 0:
             product_name = form.product_name.data

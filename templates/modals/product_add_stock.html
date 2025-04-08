@@ -4,13 +4,12 @@
 		<button class="product-danger-button" _="on click trigger closeModal">
 			<img alt="Close" src="icons/close.svg" class="close-icon" />
 		</button>
-		<p class="add-label">ADD ITEMS</p>
+		<p class="add-label">ADD STOCK</p>
 		<form hx-post="product_add_inventory/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
 			{{ form.csrf_token }}
 			<input type="hidden" name="_method" value="PATCH">
 
-			<label for="stock">Add Items:</label>
-			<input type="number" id="stock" name="stock" min="0" required>
+			{% include "modals/stock_unit_add_update.html" %}
             <br>
 			<label for="donation">Donation?:</label>
             <input type="checkbox" id="donation" name="donation">

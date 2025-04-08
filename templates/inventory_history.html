@@ -35,8 +35,11 @@
     </div>
 
     <div class="column">
-    <button class="product-button" hx-get="/product_update_inventory_options/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-        ADJUST STOCK
+    <button class="product-button" hx-get="/product_update_inventory/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+        SET STOCK
+    </button>
+    <button class="product-button" hx-get="/product_add_inventory/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+        ADD STOCK
     </button>
 
 
@@ -58,18 +61,11 @@
     <div class ="info_container">
     <table id = "info_table">
         <tr>
-            <td class="title-column">Price per Unit</td>
-            <td class="dash-column">
-                <hr class="line">
-            </td>
-            <td class="value-column">${{product.price }}</td>
-        </tr>
-        <tr>
             <td class="title-column">Perferred Quantity</td>
             <td class="dash-column">
                 <hr class="line">
             </td>
-            <td class="value-column">{{product.ideal_stock }}</td>
+            <td class="value-column">{{ product.ideal_stock }}</td>
         </tr>
         <tr>
             <td class="title-column">Minimum Quantity</td>

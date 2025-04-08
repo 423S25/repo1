@@ -16,19 +16,27 @@
         }
 
         const textFields = newRow.querySelectorAll('input[type="text"]');
-        textFields[0].setAttribute('name', `stock_name_${newId}`);
-        textFields[0].removeAttribute('value');
-        textFields[0].value = '';
-        textFields[1].setAttribute('name', `stock_multiplier_${newId}`);
-        textFields[1].removeAttribute('value');
-        textFields[1].value = '';
-        textFields[2].setAttribute('name', `stock_price_${newId}`);
-        textFields[2].removeAttribute('value');
-        textFields[2].value = '';
-        if (textFields[3] != undefined) {
-            textFields[3].setAttribute('name', `stock_price_${newId}`);
-            textFields[3].setAttribute('value', '0');
-            textFields[3].value = '';
+
+        const nameInput = newRow.querySelector('input[data-field="name"]');
+        nameInput.setAttribute('name', `stock_name_${newId}`);
+        nameInput.removeAttribute('value');
+        nameInput.value = '';
+
+        const multiplierInput = newRow.querySelector('input[data-field="multiplier"]');
+        multiplierInput.setAttribute('name', `stock_multiplier_${newId}`);
+        multiplierInput.removeAttribute('value');
+        multiplierInput.value = '';
+
+        const priceInput = newRow.querySelector('input[data-field="price"]');
+        priceInput.setAttribute('name', `stock_price_${newId}`);
+        priceInput.removeAttribute('value');
+        priceInput.value = '';
+
+        const countInput = newRow.querySelector('input[data-field="count"]');
+        if (countInput != null) {
+            countInput.setAttribute('name', `stock_count_${newId}`);
+            countInput.setAttribute('value', '0');
+            countInput.value = '';
         }
 
         newRow.querySelector('input[type="hidden"]')?.remove();
@@ -39,36 +47,32 @@
 
 <table style="grid-column: 1 / -1;"><tbody>
     <tr>
-        {% if stock_unit_selection %}
-            <th></th>
-        {% endif %}
         <th>Unit Name</th>
         <th>Count/Unit</th>
         <th>Price/Unit</th>
-        {% if stock_unit_count %}
+        {% if stock_unit_count or stock_unit_count_list %}
             <th>Count in Units</th>
         {% endif %}
     </tr>
     {% for stock_unit in stock_unit_list %}
         <tr data-index="{{ loop.index }}">
-            {% if stock_unit_selection %}
-                <td><input type="radio" name="stock_unit" value="{{ loop.index }}"/></td>
-            {% endif %}
             <td>
-                <input type="text" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
+                <input type="text" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
                 {% if stock_unit.id is not none %}
                     <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
                 {% endif %}
             </td>
-            <td><input type="text" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
-            <td><input type="text" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
-            {% if stock_unit_count %}
-                <td><input type="number" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+            <td><input type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
+            <td><input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
+            {% if stock_unit_count_list %}
+                <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+            {% elif stock_unit_count %}
+                <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
             {% endif %}
         </tr>
     {% endfor %}
     <tr>
-        <td colspan="{{ 3 + (1 if stock_unit_selection else 0) + (1 if stock_unit_count else 0) }}">
+        <td colspan="{{ 3 + (1 if stock_unit_count else 0) }}">
             <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
         </td>
     </tr>
