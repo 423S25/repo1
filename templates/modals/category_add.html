@@ -11,7 +11,14 @@
 			<input class="category-name-input" type="text" id="category_name" name="category_name" required>
 
 			<input class="category-color-input" type="color" id="category_color" name="category_color" required>
-
+			<div class="icon-container">
+			{% for icon in icons %}
+				<label class="image-radio">
+					<input type="radio" name="selected_icon" value="{{ icon }}">
+					<img src="{{ icon }}" alt="Icon">
+				</label>
+			{% endfor %}
+			</div>
 
 			<button class="category-submit-button" type="submit">Submit</button>
 		</form>
