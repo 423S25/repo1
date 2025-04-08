@@ -479,7 +479,8 @@ class StockUnit(Model):
         collector = []
         for unit in submitted_units:
             if unit.id is None: #create new stock unit
-                collector.append(StockUnit.add_stock_unit(product_id, unit.name, unit.price, unit.multiplier))
+                stock_unit = StockUnit.add_stock_unit(product_id, unit.name, unit.price, unit.multiplier)
+                collector.append(stock_unit)
             else:
                 live_unit = StockUnit.get_stock_unit(unit.id)
                 live_unit.name = unit.name
@@ -487,7 +488,7 @@ class StockUnit(Model):
                 live_unit.multiplier = unit.multiplier
                 live_unit.save()
                 collector.append(live_unit)
-            return collector
+        return collector
 
     class Meta:
         database = db
