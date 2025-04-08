@@ -1,6 +1,6 @@
 from peewee import *
 import datetime
-from typing import Optional
+from typing import Optional, NamedTuple
 import io
 import csv
 from dateutil.relativedelta import relativedelta
@@ -41,7 +41,7 @@ class Category(Model):
                 return Category.get_by_id(name_or_id)
         except DoesNotExist:
             return None
-        
+
     @classmethod
     def get_by_color(cls, hex_code: str) -> Optional['Category']:
         return cls.get_or_none(cls.color == hex_code)
@@ -62,66 +62,12 @@ class Category(Model):
 
 
 
-class StockUnit(Model):
-    product_id = IntegerField(null=False)
-    name = CharField(null=False)
-    price = FloatField(null=False)
-    multiplier = IntegerField(null=False)
-
-    @staticmethod
-    def get_placeholder() -> dict:
-        return {
-            "product_id": None,
-            "id": None,
-            "name": "Individual",
-            "price": None,
-            "multiplier": 1
-        }
-    
-    @staticmethod
-    def add_stock_unit(product_id: int, name: str, price: float, multiplier: int) -> 'StockUnit':
-        category = Category.create(
-            name=name,
-            price=price,
-            product_id=product_id,
-            multiplier=multiplier
-        )
-        return category
-
-    @staticmethod
-    def get_stock_unit(name_or_id: str | int) -> Optional['StockUnit']:
-        try:
-            if type(name_or_id) is str:
-                return Category.get(Category.name == name_or_id)
-            else:
-                return Category.get_by_id(name_or_id)
-        except DoesNotExist:
-            return None
-        
-    @staticmethod
-    def all_of_product(product_id: int) -> list['StockUnit']:
-        return list(StockUnit.select().where(
-            StockUnit.product_id==product_id
-        ))
-    
-    @staticmethod
-    def get_from_product_and_unit_name(product_id: int, unit_name: str) -> Optional['StockUnit']:
-        return list(StockUnit.select().where(
-            StockUnit.product_id==product_id & StockUnit.name == unit_name
-        ))
-
-    @staticmethod
-    def delete_stock_units_for_product(product_id: int):
-        StockUnit.delete().where(StockUnit.product_id == product_id).execute()
-       
-    @staticmethod
-    def delete_stock_unit(name_or_id: str | int):
-        stock_unit = StockUnit.get_stock_unit(name_or_id)
-        if stock_unit is not None:
-            stock_unit.delete_instance()
-
-    class Meta:
-        database = db
+# To hold data from the form before being added to the db
+class StockUnitSubmission(NamedTuple):
+    name: str
+    multiplier: int
+    price: float
+    count: int
 
 
 
@@ -129,8 +75,6 @@ class Product(Model):
     product_name = CharField(unique=True)
     category = ForeignKeyField(Category, backref='products')
     inventory = IntegerField(default=0)
-    price = DecimalField(decimal_places=2, auto_round=True)
-    unit_type = CharField(null=True)
     ideal_stock = IntegerField()
     image_path = CharField(null=True)
     last_updated = DateTimeField(default=datetime.datetime.now)
@@ -220,21 +164,26 @@ class Product(Model):
         return list(query)
 
     @staticmethod
-    def add_product(name: str, stock: int, category: int, price: float, unit_type: str, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
+    def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
+        individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
+
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
-            lifetime_donated = stock if donation else 0,
-            lifetime_purchased = stock if not donation else 0,
+            lifetime_donated=individual_count if donation else 0,
+            lifetime_purchased=individual_count if not donation else 0,
             defaults={
-                'inventory': stock,
-                'price': price,
-                'unit_type': unit_type,
+                'inventory': individual_count,
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
                 'days_left': days_left
             }
         )
+
+        product: Product = product
+        StockUnit.commit_stock_unit_submissions(product.get_id(), stock)
+        InventorySnapshot.create_snapshot(product.get_id(), individual_count, total_price)
+
         return product
 
 
@@ -428,10 +377,94 @@ class Product(Model):
 
 
 
+class StockUnit(Model):
+    product_id = ForeignKeyField(Product, backref='stockunits')
+    name = CharField(null=False)
+    price = DecimalField(decimal_places=2, auto_round=True)
+    multiplier = IntegerField(null=False)
+
+    @staticmethod
+    def get_placeholder() -> dict:
+        return {
+            "product_id": None,
+            "id": None,
+            "name": "Individual",
+            "price": None,
+            "multiplier": 1
+        }
+    
+    @staticmethod
+    def add_stock_unit(product_id: int, name: str, price: float, multiplier: int) -> 'StockUnit':
+        category = StockUnit.create(
+            name=name,
+            price=price,
+            product_id=product_id,
+            multiplier=multiplier
+        )
+        return category
+
+    @staticmethod
+    def get_stock_unit(name_or_id: str | int) -> Optional['StockUnit']:
+        try:
+            if type(name_or_id) is str:
+                return Category.get(Category.name == name_or_id)
+            else:
+                return Category.get_by_id(name_or_id)
+        except DoesNotExist:
+            return None
+        
+    @staticmethod
+    def all_of_product(product_id: int) -> list['StockUnit']:
+        return list(StockUnit.select().where(
+            StockUnit.product_id==product_id
+        ))
+    
+    @staticmethod
+    def get_from_product_and_unit_name(product_id: int, unit_name: str) -> Optional['StockUnit']:
+        matching = list(StockUnit.select().where(
+            StockUnit.product_id==product_id & StockUnit.name == unit_name
+        ))
+        return matching[0] if len(matching) == 1 else None
+
+    @staticmethod
+    def delete_stock_units_for_product(product_id: int):
+        StockUnit.delete().where(StockUnit.product_id == product_id).execute()
+       
+    @staticmethod
+    def delete_stock_unit(name_or_id: str | int):
+        stock_unit = StockUnit.get_stock_unit(name_or_id)
+        if stock_unit is not None:
+            stock_unit.delete_instance()
+
+    # Tallies the total individual count and current price
+    def tally_stock_unit_submissions(submitted_units: list[StockUnitSubmission]) -> tuple[int, float]:
+        individual_count = 0
+        total_cost = 0
+        for unit in submitted_units:
+            individual_count += unit.count * unit.multiplier
+            total_cost += unit.count * unit.price
+        return (individual_count, round(total_cost, 2))
+        
+    # Creates/updates the stock units
+    def commit_stock_unit_submissions(product_id: int, submitted_units: list[StockUnitSubmission]):
+        for unit in submitted_units:
+            live_unit = StockUnit.get_from_product_and_unit_name(product_id, unit.name)
+            if live_unit is None:
+                live_unit = StockUnit.add_stock_unit(product_id, unit.name, unit.price, unit.multiplier)
+            else:
+                live_unit.price = unit.price
+                live_unit.multiplier = unit.multiplier
+                live_unit.save()
+
+    class Meta:
+        database = db
+
+
+
 class InventorySnapshot(Model):
     product_id = IntegerField(null=False)
     individual_inventory = IntegerField(null=False)
-    inventory_by_stock_unit = TextField(null=False) # Json in [(stock_unit_id, count_in_unit)]
+    value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
     ignored = BooleanField(default=False) # To be used if a value was added in error
 
@@ -465,10 +498,11 @@ class InventorySnapshot(Model):
 
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int) -> 'InventorySnapshot':
+    def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
-            inventory=inventory,
+            individual_inventory=inventory,
+            value_at_time=price
         )
         return snapshot
     

@@ -279,10 +279,6 @@ def post_product_add():
     form.validate()
     form_errors: list[str] = parse_errors(form)
 
-    maybe_price_float = clean_price_to_float(form.price.data) #allow '$' in price field
-    if maybe_price_float is None:
-        form_errors.append('Price could not be converted to number')
-
     if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
         form_errors.append(f'No category with id {form.category_id.data}')
 
@@ -291,20 +287,16 @@ def post_product_add():
         form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
 
     stock_units = parse_stock_units(request.form, form_errors)
-    print(stock_units)
 
     if len(form_errors) == 0: #add to database
-        product = Product.add_product(
+        Product.add_product(
             form.product_name.data,
-            form.inventory.data,
+            stock_units,
             form.category_id.data,
-            maybe_price_float,
-            form.unit_type.data,
             form.ideal_stock.data,
             form.donation.data,
             None
         )
-        InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
         Product.fill_days_left()
         EmailJob.process_emails(User.get_by_username('admin').email)
         return htmx_redirect('/')

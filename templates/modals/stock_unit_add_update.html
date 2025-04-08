@@ -22,6 +22,8 @@
         textFields[1].removeAttribute('value');
         textFields[2].setAttribute('name', `stock_price_${newId}`);
         textFields[2].removeAttribute('value');
+        textFields[3].setAttribute('name', `stock_price_${newId}`);
+        textFields[3].setAttribute('value', '0');
 
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
@@ -32,9 +34,10 @@
         {% if stock_unit_selection %}
             <th></th>
         {% endif %}
-        <th>Name</th>
-        <th>Count Per</th>
-        <th>Price</th>
+        <th>Unit Name</th>
+        <th>Count/Unit</th>
+        <th>Price/Unit</th>
+        <th>Count in Units</th>
     </tr>
     {% for stock_unit in stock_unit_list %}
         <tr data-index="{{ loop.index }}">
@@ -44,10 +47,11 @@
             <td><input type="text" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/></td>
             <td><input type="text" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
             <td><input type="text" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
+            <td><input type="number" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
         </tr>
     {% endfor %}
     <tr>
-        <td colspan="{{ 4 if stock_unit_selection else 3 }}">
+        <td colspan="{{ 5 if stock_unit_selection else 4 }}">
             <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
         </td>
     </tr>

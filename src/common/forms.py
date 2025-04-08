@@ -1,6 +1,7 @@
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField
 from flask_wtf import FlaskForm
 from flask import Response, make_response
+from ..model.product import StockUnitSubmission
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[validators.input_required()])
@@ -14,8 +15,10 @@ class ProductUpdateAllForm(FlaskForm):
     unit_type = StringField('Unit Type', validators=[validators.input_required()])
     submit = SubmitField('Submit')
 
-class ProductAddForm(ProductUpdateAllForm):
-    inventory = IntegerField('Inventory', validators=[validators.NumberRange(min=0)])
+class ProductAddForm(FlaskForm):
+    product_name = StringField('Product Name', validators=[validators.input_required()])
+    ideal_stock = IntegerField('Ideal Stock', validators=[validators.NumberRange(min=1)])
+    submit = SubmitField('Submit')
     donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
     #also stock unit fields
@@ -97,7 +100,7 @@ def htmx_errors(errors: list[str]) -> Response:
     return response
 
 # Parses the stock units in the form, appending any errors to the list and returns the successfully parsed units
-def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[tuple[str, int, float]]:
+def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[StockUnitSubmission]:
     index = 1
     stock_units: list[tuple[str, int, float]] = []
     while f'stock_name_{index}' in form and f'stock_multiplier_{index}' in form and f'stock_price_{index}' in form:
@@ -122,8 +125,18 @@ def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[tuple[str
             errors.append(f'Price for stock unit "{name}" is not a valid price')
             okay = False
 
+        if f'stock_count_{index}' in form:
+            try:
+                count = int(form[f'stock_count_{index}'])
+            except:
+                errors.append(f'Count for stock unit "{name}" is not an integer')
+                okay = False
+        else:
+            errors.append(f'Count for stock unit "{name}" is missing')
+            okay = False
+
         if okay:
-            stock_units.append( (name, multiplier, price) )
+            stock_units.append(StockUnitSubmission(name, multiplier, price, count))
 
         index += 1
 
