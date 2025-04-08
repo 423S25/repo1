@@ -36,10 +36,6 @@
     width: auto;
 }
 
-.info_container tr{
-    display: flex;
-
-}
 .dash-column{
     flex: 1;
     text-align: center;

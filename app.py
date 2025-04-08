@@ -171,6 +171,7 @@ def post_product_page(product_id: int):
         return abort(404, description=f"Could not find product {product_id}")
 
     snapshots = InventorySnapshot.all_of_product(product_id)
+    stock_units_with_counts = StockUnit.all_of_product_with_count(product)
     usage = product.get_usage_per_day()
     days_until_out = product.get_days_until_out(usage)
     return render_template(
@@ -181,7 +182,8 @@ def post_product_page(product_id: int):
         daily_usage=round(usage, 1) if usage is not None else None,
         days_until_out=round(days_until_out) if days_until_out is not None else None,
         user=current_user,
-        filepath = product.image_path
+        stock_units_with_counts=stock_units_with_counts,
+        filepath=product.image_path
     )
 
 ###

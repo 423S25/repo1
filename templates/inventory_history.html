@@ -2,91 +2,109 @@
 {% from "macros.html" import inventory_item_bar %}
 {% block content %}
 
-    {% include 'nav.html' %}
+{% include 'nav.html' %}
 
-    <div class="content_container">
+<div class="content_container">
     <div class="top_container">
-    <div class="column">
-    <div class="image-box">
-        <label for="fileInput">
-    {% if not filepath %}
-        <img src="icons/image-camera.svg" class="upload-trigger" />
-    {% else %}
-        <img src="images/{{ filepath }}" />
-    {% endif %}
-        </label>
-    </div>
-    <form action="/product_upload_image/{{ product.get_id() }}" hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data" hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder" hx-swap="innerHTML">
-        <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
-    </form>
-    <div id="image-message-placeholder"></div>
-    <script>
-        document.getElementById('fileInput').addEventListener('change', function(ev) {
-            ev.preventDefault();
-            htmx.trigger(this.form, 'submit');
-        });
-    </script>
-    </div>
-    <div class="column">
-        <h1>{{ product.product_name }}</h1>
-        <h2>{{ product.category.name }}</h2>
-        <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
-        {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
-    </div>
+        <div class="column">
+            <div class="image-box">
+                <label for="fileInput">
+                    {% if not filepath %}
+                    <img src="icons/image-camera.svg" class="upload-trigger" />
+                    {% else %}
+                    <img src="images/{{ filepath }}" />
+                    {% endif %}
+                </label>
+            </div>
+            <form action="/product_upload_image/{{ product.get_id() }}"
+                hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
+                hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder"
+                hx-swap="innerHTML">
+                <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
+            </form>
+            <div id="image-message-placeholder"></div>
+            <script>
+                document.getElementById('fileInput').addEventListener('change', function (ev) {
+                    ev.preventDefault();
+                    htmx.trigger(this.form, 'submit');
+                });
+            </script>
+        </div>
+        <div class="column">
+            <h1>{{ product.product_name }}</h1>
+            <h2>{{ product.category.name }}</h2>
+            <h1>{{ product.inventory }} / {{ product.ideal_stock }}</h1>
+            {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
+        </div>
 
-    <div class="column">
-    <button class="product-button" hx-get="/product_update_inventory/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-        SET STOCK
-    </button>
-    <button class="product-button" hx-get="/product_add_inventory/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-        ADD STOCK
-    </button>
+        <div class="column">
+            <button class="product-button" hx-get="/product_update_inventory/{{ product.id }}" hx-target="body"
+                hx-swap="beforeend">
+                SET STOCK
+            </button>
+            <button class="product-button" hx-get="/product_add_inventory/{{ product.id }}" hx-target="body"
+                hx-swap="beforeend">
+                ADD STOCK
+            </button>
 
 
-    <div class="dropdown">
-        <button class="dropdown-btn">
-            <img src="icons/three_dot.svg" width="40" height="30">
-        </button>
+            <div class="dropdown">
+                <button class="dropdown-btn">
+                    <img src="icons/three_dot.svg" width="40" height="30">
+                </button>
 
 
-        <div class="dropdown-content">
-            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
+                <div class="dropdown-content">
+                    <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML"
+                        hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
 
-            <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Info</a>
+                    <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update
+                        Info</a>
 
+                </div>
+            </div>
+
+
+            <div class="info_container">
+                <table id="info_table">
+                    <tr>
+                        <td class="title-column">Perferred Quantity</td>
+                        <td class="dash-column">
+                            <hr class="line">
+                        </td>
+                        <td class="value-column">{{ product.ideal_stock }}</td>
+                    </tr>
+                    <tr>
+                        <td class="title-column">Minimum Quantity</td>
+                        <td class="dash-column">
+                            <hr class="line">
+                        </td>
+                        <td class="value-column">min</td>
+                    </tr>
+                </table>
+                <table>
+                    <tbody>
+                        <tr>
+                            <th>Unit Name</th>
+                            <th>Unit Price</th>
+                            <th>Individual Price</th>
+                            <th>Count in Units</th>
+                        </tr>
+                        {% for unit, count in stock_units_with_counts %}
+                            <tr>
+                                <td>{{ unit.name }}</td>
+                                <td>${{ unit.price }}</td>
+                                <td>${{ (unit.price / unit.multiplier) | round(2) }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+</div>
 
-
-    <div class ="info_container">
-    <table id = "info_table">
-        <tr>
-            <td class="title-column">Perferred Quantity</td>
-            <td class="dash-column">
-                <hr class="line">
-            </td>
-            <td class="value-column">{{ product.ideal_stock }}</td>
-        </tr>
-        <tr>
-            <td class="title-column">Minimum Quantity</td>
-            <td class="dash-column">
-                <hr class="line">
-            </td>
-            <td class="value-column">min</td>
-        </tr>
-    </table>
-        <script>
-
-        </script>
-    </div>
-    </div>
-    </div>
-    </div>
-
-    </div>
-{% block update_stock %}
-{% endblock %}
-{% block update_all %}
-{% endblock %}
+</div>
 </body>
 {% endblock %}

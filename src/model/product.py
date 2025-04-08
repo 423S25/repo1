@@ -465,6 +465,20 @@ class StockUnit(Model):
         ))
     
     @staticmethod
+    def all_of_product_with_count(product_or_id: Product | int) -> list[list['StockUnit', int]]:
+        if type(product_or_id) is int:
+            product = Product.get_product(product_or_id)
+        else:
+            product = product_or_id
+        stock_units = StockUnit.all_of_product(product.get_id())
+        stock_units_with_counts = [[unit, 0] for unit in stock_units]
+        stock_unit_ids = list(map(lambda x: x.get_id(), stock_units))
+        for unit_id, count in product.get_inventory_breakdown():
+            index = stock_unit_ids.index(unit_id)
+            stock_units_with_counts[index][1] += count
+        return stock_units_with_counts
+    
+    @staticmethod
     def delete_stock_units_for_product(product_id: int):
         StockUnit.delete().where(StockUnit.product_id == product_id).execute()
        
