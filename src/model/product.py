@@ -52,7 +52,7 @@ class Category(Model):
         #delete products in category
         products = Product.select().where(Product.category == category_id)
         for prod in products:
-            Product.delete_by_id(prod.get_id())
+            Product.delete_product(prod.get_id())
 
     def update_category(self, category_name: str, category_color: str):
         self.name = category_name
