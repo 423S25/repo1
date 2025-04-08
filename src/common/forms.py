@@ -11,14 +11,10 @@ class LoginForm(FlaskForm):
 class ProductUpdateAllForm(FlaskForm):
     product_name = StringField('Product Name', validators=[validators.input_required()])
     ideal_stock = IntegerField('Ideal Stock', validators=[validators.NumberRange(min=1)])
-    price = StringField('Price', validators=[validators.input_required()]) #string to allow '$' in entry
-    unit_type = StringField('Unit Type', validators=[validators.input_required()])
     submit = SubmitField('Submit')
+    #also stock unit fields
 
-class ProductAddForm(FlaskForm):
-    product_name = StringField('Product Name', validators=[validators.input_required()])
-    ideal_stock = IntegerField('Ideal Stock', validators=[validators.NumberRange(min=1)])
-    submit = SubmitField('Submit')
+class ProductAddForm(ProductUpdateAllForm):
     donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
     #also stock unit fields
@@ -99,11 +95,12 @@ def htmx_errors(errors: list[str]) -> Response:
     response.headers['Content-Type'] = 'text/html'
     return response
 
-# Parses the stock units in the form, appending any errors to the list and returns the successfully parsed units
-def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[StockUnitSubmission]:
+# Parses the stock units in the form, appending any errors to the list and returning the successfully parsed units
+def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bool) -> list[StockUnitSubmission]:
     index = 1
-    stock_units: list[tuple[str, int, float]] = []
+    stock_units: list[StockUnitSubmission] = []
     while f'stock_name_{index}' in form and f'stock_multiplier_{index}' in form and f'stock_price_{index}' in form:
+        print('pulling stock unit', index)
         name = form[f'stock_name_{index}']
         if name is None or name == '':
             continue
@@ -125,18 +122,26 @@ def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[StockUnit
             errors.append(f'Price for stock unit "{name}" is not a valid price')
             okay = False
 
+        count = None
         if f'stock_count_{index}' in form:
             try:
                 count = int(form[f'stock_count_{index}'])
             except:
                 errors.append(f'Count for stock unit "{name}" is not an integer')
                 okay = False
-        else:
+        elif include_count:
             errors.append(f'Count for stock unit "{name}" is missing')
             okay = False
 
+        id = None
+        if f'stock_id_{index}' in form:
+            try:
+                id = int(form[f'stock_id_{index}'])
+            except:
+                pass
+
         if okay:
-            stock_units.append(StockUnitSubmission(name, multiplier, price, count))
+            stock_units.append(StockUnitSubmission(id, name, multiplier, price, count))
 
         index += 1
 

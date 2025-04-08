@@ -64,10 +64,11 @@ class Category(Model):
 
 # To hold data from the form before being added to the db
 class StockUnitSubmission(NamedTuple):
+    id: Optional[int]
     name: str
     multiplier: int
     price: float
-    count: int
+    count: Optional[int]
 
 
 
@@ -310,14 +311,14 @@ class Product(Model):
         self.last_updated = datetime.datetime.now()
         self.save()
 
-    def update_product(self, product_name: str, price: float, unit_type: str, ideal_stock: int):
+    def update_product(self, product_name: str, stock_unit_submissions: list[StockUnitSubmission], ideal_stock: int):
+        individual_count, _ = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
+        StockUnit.commit_stock_unit_submissions(self.get_id(), stock_unit_submissions)
+        
+        self.inventory = individual_count
         self.product_name = product_name
-        self.price = price
-        self.unit_type = unit_type
         self.ideal_stock = ideal_stock
-
         self.last_updated = datetime.datetime.now()
-
         self.save()
 
 
@@ -378,38 +379,35 @@ class Product(Model):
 
 
 class StockUnit(Model):
+    PLACEHOLDER = {
+        "product_id": None,
+        "id": None,
+        "name": "Individual",
+        "price": None,
+        "multiplier": 1
+    }
+    
     product_id = ForeignKeyField(Product, backref='stockunits')
     name = CharField(null=False)
     price = DecimalField(decimal_places=2, auto_round=True)
     multiplier = IntegerField(null=False)
-
-    @staticmethod
-    def get_placeholder() -> dict:
-        return {
-            "product_id": None,
-            "id": None,
-            "name": "Individual",
-            "price": None,
-            "multiplier": 1
-        }
     
     @staticmethod
     def add_stock_unit(product_id: int, name: str, price: float, multiplier: int) -> 'StockUnit':
-        category = StockUnit.create(
+        return StockUnit.create(
             name=name,
             price=price,
             product_id=product_id,
             multiplier=multiplier
         )
-        return category
 
     @staticmethod
     def get_stock_unit(name_or_id: str | int) -> Optional['StockUnit']:
         try:
             if type(name_or_id) is str:
-                return Category.get(Category.name == name_or_id)
+                return StockUnit.get(StockUnit.name == name_or_id)
             else:
-                return Category.get_by_id(name_or_id)
+                return StockUnit.get_by_id(name_or_id)
         except DoesNotExist:
             return None
         
@@ -419,13 +417,6 @@ class StockUnit(Model):
             StockUnit.product_id==product_id
         ))
     
-    @staticmethod
-    def get_from_product_and_unit_name(product_id: int, unit_name: str) -> Optional['StockUnit']:
-        matching = list(StockUnit.select().where(
-            StockUnit.product_id==product_id & StockUnit.name == unit_name
-        ))
-        return matching[0] if len(matching) == 1 else None
-
     @staticmethod
     def delete_stock_units_for_product(product_id: int):
         StockUnit.delete().where(StockUnit.product_id == product_id).execute()
@@ -441,17 +432,18 @@ class StockUnit(Model):
         individual_count = 0
         total_cost = 0
         for unit in submitted_units:
-            individual_count += unit.count * unit.multiplier
-            total_cost += unit.count * unit.price
+            individual_count += (unit.count or 0) * unit.multiplier
+            total_cost += (unit.count or 0) * unit.price
         return (individual_count, round(total_cost, 2))
         
     # Creates/updates the stock units
     def commit_stock_unit_submissions(product_id: int, submitted_units: list[StockUnitSubmission]):
         for unit in submitted_units:
-            live_unit = StockUnit.get_from_product_and_unit_name(product_id, unit.name)
-            if live_unit is None:
+            if unit.id is None: #create new stock unit
                 live_unit = StockUnit.add_stock_unit(product_id, unit.name, unit.price, unit.multiplier)
             else:
+                live_unit = StockUnit.get_stock_unit(unit.id)
+                live_unit.name = unit.name
                 live_unit.price = unit.price
                 live_unit.multiplier = unit.multiplier
                 live_unit.save()

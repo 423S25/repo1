@@ -267,8 +267,9 @@ def get_product_add():
         'modals/product_add.html',
         form=form,
         categories=categories,
-        stock_unit_list=[StockUnit.get_placeholder()],
-        stock_unit_selection=False
+        stock_unit_list=[StockUnit.PLACEHOLDER],
+        stock_unit_selection=False,
+        stock_unit_count=True
     )
 
 # Create a new product
@@ -286,7 +287,7 @@ def post_product_add():
     if CATEGORY_MESSAGE in form_errors:
         form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
 
-    stock_units = parse_stock_units(request.form, form_errors)
+    stock_units = parse_stock_units(request.form, form_errors, True)
 
     if len(form_errors) == 0: #add to database
         Product.add_product(
@@ -450,7 +451,15 @@ def post_product_update_inventory_mobile(product_id: int):
 @admin_required
 def get_product_update_all(product_id: int):
     product = Product.get_product(product_id)
-    return render_template("modals/product_update_all.html", product=product, form=ProductUpdateAllForm())
+    stock_units = StockUnit.all_of_product(product.get_id())
+    return render_template(
+        "modals/product_update_all.html",
+        product=product,
+        form=ProductUpdateAllForm(),
+        stock_unit_list=stock_units,
+        stock_unit_selection=False,
+        stock_unit_count=False
+    )
 
 @app.post("/product_update_all/<int:product_id>")
 @admin_required
@@ -463,20 +472,18 @@ def post_product_update_all(product_id: int):
         if product is None:
             form_errors.append(f'No product found with id {product_id}')
 
-        price = clean_price_to_float(form.price.data)
-        if price is None:
-            form_errors.append(f'Price "{form.price.data}" cound not be converted to a number')
-
         possible_conflicing_product = Product.get_product(form.product_name.data)
         if product.product_name != form.product_name.data and possible_conflicing_product is not None:
             form_errors.append(f'Product already exists with name "{form.product_name.data}"')
+
+        stock_units = parse_stock_units(request.form, form_errors, False)
+        print('UNITS', stock_units)
         
         if len(form_errors) == 0:
             product_name = form.product_name.data
-            unit_type = form.unit_type.data
             ideal_stock = form.ideal_stock.data
 
-            product.update_product(product_name, float(price), unit_type, int(ideal_stock))
+            product.update_product(product_name, stock_units, ideal_stock)
             Product.fill_days_left()
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)

@@ -18,12 +18,20 @@
         const textFields = newRow.querySelectorAll('input[type="text"]');
         textFields[0].setAttribute('name', `stock_name_${newId}`);
         textFields[0].removeAttribute('value');
+        textFields[0].value = '';
         textFields[1].setAttribute('name', `stock_multiplier_${newId}`);
         textFields[1].removeAttribute('value');
+        textFields[1].value = '';
         textFields[2].setAttribute('name', `stock_price_${newId}`);
         textFields[2].removeAttribute('value');
-        textFields[3].setAttribute('name', `stock_price_${newId}`);
-        textFields[3].setAttribute('value', '0');
+        textFields[2].value = '';
+        if (textFields[3] != undefined) {
+            textFields[3].setAttribute('name', `stock_price_${newId}`);
+            textFields[3].setAttribute('value', '0');
+            textFields[3].value = '';
+        }
+
+        newRow.querySelector('input[type="hidden"]')?.remove();
 
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
@@ -37,21 +45,30 @@
         <th>Unit Name</th>
         <th>Count/Unit</th>
         <th>Price/Unit</th>
-        <th>Count in Units</th>
+        {% if stock_unit_count %}
+            <th>Count in Units</th>
+        {% endif %}
     </tr>
     {% for stock_unit in stock_unit_list %}
         <tr data-index="{{ loop.index }}">
             {% if stock_unit_selection %}
                 <td><input type="radio" name="stock_unit" value="{{ loop.index }}"/></td>
             {% endif %}
-            <td><input type="text" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/></td>
+            <td>
+                <input type="text" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
+                {% if stock_unit.id is not none %}
+                    <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
+                {% endif %}
+            </td>
             <td><input type="text" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
             <td><input type="text" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
-            <td><input type="number" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+            {% if stock_unit_count %}
+                <td><input type="number" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+            {% endif %}
         </tr>
     {% endfor %}
     <tr>
-        <td colspan="{{ 5 if stock_unit_selection else 4 }}">
+        <td colspan="{{ 3 + (1 if stock_unit_selection else 0) + (1 if stock_unit_count else 0) }}">
             <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
         </td>
     </tr>
