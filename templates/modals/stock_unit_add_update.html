@@ -1,0 +1,54 @@
+<script>
+    function addNewStockUnit(ev, btn) {
+        ev.preventDefault();
+        const btnRow = btn?.parentElement?.parentElement;
+        const prevRow = btnRow?.previousElementSibling;
+        if (prevRow == null) {
+            return;
+        }
+        const newRow = prevRow.cloneNode(true);
+        const newId = parseInt(prevRow.getAttribute('data-index')) + 1;
+        newRow.setAttribute('data-index', newId);
+
+        const newRadio = newRow.querySelector('input[type="radio"]');
+        if (newRadio != null) {
+            newRadio.setAttribute('value', newId);
+        }
+
+        const textFields = newRow.querySelectorAll('input[type="text"]');
+        textFields[0].setAttribute('name', `stock_name_${newId}`);
+        textFields[0].removeAttribute('value');
+        textFields[1].setAttribute('name', `stock_multiplier_${newId}`);
+        textFields[1].removeAttribute('value');
+        textFields[2].setAttribute('name', `stock_price_${newId}`);
+        textFields[2].removeAttribute('value');
+
+        btnRow.parentElement.insertBefore(newRow, btnRow);
+    }
+</script>
+
+<table style="grid-column: 1 / -1;"><tbody>
+    <tr>
+        {% if stock_unit_selection %}
+            <th></th>
+        {% endif %}
+        <th>Name</th>
+        <th>Count Per</th>
+        <th>Price</th>
+    </tr>
+    {% for stock_unit in stock_unit_list %}
+        <tr data-index="{{ loop.index }}">
+            {% if stock_unit_selection %}
+                <td><input type="radio" name="stock_unit" value="{{ loop.index }}"/></td>
+            {% endif %}
+            <td><input type="text" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/></td>
+            <td><input type="text" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
+            <td><input type="text" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
+        </tr>
+    {% endfor %}
+    <tr>
+        <td colspan="{{ 4 if stock_unit_selection else 3 }}">
+            <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+        </td>
+    </tr>
+</tbody></table>

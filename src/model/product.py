@@ -67,6 +67,16 @@ class StockUnit(Model):
     name = CharField(null=False)
     price = FloatField(null=False)
     multiplier = IntegerField(null=False)
+
+    @staticmethod
+    def get_placeholder() -> dict:
+        return {
+            "product_id": None,
+            "id": None,
+            "name": "Individual",
+            "price": None,
+            "multiplier": 1
+        }
     
     @staticmethod
     def add_stock_unit(product_id: int, name: str, price: float, multiplier: int) -> 'StockUnit':
@@ -94,6 +104,12 @@ class StockUnit(Model):
             StockUnit.product_id==product_id
         ))
     
+    @staticmethod
+    def get_from_product_and_unit_name(product_id: int, unit_name: str) -> Optional['StockUnit']:
+        return list(StockUnit.select().where(
+            StockUnit.product_id==product_id & StockUnit.name == unit_name
+        ))
+
     @staticmethod
     def delete_stock_units_for_product(product_id: int):
         StockUnit.delete().where(StockUnit.product_id == product_id).execute()
@@ -219,8 +235,6 @@ class Product(Model):
                 'days_left': days_left
             }
         )
-        product: Product = product
-        InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
         return product
 
 
@@ -320,8 +334,8 @@ class Product(Model):
             if curr.ignored or prev.ignored:
                 continue
 
-            if prev.inventory > curr.inventory: # There must be a decrease in stock; otherwise, it was a restock
-                inventory_delta = prev.inventory - curr.inventory
+            if prev.individual_inventory > curr.individual_inventory: # There must be a decrease in stock; otherwise, it was a restock
+                inventory_delta = prev.individual_inventory - curr.individual_inventory
                 day_delta = (curr.timestamp - prev.timestamp).total_seconds() / 86_400
                 daily_usages.append(inventory_delta / day_delta)
 
@@ -416,7 +430,8 @@ class Product(Model):
 
 class InventorySnapshot(Model):
     product_id = IntegerField(null=False)
-    inventory = IntegerField(null=False)
+    individual_inventory = IntegerField(null=False)
+    inventory_by_stock_unit = TextField(null=False) # Json in [(stock_unit_id, count_in_unit)]
     timestamp = DateTimeField(default=datetime.datetime.now)
     ignored = BooleanField(default=False) # To be used if a value was added in error
 

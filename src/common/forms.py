@@ -1,6 +1,6 @@
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, BooleanField, validators, ColorField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField
 from flask_wtf import FlaskForm
-from flask import Response, make_response, redirect
+from flask import Response, make_response
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[validators.input_required()])
@@ -18,6 +18,7 @@ class ProductAddForm(ProductUpdateAllForm):
     inventory = IntegerField('Inventory', validators=[validators.NumberRange(min=0)])
     donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
+    #also stock unit fields
 
 # also for mobile
 class ProductUpdateInventoryForm(FlaskForm):
@@ -94,4 +95,37 @@ def htmx_errors(errors: list[str]) -> Response:
     response = make_response(html, 400)
     response.headers['Content-Type'] = 'text/html'
     return response
+
+# Parses the stock units in the form, appending any errors to the list and returns the successfully parsed units
+def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[tuple[str, int, float]]:
+    index = 1
+    stock_units: list[tuple[str, int, float]] = []
+    while f'stock_name_{index}' in form and f'stock_multiplier_{index}' in form and f'stock_price_{index}' in form:
+        name = form[f'stock_name_{index}']
+        if name is None or name == '':
+            continue
+
+        okay = True
+        multiplier = form[f'stock_multiplier_{index}']
+        price = clean_price_to_float(form[f'stock_price_{index}'])
+
+        try:
+            multiplier = int(multiplier)
+        except:
+            errors.append(f'Multiplier for stock unit "{name}" is not an integer')
+            okay = False
+        if multiplier < 1:
+            errors.append(f'Multiplier for stock unit "{name}" must be at least 1')
+            okay = False
+
+        if price is None:
+            errors.append(f'Price for stock unit "{name}" is not a valid price')
+            okay = False
+
+        if okay:
+            stock_units.append( (name, multiplier, price) )
+
+        index += 1
+
+    return stock_units
 

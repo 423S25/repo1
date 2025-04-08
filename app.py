@@ -6,7 +6,7 @@ from src.model.user import User, user_db
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
 from flask_bcrypt import Bcrypt
 
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
 from src.common.email_job import EmailJob
 
 from user_agents import parse
@@ -263,7 +263,13 @@ def post_settings():
 def get_product_add():
     form = ProductAddForm()
     categories = Category.all_alphabetized()
-    return render_template('modals/product_add.html', form=form, categories=categories)
+    return render_template(
+        'modals/product_add.html',
+        form=form,
+        categories=categories,
+        stock_unit_list=[StockUnit.get_placeholder()],
+        stock_unit_selection=False
+    )
 
 # Create a new product
 @app.post('/product_add')
@@ -284,8 +290,12 @@ def post_product_add():
     if CATEGORY_MESSAGE in form_errors:
         form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
 
+    stock_units = parse_stock_units(request.form, form_errors)
+    print(stock_units)
+
     if len(form_errors) == 0: #add to database
-        Product.add_product(request.form.get("product_name"),
+        product = Product.add_product(
+            form.product_name.data,
             form.inventory.data,
             form.category_id.data,
             maybe_price_float,
@@ -294,6 +304,7 @@ def post_product_add():
             form.donation.data,
             None
         )
+        InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
         Product.fill_days_left()
         EmailJob.process_emails(User.get_by_username('admin').email)
         return htmx_redirect('/')
