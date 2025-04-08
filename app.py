@@ -162,7 +162,6 @@ def post_filter():
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
 def post_product_page(product_id: int):
-
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
 

@@ -111,6 +111,7 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
             count_is_missing = not include_count or count_key not in form or form[count_key] == ''
             if not (mult_is_missing and price_is_missing and count_is_missing):
                 errors.append(f'Missing name for stock unit {index}')
+            index += 1
             continue
 
         okay = True
