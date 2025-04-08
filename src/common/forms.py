@@ -41,9 +41,11 @@ class ProductUpdatePurchasedForm(FlaskForm):
 class CategoryAddForm(FlaskForm):
     category_name = StringField('Category Name', validators=[validators.input_required()])
     category_color = ColorField('Category Color', validators=[validators.input_required()])
+    selected_icon = ColorField('Selected Icon', validators=[validators.input_required()])
 
-class CategoryUpdateAllForm(CategoryAddForm):
-    pass
+class CategoryUpdateAllForm(FlaskForm):
+    category_name = StringField('Category Name', validators=[validators.input_required()])
+    category_color = ColorField('Category Color', validators=[validators.input_required()])
 
 
 
@@ -81,6 +83,9 @@ def parse_errors(form: FlaskForm) -> list[str]:
                     errors_list.append(error_msg)
             else:
                 errors_list.append(error_msg)
+
+    if 'Field "Selected Icon" is required' in errors_list:
+        errors_list[errors_list.index('Field "Selected Icon" is required')] = "Please Select an Icon"
 
     return errors_list
 
