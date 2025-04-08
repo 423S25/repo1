@@ -268,11 +268,20 @@ class Product(Model):
     ########### INSTANCE METHODS ###########
     ########################################
 
+    def time_since_last_updated(self) -> relativedelta:
+        return relativedelta(datetime.datetime.now(), self.last_updated)
+    
+    def been_over_one_week_since_updated(self) -> relativedelta:
+        delta = self.time_since_last_updated()
+        return delta.weeks >= 1 or delta.months >= 1 or delta.years >= 1
+
     # Returns a human string for how long it has been since the product was updated (e.g., "2 days" or "1 week")
     def human_last_updated(self) -> str:
-        delta = relativedelta(datetime.datetime.now(), self.last_updated)
-        if delta.weeks > 0:
-            return f"{delta.weeks} {'week' if delta.weeks == 1 else 'weeks'}"
+        delta = self.time_since_last_updated()
+        if delta.months > 1: #allow things like "6 weeks"
+            return f"{delta.months} months"
+        if delta.weeks > 1: #allow things like "10 days"
+            return f"{delta.weeks} weeks"
         elif delta.days > 0:
             return f"{delta.days} {'day' if delta.days == 1 else 'days'}"
         elif delta.hours > 0:

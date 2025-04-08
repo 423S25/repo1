@@ -8,7 +8,7 @@
 .mobile-product-row > * {
     position: absolute;
 }
-.mobile-product-row > img {
+.mobile-product-row-image {
     height: 40px;
     width: 40px;
     padding: 5px;
@@ -22,6 +22,19 @@
     font-size: 1.2em;
     top: 12px;
     left: 70px;
+    white-space: nowrap;
+    max-width: calc(100% - 80px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mobile-product-row-name.short {
+    max-width: calc(100% - 117px);
+}
+.mobile-inventory-calendar-alert {
+    height: 27px;
+    width: 27px;
+    top: 10px;
+    right: 10px;
 }
 .mobile-product-last-updated {
     color: var(--hrdc-theme-dark-teal);

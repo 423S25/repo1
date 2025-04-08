@@ -11,7 +11,7 @@ from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
 from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
@@ -276,8 +276,7 @@ def get_product_add():
 @admin_required
 def post_product_add():
     form = ProductAddForm()
-    form.validate()
-    form_errors: list[str] = parse_errors(form)
+    form_errors = parse_errors(form)
 
     if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
         form_errors.append(f'No category with id {form.category_id.data}')
@@ -375,7 +374,8 @@ def get_product_update_inventory(product_id: int):
 @admin_required
 def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        form_errors = []
+        form = FlaskForm()
+        form_errors = parse_errors(form)
         stock_units = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)

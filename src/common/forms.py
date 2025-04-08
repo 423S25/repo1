@@ -101,12 +101,21 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
     stock_units: list[StockUnitSubmission] = []
     while f'stock_name_{index}' in form and f'stock_multiplier_{index}' in form and f'stock_price_{index}' in form:
         name = form[f'stock_name_{index}']
+        mult_key = f'stock_multiplier_{index}'
+        price_key = f'stock_price_{index}'
+        count_key = f'stock_count_{index}'
+
         if name is None or name == '':
+            mult_is_missing = mult_key not in form or form[mult_key] == ''
+            price_is_missing = price_key not in form or form[price_key] == ''
+            count_is_missing = not include_count or count_key not in form or form[count_key] == ''
+            if not (mult_is_missing and price_is_missing and count_is_missing):
+                errors.append(f'Missing name for stock unit {index}')
             continue
 
         okay = True
-        multiplier = form[f'stock_multiplier_{index}']
-        price = clean_price_to_float(form[f'stock_price_{index}'])
+        multiplier = form[mult_key]
+        price = clean_price_to_float(form[price_key])
 
         try:
             multiplier = int(multiplier)
@@ -122,9 +131,9 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
             okay = False
 
         count = None
-        if f'stock_count_{index}' in form:
+        if count_key in form:
             try:
-                count = int(form[f'stock_count_{index}'])
+                count = int(form[count_key])
             except:
                 errors.append(f'Count for stock unit "{name}" is not an integer')
                 okay = False
