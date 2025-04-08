@@ -128,7 +128,7 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
             okay = False
 
         if price is None:
-            errors.append(f'Price for stock unit "{name}" is not a valid price')
+            errors.append(f'Price for stock unit "{name}" is not valid')
             okay = False
 
         count = None

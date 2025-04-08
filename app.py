@@ -162,6 +162,9 @@ def post_filter():
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
 def post_product_page(product_id: int):
+    if is_mobile():
+        return redirect("/mobile")
+    
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
 
@@ -193,6 +196,8 @@ def post_product_page(product_id: int):
 @app.get("/mobile")
 @login_required
 def get_mobile_index():
+    if not is_mobile():
+        return redirect("/")
     categories = [
         Category.ALL_PRODUCTS_PLACEHOLDER,
         *Category.all_alphabetized()

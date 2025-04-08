@@ -86,6 +86,7 @@
                     <tbody>
                         <tr>
                             <th>Unit Name</th>
+                            <th>Count per Unit</th>
                             <th>Unit Price</th>
                             <th>Individual Price</th>
                             <th>Count in Units</th>
@@ -93,8 +94,9 @@
                         {% for unit, count in stock_units_with_counts %}
                             <tr>
                                 <td>{{ unit.name }}</td>
-                                <td>${{ unit.price }}</td>
-                                <td>${{ (unit.price / unit.multiplier) | round(2) }}</td>
+                                <td>{{ unit.multiplier }}</td>
+                                <td>${{ "%.2f" | format(unit.price) }}</td>
+                                <td>${{ "%.2f" | format(unit.price / unit.multiplier) }}</td>
                                 <td>{{ count }}</td>
                             </tr>
                         {% endfor %}
