@@ -35,7 +35,7 @@ h1
 input#username, input#password
 {
     width: 75%;
-    height: 15%;
+    height: 4em;
     color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
@@ -52,11 +52,27 @@ input#submit
     color: white;
     text-decoration: none;
     font-size: 14px;
-    width: 25%;
-    height: 15%;
+    width: 6em;
+    height: 4em;
     font-weight: bold;
     font-family: 'Gotham Book';
-    margin-left: 50%;
+    margin-left: 60%;
+    margin-bottom: 10%;
+}
+
+input#submit:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    width: 6em;
+    height: 4em;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin-left: 60%;
+    margin-bottom: 10%;
 }
 
 li
