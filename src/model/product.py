@@ -6,8 +6,11 @@ import csv
 from dateutil.relativedelta import relativedelta
 import xml.etree.ElementTree as ET
 import re
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
-db = SqliteDatabase('inventory.db')
+db = SqliteDatabase(os.environ.get("INVENTORY_DB_PATH", "inventory.db"))
 
 
 class Category(Model):
