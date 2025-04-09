@@ -323,11 +323,14 @@ class Product(Model):
     def get_csv(cls):
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Name', 'Category', 'Inventory', 'Price', 'Unit Type', 'Ideal Stock', \
-                         'Days Left', 'Lifetime amount donated', 'Lifetime amount purchased'])
+        writer.writerow([
+            'Name', 'Category', 'Inventory', 'Ideal Stock',
+            'Days Left', 'Lifetime amount donated', 'Lifetime amount purchased'
+        ])
         for product in cls.select():
+            product: Product = product
             writer.writerow([product.product_name, product.category.name, product.inventory, \
-                             product.price, product.unit_type, product.ideal_stock, product.days_left,
+                             product.ideal_stock, product.days_left,
                              product.lifetime_donated, product.lifetime_purchased])
         output.seek(0)
         return output.getvalue()
