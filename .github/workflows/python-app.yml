@@ -58,5 +58,5 @@ jobs:
     - name: Run Unit tests
       run: pytest
 
-    - name: Run Selenium tests
+    #- name: Run Selenium tests
       #run: selenium-side-runner -c "browserName=chrome goog:chromeOptions.args=[\"--headless\"]" automated-testing/e2e/CRUD.side
