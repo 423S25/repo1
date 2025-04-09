@@ -7,6 +7,10 @@
     <canvas id="inventoryScatterChart"></canvas>
 </div>
 
+<div id="scatter-chart-container">
+    <canvas id="amountIdealChartContainer"></canvas>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const ctx = document.getElementById("inventoryScatterChart").getContext("2d");
@@ -23,7 +27,8 @@
                         }
                         {% if not loop.last %}, {% endif %}
                     {% endfor %}
-                ]
+                ],
+                backgroundColor: 'rgb(20, 111, 118)'
             }]
         };
 
@@ -61,3 +66,110 @@
         });
     });
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx2 = document.getElementById("amountIdealChartContainer").getContext("2d");
+
+        const data2 = {
+            datasets: [{
+                label: "Ideal Amount vs Current Stock",
+                data: [
+                    {% for d in data3 %}
+                        {
+                            x: {{ d[0] }},
+                            y: {{ d[1] }},
+                            label: "{{ d[2] }}",
+                        }
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgb(20, 111, 118)'
+            }]
+        };
+
+        new Chart(ctx2, {
+            type: "scatter",
+            data: data2,
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Current Stock"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Ideal Amount"
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItem) {
+                                return tooltipItem[0].raw.label; // Show name in tooltip
+                            },
+                            label: function(tooltipItem) {
+                                return `Price: ${tooltipItem.raw.x}, Inventory: ${tooltipItem.raw.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+ <canvas id="groupedBarChart" width="600" height="400"></canvas>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById("groupedBarChart").getContext("2d");
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Product A', 'Product B', 'Product C'],
+                    datasets: [
+                        {
+                            label: 'Current Stock',
+                            data: [12, 19, 7],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                        },
+                        {
+                            label: 'Ideal Stock',
+                            data: [15, 12, 10],
+                            backgroundColor: 'rgba(255, 205, 86, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Stock Comparison Per Product'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Products'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Stock Units'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>

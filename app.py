@@ -149,6 +149,7 @@ def get_reports():
         colors.append(category["color"])
     data1 = helper.price_over_amount_inventory(helper)
     data2 = helper.convert_to_rgb(helper, colors)
+    data3 = helper.ideal_over_amount_inventory(helper)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -157,7 +158,9 @@ def get_reports():
         quant=[c["total_inventory"] for c in categories],
         value=request.args.get('value'),
         data1=data1,
-        data2=data2
+        data2=data2,
+        data3=data3,
+        Flag = True
     )
 
 # The search function for the main table page. Re-serves index.html

@@ -25,3 +25,14 @@ class helper():
             set.append(str(fcgpt))
         # Return the RGB string in the desired format
         return list(set)
+
+    def ideal_over_amount_inventory(self):
+        products = Product.all()
+        data = []
+        for p in products:
+            values = []
+            values.append(p.inventory)
+            values.append(p.ideal_stock)
+            values.append(p.product_name)
+            data.append(values)
+        return data
