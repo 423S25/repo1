@@ -45,12 +45,14 @@
     display: flex;
     flex-flow: column;
     line-height: 0.3;
+    margin-left: 3%;
 }
 
 .inventory_content
 {
     display: flex;
     flex-flow: column;
+    margin-left: 3%;
 }
 
 .adjust_content
@@ -94,7 +96,7 @@ h2#category_name p
     font-family: 'Gotham Book';
     position: relative;
     top: 10px;
-    text-indent: 5px;
+    text-indent: 10%;
 }
 
 h2#category_name img
@@ -129,7 +131,7 @@ span#inventory_bar
     font-size: 16px;
     font-family: 'Gotham Bold';
     position: relative;
-    bottom: 6px;
+    bottom: 5px;
     text-indent: 5px;
     text-decoration: none;
 }
@@ -140,7 +142,7 @@ span#inventory_bar
     font-size: 16px;
     font-family: 'Gotham Bold';
     position: relative;
-    bottom: 6px;
+    bottom: 5px;
     text-indent: 5px;
     text-decoration: none;
 }
@@ -168,15 +170,15 @@ span#inventory_bar
     cursor: pointer;
 }
 
+.upload-trigger:hover
+{
+    cursor: pointer;
+}
+
 .image-box img {
             max-width: 100%;
             max-height: 100%;
             object-fit: cover
-}
-
-.image-box img:hover
-{
-    cursor: pointer;
 }
 
 .info_container table {
@@ -323,6 +325,11 @@ input#donation
     position: relative;
 }
 
+input#donation:hover
+{
+    cursor: pointer;
+}
+
 .add-category-id
 {
 	color: #ffffff;
@@ -376,7 +383,6 @@ button#add-product-label:hover
     font-family: 'Gotham Book';
     display: grid;
     padding: 1rem 1rem;
-    cursor: pointer;
 }
 
 .modal-buttons
@@ -411,7 +417,6 @@ button#add-product-label:hover
 .dropdown-btn {
     background: transparent;
     border: none;
-    cursor: pointer;
     padding: 0;
 }
 

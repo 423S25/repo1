@@ -3,6 +3,16 @@ body {
     overflow-y: auto;
 }
 
+button:hover
+{
+    cursor: pointer;
+}
+
+select:hover
+{
+    cursor: pointer;
+}
+
 .form-control
 {
     padding: 15px 22%;
@@ -25,7 +35,6 @@ body {
     margin-bottom: auto;
     padding: 1em 1em;
     color: var(--hrdc-theme-dark-teal);
-    cursor: pointer;
 
     font-size: 12px;
     font-family: 'Gotham Book';
@@ -39,7 +48,6 @@ body {
     background-color: var(--hrdc-theme-teal);
     border-color: var(--hrdc-theme-teal);
     color: white;
-    cursor: pointer;
 }
 
 .report-navigation button:active {
@@ -57,7 +65,6 @@ body {
     margin-bottom: auto;
     padding: 1em 1em;
     color: var(--hrdc-theme-dark-teal);
-    cursor: pointer;
 
     font-size: 12px;
     font-family: 'Gotham Book';
@@ -71,7 +78,6 @@ body {
     background-color: var(--hrdc-theme-teal);
     border-color: var(--hrdc-theme-teal);
     color: white;
-    cursor: pointer;
 }
 
 .navigation button:active {
@@ -100,7 +106,6 @@ body {
 
 .logout:hover .logout-icon {
     filter: brightness(0) invert(1);
-    cursor: pointer;
 }
 
 .logout:active .logout-icon {
@@ -124,7 +129,7 @@ body {
     text-align: center;
     text-decoration: none;
     font-size: 14px;
-    padding: 15px 3%;
+    padding: 15px 2%;
     font-weight: bold;
     font-family: 'Gotham Book';
     margin-left: auto;
@@ -137,10 +142,9 @@ body {
     text-align: center;
     text-decoration: none;
     font-size: 14px;
-    padding: 15px 3%;
+    padding: 15px 2%;
     font-weight: bold;
     font-family: 'Gotham Book';
-    cursor: pointer;
 }
 
 .close-button {
@@ -166,7 +170,6 @@ body {
     padding: 15px 3%;
     font-weight: bold;
     font-family: 'Gotham Book';
-    cursor: pointer;
 }
 
 .urgency-banners {
@@ -197,11 +200,6 @@ body {
     display: grid;
 }
 
-.filter-input:hover
-{
-    cursor: pointer;
-}
-
 .filter-edit-button
 {
     background-color: var(--hrdc-theme-teal);
@@ -227,7 +225,6 @@ body {
     padding: 15px 3%;
     font-weight: bold;
     font-family: 'Gotham Book';
-    cursor: pointer;
 }
 
 .banner {
@@ -332,7 +329,6 @@ p {
 
 .inventory-item-link:hover {
     background-color: var(--hrdc-theme-light-grey);
-    cursor: pointer;
 }
 
 .inventory-item-link > img {
