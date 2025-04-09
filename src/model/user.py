@@ -1,8 +1,11 @@
 import uuid
 from peewee import *
 from flask_security import UserMixin
+import os
+from dotenv import load_dotenv
+load_dotenv
 
-user_db = SqliteDatabase('users.db')
+user_db = SqliteDatabase(os.environ.get("USERS_DB_PATH", "users.db"))
 
 class User(UserMixin, user_db.Model):
     id = AutoField()
@@ -11,7 +14,6 @@ class User(UserMixin, user_db.Model):
     password = TextField()
     active = BooleanField(default=True)
     fs_uniquifier = TextField(default=lambda: str(uuid.uuid4()))
-    #confirmed_at = DateTimeField(null=True)
 
     @staticmethod
     def all() -> list['User']:
