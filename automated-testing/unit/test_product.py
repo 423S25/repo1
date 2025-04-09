@@ -4,7 +4,7 @@ from src.model.product import Product, Category
 
 @pytest.fixture(autouse=True)
 def setup_inventory():
-    cat = Category.add_category("cleaning supplies", "test-color")
+    cat = Category.add_category("cleaning supplies", "test-color", "/icons/cat_icons/Cleaning.svg")
     Product.add_product("clorox wipes", 5, cat.get_id(), 5.00, "tubes", 10, False, None)
     Product.add_product("lysol", 1, cat.get_id(), 3.00, "bottles", 30, False, None)
     Product.add_product("dish soap", 10, cat.get_id(), 5.00, "bottles", 10, False, None)
