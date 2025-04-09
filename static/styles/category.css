@@ -88,7 +88,40 @@ button.category-danger-button
     width: 2rem;
 }
 
-.close-icon:active
-{
+.close-icon:active {
     filter: brightness(0) invert(1);
+}
+
+.image-radio input[type="radio"] {
+    display: none;
+}
+
+.image-radio img {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
+.image-radio input[type="radio"]:hover + img {
+    transform: scale(1.1);
+}
+
+.image-radio input[type="radio"]:checked + img {
+    outline: 2px solid var(--hrdc-theme-teal);
+    border-radius: 5px;
+}
+
+.icon {
+    width: 40px;
+    height: 40px;
+    transition: transform 0.2s ease;
+}
+
+.icon-container {
+    grid-column: span 2; /* Make it take up both columns */
+    display: flex;
+    gap: 10px; /* Adjust spacing between icons */
+    justify-content: left; /* Center the icons horizontally */
+    flex-wrap: wrap; /* Allow wrapping if needed */
 }
