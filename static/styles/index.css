@@ -39,6 +39,7 @@ body {
     background-color: var(--hrdc-theme-teal);
     border-color: var(--hrdc-theme-teal);
     color: white;
+    cursor: pointer;
 }
 
 .report-navigation button:active {
@@ -70,6 +71,7 @@ body {
     background-color: var(--hrdc-theme-teal);
     border-color: var(--hrdc-theme-teal);
     color: white;
+    cursor: pointer;
 }
 
 .navigation button:active {
@@ -98,6 +100,7 @@ body {
 
 .logout:hover .logout-icon {
     filter: brightness(0) invert(1);
+    cursor: pointer;
 }
 
 .logout:active .logout-icon {
@@ -137,6 +140,7 @@ body {
     padding: 15px 3%;
     font-weight: bold;
     font-family: 'Gotham Book';
+    cursor: pointer;
 }
 
 .close-button {
@@ -162,6 +166,7 @@ body {
     padding: 15px 3%;
     font-weight: bold;
     font-family: 'Gotham Book';
+    cursor: pointer;
 }
 
 .urgency-banners {
@@ -192,6 +197,11 @@ body {
     display: grid;
 }
 
+.filter-input:hover
+{
+    cursor: pointer;
+}
+
 .filter-edit-button
 {
     background-color: var(--hrdc-theme-teal);
@@ -217,6 +227,7 @@ body {
     padding: 15px 3%;
     font-weight: bold;
     font-family: 'Gotham Book';
+    cursor: pointer;
 }
 
 .banner {
@@ -321,6 +332,7 @@ p {
 
 .inventory-item-link:hover {
     background-color: var(--hrdc-theme-light-grey);
+    cursor: pointer;
 }
 
 .inventory-item-link > img {

@@ -7,13 +7,148 @@
 
 
 }
+
+/* Styling for the Inventory History */
+
 .column {
 
     border: 1px solid black;
     box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 0.5fr 1fr 1fr;
+    margin-top: 1%;
 }
 
+.row1
+{
+    display: flex;
+    flex-flow: column;
+}
 
+.row2
+{
+    display: flex;
+    flex-flow: column;
+}
+
+.row3
+{
+    display: flex;
+    flex-flow: column;
+    margin-top: 5%;
+    margin-right: 10%;
+    gap: 10%;
+}
+
+.product_content
+{
+    display: flex;
+    flex-flow: column;
+    line-height: 0.3;
+}
+
+.inventory_content
+{
+    display: flex;
+    flex-flow: column;
+}
+
+.adjust_content
+{
+    display: flex;
+    flex-flow: row;
+}
+
+.info_container
+{
+    margin-left: auto;
+}
+
+h1#inventory_stock
+{
+    text-align: left;
+    text-indent: 1%;
+}
+
+h1#product_name
+{
+    text-align: left;
+    color: var(--hrdc-theme-teal);
+    font-size: 40px;
+    font-family: 'Gotham Bold';
+    text-transform: uppercase;
+}
+
+h2#category_name
+{
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    bottom: 20px;
+}
+
+h2#category_name p
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 18px;
+    font-family: 'Gotham Book';
+    position: relative;
+    top: 10px;
+    text-indent: 5px;
+}
+
+h2#category_name img
+{
+    width: 7.5%;
+}
+
+table#info_table
+{
+    line-height: 2;
+}
+
+span#inventory_bar
+{
+    width: 50%;
+}
+
+.dropdown-btn
+{
+    margin-top: 25%;
+}
+
+.back
+{
+    margin-top: 3%;
+    margin-left: 5%;
+}
+
+.back a
+{
+    color: var(--hrdc-theme-teal);
+    font-size: 16px;
+    font-family: 'Gotham Bold';
+    position: relative;
+    bottom: 6px;
+    text-indent: 5px;
+    text-decoration: none;
+}
+
+.back a:hover
+{
+    color: var(--hrdc-theme-green-yellow);
+    font-size: 16px;
+    font-family: 'Gotham Bold';
+    position: relative;
+    bottom: 6px;
+    text-indent: 5px;
+    text-decoration: none;
+}
+
+.back img
+{
+    width: 1.5%
+}
 
 .image-box {
             width: 249px;
@@ -24,11 +159,24 @@
             align-items: center;
             background-color: #F5F5F5;
             clear: left;
+            margin-left: 5%;
+            margin-top: 5%;
 }
+
+.image-box:hover
+{
+    cursor: pointer;
+}
+
 .image-box img {
             max-width: 100%;
             max-height: 100%;
             object-fit: cover
+}
+
+.image-box img:hover
+{
+    cursor: pointer;
 }
 
 .info_container table {
@@ -228,6 +376,7 @@ button#add-product-label:hover
     font-family: 'Gotham Book';
     display: grid;
     padding: 1rem 1rem;
+    cursor: pointer;
 }
 
 .modal-buttons
