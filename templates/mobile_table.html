@@ -1,0 +1,28 @@
+{% from "macros.html" import inventory_item_bar %}
+
+{% if product_list|length == 0 %}
+    <span class="none-in-category">No products match your search terms</span>
+{% elif product_list|length == 1 %}
+    <span class="result-count">Showing 1 result</span>
+{% else %}
+    <span class="result-count">Showing {{ product_list|length }} results</span>
+{% endif %}
+
+{% for product in product_list %}
+    <div class="mobile-product-row box-shadow-small">
+        {% if not product.image_path %}
+            <img src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
+        {% else %}
+            <img src="images/{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
+        {% endif %}
+        <div role="button" hx-get="/product_update_inventory_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend" class="mobile-product-row-rhs">
+            <span class="mobile-product-row-name">{{ product.product_name }}</span><br>
+            <span class="mobile-product-last-updated">{{ product.category.name }}</span><br>
+            <span class="mobile-product-last-updated">{{ product.human_last_updated() }} Ago</span>
+            <div class="inventory-row-cont mobile-inventory-row-cont">
+                {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
+                <span>{{ product.inventory }}/{{ product.ideal_stock }}</span>
+            </div>
+        </div>
+    </div>
+{% endfor %}

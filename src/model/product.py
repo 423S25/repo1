@@ -3,6 +3,9 @@ import datetime
 from typing import Optional
 import io
 import csv
+from dateutil.relativedelta import relativedelta
+import xml.etree.ElementTree as ET
+import re
 
 db = SqliteDatabase('inventory.db')
 
@@ -23,11 +26,15 @@ class Category(Model):
         return list(Category.select().order_by(Category.name))
 
     @staticmethod
-    def add_category(name: str, color: str) -> 'Category':
+    def add_category(name: str, color: str, icon_path : str) -> 'Category':
+        colored_icon_path = Category.change_svg_color(icon_path, color, name)
         category = Category.create(
             name=name,
-            color = color
+            color = color,
+            image_path = colored_icon_path
+
         )
+
         return category
 
     @staticmethod
@@ -39,16 +46,44 @@ class Category(Model):
                 return Category.get_by_id(name_or_id)
         except DoesNotExist:
             return None
-
+        
+    @classmethod
+    def get_by_color(cls, hex_code: str) -> Optional['Category']:
+        return cls.get_or_none(cls.color == hex_code)
+    
     @staticmethod
     def delete_category(category_id):
         category = Category.get_category(category_id)
         category.delete_instance()
+        #delete products in category
+        products = Product.select().where(Product.category == category_id)
+        for prod in products:
+            Product.delete_product(prod.get_id())
 
     def update_category(self, category_name: str, category_color: str):
         self.name = category_name
         self.color = category_color
+        self.image_path = self.change_svg_color(self.image_path, category_color, category_name)
         self.save()
+
+    @staticmethod
+    def change_svg_color(input_svg: str, new_color: str, name : str):
+
+        tree = ET.parse("static/" + input_svg)
+        root = tree.getroot()
+
+        namespace = {'svg': 'http://www.w3.org/2000/svg'}
+        ET.register_namespace('', namespace['svg'])
+
+        for style in root.findall(".//{http://www.w3.org/2000/svg}style"):
+            if style.text:
+                new_style_text = re.sub(r'#([0-9a-fA-F]{3,6})', new_color, style.text, flags=re.IGNORECASE)
+                style.text = new_style_text
+
+        output_path = "icons/category_icons/" + name + ".svg"
+        tree.write("static/" + output_path)
+
+        return output_path
 
 
     class Meta:
@@ -79,8 +114,10 @@ class Product(Model):
 
     @staticmethod
     def get_low_products():
-        product_levels = [0,0,0]
+        product_levels = [0, 0, 0]
         for product in Product.all():
+            if product.ideal_stock == 0: #should never happen, but keeps the server from crashing
+                continue
             if product.inventory / product.ideal_stock <= 0.25:
                 product_levels[0] += 1
             elif (product.inventory / product.ideal_stock > 0.25) and (product.inventory / product.ideal_stock <= 0.5):
@@ -99,6 +136,32 @@ class Product(Model):
         return list(Product.select().where(Product.product_name.ilike(f'%{product}%')))
 
     @staticmethod
+    def search_filter_and_sort(product_name_fragment: str = '', product_category_id: int = 0, product_sort_method: str = None) -> list['Product']:
+        query = Product.select()
+
+        if len(product_name_fragment) > 0:
+            query = query.where(Product.product_name.ilike(f'%{product_name_fragment}%'))
+        if product_category_id != 0:
+            query = query.where(Product.category_id == product_category_id)
+        
+        products = list(query)
+
+        if product_sort_method == 'alpha_a_z' or (product_sort_method == 'best_match' and len(product_name_fragment) == 0):
+            return list(sorted(products, key=lambda p: p.product_name.lower()))
+        elif product_sort_method == 'alpha_z_a':
+            return list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
+        elif product_sort_method == 'best_match':
+            return list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
+        elif product_sort_method == 'lowest_stock':
+            return list(sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
+        elif product_sort_method == 'highest_stock':
+            return list(reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
+        elif product_sort_method == 'most_recent':
+            return list(reversed(sorted(products, key=lambda p: p.last_updated)))
+        else: #default to least recent
+            return list(sorted(products, key=lambda p: p.last_updated))
+
+    @staticmethod
     #overloaded with category id for filter
     def urgency_rank(category_id: int = None) -> list['Product']:
         query = Product.select(Product, Category).join(Category)
@@ -115,7 +178,7 @@ class Product(Model):
     def alphabetized_of_category(category_id: int = None) -> list['Product']:
         query = Product.select(Product, Category).join(Category)
 
-        if category_id is not None:
+        if category_id is not None and category_id != 0:
             query = query.where(Product.category_id == category_id)
 
         query = query.order_by(Product.product_name)
@@ -138,6 +201,7 @@ class Product(Model):
                 'days_left': days_left
             }
         )
+        product: Product = product
         InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
         return product
 
@@ -188,16 +252,14 @@ class Product(Model):
         return res
     
     # Deletes the chosen product
-    @classmethod
-    def delete_product(cls, product_id):
+    @staticmethod
+    def delete_product(product_id):
         product = Product.get_product(product_id)
-        product.delete_instance()
-        InventorySnapshot.delete_snapshots_for_product(product_id)
+        if product is not None:
+            product.delete_instance()
+            InventorySnapshot.delete_snapshots_for_product(product_id)
 
     
-    ########################################
-    ########### INSTANCE METHODS ###########
-    ########################################
     @classmethod
     def get_csv(cls):
         output = io.StringIO()
@@ -209,6 +271,24 @@ class Product(Model):
                              product.price, product.unit_type, product.ideal_stock, product.days_left, product.lifetime_donated, product.lifetime_purchased])
         output.seek(0)
         return output.getvalue()
+    
+    ########################################
+    ########### INSTANCE METHODS ###########
+    ########################################
+
+    # Returns a human string for how long it has been since the product was updated (e.g., "2 days" or "1 week")
+    def human_last_updated(self) -> str:
+        delta = relativedelta(datetime.datetime.now(), self.last_updated)
+        if delta.weeks > 0:
+            return f"{delta.weeks} {'week' if delta.weeks == 1 else 'weeks'}"
+        elif delta.days > 0:
+            return f"{delta.days} {'day' if delta.days == 1 else 'days'}"
+        elif delta.hours > 0:
+            return f"{delta.hours} {'hour' if delta.hours == 1 else 'hours'}"
+        elif delta.minutes > 0:
+            return f"{delta.minutes} {'minute' if delta.minutes == 1 else 'minutes'}"
+        else:
+            return f"{delta.seconds} {'second' if delta.seconds == 1 else 'seconds'}"
 
     # Calculates the average inventory used per day
     def get_usage_per_day(self) -> float | None:
@@ -260,30 +340,26 @@ class Product(Model):
 
 
 
+    # Add to the current available inventory of a product with [`new_stock`] units
+    def add_items(self, amount: int, donation: bool):
+        if donation:
+            if self.lifetime_donated is None:
+                self.lifetime_donated = 0
+            self.lifetime_donated += amount
+        else:
+            if self.lifetime_purchased is None:
+                self.lifetime_purchased = 0
+            self.lifetime_purchased += amount
+        self.inventory += amount
+        self.save()
+        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
+
     # Sets the current available stock of a product to [`new_stock`] units
     def update_stock(self, new_stock: int):
         self.inventory = new_stock
         self.last_updated = datetime.datetime.now()
         self.save()
         InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
-
-    #1. sets the lifetime_donated
-    #2. if adjust_inventory is set, it will add/subtract from stock as well
-    def set_donated(self, new_amount: int, adjust_inventory: bool):
-        old_amount = self.lifetime_donated
-        if adjust_inventory:
-            self.inventory = self.inventory + (new_amount - old_amount)
-        self.lifetime_donated = new_amount
-        self.save()
-
-    #1. sets the lifetime_purchased
-    #2. if adjust_inventory is set, it will add/subtract from stock as well
-    def set_purchased(self, new_amount: int, adjust_inventory: bool):
-        old_amount = self.lifetime_purchased
-        if adjust_inventory:
-            self.inventory = self.inventory + (new_amount - old_amount)
-        self.lifetime_purchased = new_amount
-        self.save()
 
     # Increment price
     def increment_price(self, increase: float):
@@ -358,7 +434,7 @@ class InventorySnapshot(Model):
     def create_snapshot(product_id: int, inventory: int) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
-            inventory=inventory, 
+            inventory=inventory,
         )
         return snapshot
     

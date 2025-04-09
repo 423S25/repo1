@@ -1,9 +1,11 @@
+<link rel="stylesheet" href="styles/inventory.css">
+
 {% from "macros.html" import inventory_item_bar %}
 
 <div id="inventory-table" class="inventory-table">
     {% for product in product_list %}
         <div class="inventory-table-row box-shadow-small">
-            <img alt="Map" src="icons/map.svg" class="inventory-item-icon"/>
+            <img alt="{{ product.category.name }} Icon" src="{{ product.category.image_path }}" class="inventory-item-icon"/>
             <div class="center-vert">
                 <span class="inventory-item-name">{{ product.product_name }}</span>
                 {% if product.category.name is not none %}

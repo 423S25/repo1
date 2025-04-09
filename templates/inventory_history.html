@@ -10,43 +10,33 @@
     <div class="image-box">
         <label for="fileInput">
     {% if not filepath %}
-            <img src="icons/image-camera.svg" class="upload-trigger" />
+        <img src="icons/image-camera.svg" class="upload-trigger" />
     {% else %}
-            <img src="images/{{ filepath }}" />
+        <img src="images/{{ filepath }}" />
     {% endif %}
         </label>
     </div>
-    <form action="/upload/{{ product.get_id() }}" method="POST" enctype="multipart/form-data">
+    <form action="/product_upload_image/{{ product.get_id() }}" hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data" hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder" hx-swap="innerHTML">
         <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
     </form>
+    <div id="image-message-placeholder"></div>
     <script>
-        document.getElementById('fileInput').addEventListener('change', function() {
-        this.form.submit();
+        document.getElementById('fileInput').addEventListener('change', function(ev) {
+            ev.preventDefault();
+            htmx.trigger(this.form, 'submit');
         });
     </script>
     </div>
     <div class="column">
-    <h1>{{ product.product_name }}</h1>
-    <h2>{{product.category.name}}</h2>
-    <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <h3>Lifetime amount donated: {{ product.lifetime_donated }}</h3>
-        <button hx-get="/load_update_donated/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST
-        </button>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <h3>Lifetime amount purchased: {{ product.lifetime_purchased }}</h3>
-        <button hx-get="/load_update_purchased/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST
-        </button>
-    </div>
-    {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
+        <h1>{{ product.product_name }}</h1>
+        <h2>{{ product.category.name }}</h2>
+        <h1>{{ product.inventory }} /  {{ product.ideal_stock }}</h1>
+        {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
     </div>
 
     <div class="column">
-    <button class="product-button" hx-get="/load_update/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-            ADJUST STOCK
+    <button class="product-button" hx-get="/product_update_inventory_options/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+        ADJUST STOCK
     </button>
 
 
@@ -57,9 +47,9 @@
 
 
         <div class="dropdown-content">
-            <a href="#" hx-delete="/delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
+            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete Item</a>
 
-            <a hx-get="/load_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Info</a>
+            <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update Info</a>
 
         </div>
     </div>

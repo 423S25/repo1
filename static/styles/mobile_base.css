@@ -1,26 +1,3 @@
-.back-row {
-    margin: 20px;
-    font-size: 1em;
-}
-.back-row > a {
-    height: 1.4em;
-    display: inline-block;
-    overflow: hidden;
-    font-family: 'Gotham Book', sans-serif;
-    color: var(--hrdc-theme-dark-teal);
-    font-weight: bold;
-    text-decoration: none;
-}
-.back-row > a > img {
-    height: 1.4em;
-}
-.back-row > a > span {
-    position: relative;
-    top: -0.35em;
-    padding: 0 5px;
-    text-transform: uppercase;
-}
-
 .mobile-form-container {
     margin: 20px;
     width: calc(100% - 40px);
@@ -55,4 +32,15 @@
 }
 .mobile-form-container:has(input:focus) img {
     opacity: 0;
+}
+
+.mobile-select {
+    margin: 20px;
+    margin-top: 0;
+    width: calc(100% - 40px);
+    border: none;
+    background-color: white;
+    padding: 12px 15px;
+    color: var(--hrdc-theme-dark-teal);
+    font-size: 16px;  
 }

@@ -1,19 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
-<link rel="stylesheet" href="styles/mobile_base.css"/>
-<link rel="stylesheet" href="styles/mobile_index.css"/>
 
-<div class="grid-land">
-    {% for category in category_list %}
-        <a href="/mobile-category?category_id={{ category.id }}" class="category-btn center-all box-shadow-small">
-            {% if not category.image_path %}
-                <img src="icons/image-camera.svg" alt="Off{{ category.name }}"/><br>
-            {% else %}
-                <img src="{{ category.image_path }}" alt="Off{{ category.name }}"/><br>
-            {% endif %}
-            <span>{{ category.name }}</span>
-        </a>
-    {% endfor %}
+<link rel="stylesheet" href="styles/mobile_base.css"/>
+<link rel="stylesheet" href="styles/mobile_table.css"/>
+<link rel="stylesheet" href="styles/mobile_modal.css"/>
+
+<form hx-get="/product_search_filter_mobile" hx-trigger="change, input from:input delay:300ms" hx-target="#product-list" hx-swap="innerHTML">   
+    <div class="mobile-form-container">
+        <img src="icons/search_icon.svg" alt="Search Icon"/>
+        <input name="product_name" class="mobile-form-control" placeholder="Search"/>
+    </div>
+    
+    <select name="product_category_id" class="mobile-select box-shadow-small">
+        {% for category in category_list %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+        {% endfor %}
+    </select>
+    
+    <select name="product_sort_method" class="mobile-select box-shadow-small">
+        <option value="least_recent">Least Recently Updated</option>
+        <option value="most_recent">Most Recently Updated</option>
+        <option value="lowest_stock">Lowest Stock Percentage</option>
+        <option value="highest_stock">Highest Stock Percentage</option>
+        <option value="alpha_a_z">Alphabetical (A-Z)</option>
+        <option value="alpha_z_a">Alphabetical (Z-A)</option>
+        <option value="best_match">Best Match</option>
+    </select>
+</form>
+
+<div id="product-list">
+    {% include "mobile_table.html" %}
 </div>
 
 {% endblock %}

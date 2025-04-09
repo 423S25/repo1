@@ -6,7 +6,7 @@ body {
 .form-control
 {
     padding: 15px 22%;
-     font-family: 'Gotham Book';
+    font-family: 'Gotham Book';
     font-size: 14px;
     font-weight: bold;
     color: #5b5b5b;
@@ -14,9 +14,42 @@ body {
     box-shadow: 2px 4px 4px 2px rgba(0, 0, 0, 0.2) inset;
     text-transform: uppercase;
 }
-.navigation {
+
+.report-navigation{
     display: flex;
     flex-direction: row;
+
+}
+
+.report-navigation button {
+    margin-bottom: auto;
+    padding: 1em 1em;
+    color: var(--hrdc-theme-dark-teal);
+    cursor: pointer;
+
+    font-size: 12px;
+    font-family: 'Gotham Book';
+    border: 3px solid black;
+    border-color: #ffffff;
+    background-color: #ffffff;
+}
+
+.report-navigation button:hover {
+    border: 3px solid black;
+    background-color: var(--hrdc-theme-teal);
+    border-color: var(--hrdc-theme-teal);
+    color: white;
+}
+
+.report-navigation button:active {
+    border: 3px solid black;
+    border-color: var(--hrdc-theme-teal);
+    background-color: #ffffff;
+    color: var(--hrdc-theme-dark-teal);
+}
+
+.report-navigation button.current-report {
+    border-bottom: 3px solid var(--hrdc-theme-teal);
 }
 
 .navigation button {
@@ -50,9 +83,7 @@ body {
     border-bottom: 3px solid var(--hrdc-theme-teal);
 }
 
-.inventory:hover {
-    border-bottom: 3px solid #ffffff;
-}
+
 
 
 .logout {
@@ -72,8 +103,6 @@ body {
 .logout:active .logout-icon {
     filter: brightness(1) invert(0);
 }
-
-
 
 .form-control::placeholder {
     color: #B2B4B5;
@@ -110,6 +139,31 @@ body {
     font-family: 'Gotham Book';
 }
 
+.close-button {
+    background-color: var(--hrdc-theme-red);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin-left: auto;
+}
+
+.close-button:hover {
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
 .urgency-banners {
     height: 60px;
     padding: var(--main-padding);
@@ -125,6 +179,46 @@ body {
     box-shadow: 0 2px 2px 2px rgba(0, 0, 0, 0.3);
 }
 
+.filter-input
+{
+    font-family: 'Gotham Book';
+    font-size: 14px;
+    color: var(--hrdc-theme-teal);
+    background-color: #ffffff;
+    border-color: var(--hrdc-theme-teal);
+    border-radius: 5px;
+    box-shadow: 2px 4px 4px 2px rgba(0, 0, 0, 0.2);
+    padding: 15px 12%;
+    display: grid;
+}
+
+.filter-edit-button
+{
+    background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    display: grid;
+}
+
+.filter-edit-button:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
 .banner {
     background-color: white;
     display: grid;
@@ -136,21 +230,21 @@ body {
 .red_rectangle {
     height: 1%;
     width: 100%;
-    background-color: #e20707;
+    background-color: var(--hrdc-theme-stock-urgent);
     padding-bottom: 1%;
 }
 
 .orange_rectangle {
     height: 1%;
     width: 100%;
-    background-color: #cc4600;
+    background-color: var(--hrdc-theme-stock-low);
     padding-bottom: 1%;
 }
 
 .green_rectangle {
     height: 1%;
     width: 100%;
-    background-color: #004907;
+    background-color: var(--hrdc-theme-stock-okay);
     padding-bottom: 1%;
 }
 
@@ -172,7 +266,7 @@ p {
 
 .filter-parent {
     grid-row: 1 / -1;
-    background-color: tomato;
+    background-color: #ffffff;
 }
 
 .inventory-table {

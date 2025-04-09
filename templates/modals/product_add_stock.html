@@ -1,0 +1,23 @@
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+	<div class="modal-underlay" _="on click trigger closeModal"></div>
+	<div class="modal-content">
+		<button class="product-danger-button" _="on click trigger closeModal">
+			<img alt="Close" src="icons/close.svg" class="close-icon" />
+		</button>
+		<p class="add-label">ADD ITEMS</p>
+		<form hx-post="product_add_inventory/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
+			{{ form.csrf_token }}
+			<input type="hidden" name="_method" value="PATCH">
+
+			<label for="stock">Add Items:</label>
+			<input type="number" id="stock" name="stock" min="0" required>
+            <br>
+			<label for="donation">Donation?:</label>
+            <input type="checkbox" id="donation" name="donation">
+			<br>
+			<br>
+			<button class="product-button" type="submit">Add</button>
+		</form>
+		<div id="modal-errors"></div>
+	</div>
+</div>
