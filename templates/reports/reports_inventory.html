@@ -15,11 +15,15 @@
             datasets: [{
                 label: "Inventory vs Price",
                 data: [
-                    {x: 10, y: 20},
-                    {x: 15, y: 10},
-                    {x: 20, y: 30}
-                ],
-                backgroundColor: "rgba(75, 192, 192, 0.7)"
+                    {% for d in data1 %}
+                        {
+                            x: {{ d[0] }},
+                            y: {{ d[1] }},
+                            label: "{{ d[2] }}",
+                        }
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ]
             }]
         };
 
@@ -38,6 +42,18 @@
                         title: {
                             display: true,
                             text: "Inventory Count"
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItem) {
+                                return tooltipItem[0].raw.label; // Show name in tooltip
+                            },
+                            label: function(tooltipItem) {
+                                return `Price: ${tooltipItem.raw.x}, Inventory: ${tooltipItem.raw.y}`;
+                            }
                         }
                     }
                 }

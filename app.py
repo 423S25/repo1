@@ -1,5 +1,6 @@
 import os, secrets
 from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
+from src.common.functions import helper
 
 from src.model.product import Category
 from src.model.product import Product, InventorySnapshot, db
@@ -131,7 +132,7 @@ def post_filter():
 def get_reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
-    categories = [{"id": c.id, "name": c.name, "total_inventory": 0} for c in Category.all()]
+    categories = [{"id": c.id, "name": c.name, "total_inventory": 0, "color": c.color} for c in Category.all()]
 
     # Create a mapping from category ID to total inventory
     category_inventory = {c["id"]: 0 for c in categories}
@@ -142,9 +143,12 @@ def get_reports():
             category_inventory[product.category_id] += product.inventory
 
     # Update category objects with total inventory values
+    colors = []
     for category in categories:
         category["total_inventory"] = category_inventory[category["id"]]
-
+        colors.append(category["color"])
+    data1 = helper.price_over_amount_inventory(helper)
+    data2 = helper.convert_to_rgb(helper, colors)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -152,7 +156,8 @@ def get_reports():
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
         value=request.args.get('value'),
-        flag=True
+        data1=data1,
+        data2=data2
     )
 
 # The search function for the main table page. Re-serves index.html
