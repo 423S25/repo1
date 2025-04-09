@@ -4,8 +4,8 @@ from src.model.product import Product, Category
 
 @pytest.fixture(autouse=True)
 def setup_inventory():
-    cleaning_supplies = Category.add_category("cleaning supplies", "test-color")
-    bedding = Category.add_category("bedding", "test-color-2")
+    cleaning_supplies = Category.add_category("cleaning supplies", "test-color", "/icons/cat_icons/Cleaning.svg")
+    bedding = Category.add_category("bedding", "test-color-2", "/icons/cat_icons/Hygiene.svg")
     Product.add_product("clorox wipes", 5, cleaning_supplies.get_id(), 5.00, "tubes", 10, False, None)
     Product.add_product("lysol", 1, cleaning_supplies.get_id(), 3.00, "bottles", 30, False, None)
     Product.add_product("dish soap", 10, cleaning_supplies.get_id(), 5.00, "bottles", 10, False, None)
@@ -30,7 +30,7 @@ def test_get_alphabetized(setup_inventory: list['Category']):
     assert cats[1].name == "cleaning supplies"
 
 def test_add_category(setup_inventory: list['Category']):
-    Category.add_category("test", "test-color-3")
+    Category.add_category("test", "test-color-3", "/icons/cat_icons/Cleaning.svg")
     cat = Category.get_category("test")
     assert cat.name == "test"
     assert cat.color == "test-color-3"
