@@ -51,6 +51,11 @@
     display: grid;
 }
 
+.category-color-input:hover
+{
+    cursor: pointer;
+}
+
 .category-submit-button
 {
     background-color: var(--hrdc-theme-teal);
@@ -75,12 +80,18 @@
     padding: 1em 1em;
     font-weight: bold;
     font-family: 'Gotham Book';
+    cursor: pointer;
 }
 
 button.category-danger-button
 {
     background-color: #ffffff;
     border-style: none;
+}
+
+button.category-danger-button:hover
+{
+    cursor: pointer;
 }
 
 .close-icon
