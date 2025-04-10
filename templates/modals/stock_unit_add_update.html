@@ -1,0 +1,96 @@
+<script>
+    function addNewStockUnit(ev, btn) {
+        ev.preventDefault();
+        const btnRow = btn?.parentElement?.parentElement;
+        const prevRow = btnRow?.previousElementSibling;
+        if (prevRow == null) {
+            return;
+        }
+        const newRow = prevRow.cloneNode(true);
+        const newId = parseInt(prevRow.getAttribute('data-index')) + 1;
+        newRow.setAttribute('data-index', newId);
+
+        const newRadio = newRow.querySelector('input[type="radio"]');
+        if (newRadio != null) {
+            newRadio.setAttribute('value', newId);
+        }
+
+        const textFields = newRow.querySelectorAll('input[type="text"]');
+
+        const nameInput = newRow.querySelector('input[data-field="name"]');
+        nameInput.setAttribute('name', `stock_name_${newId}`);
+        nameInput.removeAttribute('value');
+        nameInput.value = '';
+
+        const multiplierInput = newRow.querySelector('input[data-field="multiplier"]');
+        multiplierInput.setAttribute('name', `stock_multiplier_${newId}`);
+        multiplierInput.removeAttribute('value');
+        multiplierInput.value = '';
+
+        const priceInput = newRow.querySelector('input[data-field="price"]');
+        priceInput.setAttribute('name', `stock_price_${newId}`);
+        priceInput.removeAttribute('value');
+        priceInput.value = '';
+
+        const countInput = newRow.querySelector('input[data-field="count"]');
+        if (countInput != null) {
+            countInput.setAttribute('name', `stock_count_${newId}`);
+            countInput.setAttribute('value', '0');
+            countInput.value = '0';
+        }
+
+        newRow.querySelector('input[type="hidden"]')?.remove();
+
+        btnRow.parentElement.insertBefore(newRow, btnRow);
+    }
+</script>
+
+<style>
+    .stock-unit-update-table input {
+        width: 100px;
+    }
+</style>
+
+<table style="grid-column: 1 / -1;" class="stock-unit-update-table"><tbody>
+    <tr>
+        <th>Unit Name</th>
+        <th>Count/Unit</th>
+        <th>Price/Unit</th>
+        {% if not stock_unit_count_hidden %}
+            <th>Count in Units</th>
+        {% endif %}
+    </tr>
+    {% for stock_unit in stock_unit_list %}
+        <tr data-index="{{ loop.index }}">
+            <td>
+                <input type="text" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
+                {% if stock_unit.id is not none %}
+                    <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
+                {% endif %}
+            </td>
+            <td><input type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
+            <td>
+                <input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
+                {% if stock_unit_count_hidden %}
+                    {% if stock_unit_count_list %}
+                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                    {% else %}
+                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                    {% endif %}
+                {% endif %}
+            </td>
+            {% if not stock_unit_count_hidden %}
+                {% if stock_unit_count_list %}
+                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                {% else %}
+                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                {% endif %}
+            {% endif %}
+        </tr>
+    {% endfor %}
+    <tr>
+        <td colspan="{{ 3 + (1 if stock_unit_count else 0) }}">
+            <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+        </td>
+    </tr>
+</tbody></table>
