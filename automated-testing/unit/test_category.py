@@ -1,16 +1,18 @@
 import pytest
 from app import app
-from src.model.product import Product, Category
+from src.model.product import Product, Category, StockUnitSubmission
 
 @pytest.fixture(autouse=True)
 def setup_inventory():
     cleaning_supplies = Category.add_category("cleaning supplies", "test-color", "/icons/cat_icons/Cleaning.svg")
     bedding = Category.add_category("bedding", "test-color-2", "/icons/cat_icons/Hygiene.svg")
-    Product.add_product("clorox wipes", 5, cleaning_supplies.get_id(), 5.00, "tubes", 10, False, None)
-    Product.add_product("lysol", 1, cleaning_supplies.get_id(), 3.00, "bottles", 30, False, None)
-    Product.add_product("dish soap", 10, cleaning_supplies.get_id(), 5.00, "bottles", 10, False, None)
-    Product.add_product("sleeping bags", 5, bedding.get_id(), 50.00, "individual", 10, False, None)
-    Product.add_product("sheets", 30, bedding.get_id(), 20.00, "individual", 40, False, None)    
+    individual1 = [StockUnitSubmission(None, "individual", 1, 1, 1)]
+    individual2 = [StockUnitSubmission(None, "individual", 1, 1, 10)]
+    Product.add_product("clorox wipes", individual1, cleaning_supplies.get_id(), 10, False, None)
+    Product.add_product("lysol", individual1, cleaning_supplies.get_id(), 30, False, None)
+    Product.add_product("dish soap", individual2, cleaning_supplies.get_id(), 10, False, None)
+    Product.add_product("sleeping bags", individual2, bedding.get_id(), 10, False, None)
+    Product.add_product("sheets", individual2, bedding.get_id(), 40, False, None)    
     categories = []
     categories.append(cleaning_supplies)
     categories.append(bedding)
