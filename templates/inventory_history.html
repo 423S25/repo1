@@ -129,6 +129,57 @@
         </table>
 
     </div>
+    <div>
+        <canvas id="donatedPurchasedChart"></canvas>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById("donatedPurchasedChart").getContext("2d");
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['{{ product.product_name }}'],
+                    datasets: [
+                        {
+                            label: 'Purchased',
+                            data: [{{ product.lifetime_purchased }}],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                        },
+                        {
+                            label: 'Donated',
+                            data: [{{ product.lifetime_donated }}],
+                            backgroundColor: 'rgba(255, 205, 86, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Purchased vs Donated For Lifetime of Product'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Products'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Stock Units'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </div>
 </div>
 
