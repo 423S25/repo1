@@ -111,6 +111,7 @@ class Product(Model):
     inventory = IntegerField(default=0)
     inventory_breakdown = TextField(null=False) # [[stock_unit.id, count]]
     ideal_stock = IntegerField()
+    price = FloatField(default=0)
     image_path = CharField(null=True)
     last_updated = DateTimeField(default=datetime.datetime.now)
     days_left = DecimalField(decimal_places=2, auto_round=True, null=True)
@@ -240,10 +241,11 @@ class Product(Model):
     @staticmethod
     def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
         individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
-
+        price = total_price / individual_count
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
+            price=price,
             lifetime_donated=individual_count if donation else 0,
             lifetime_purchased=individual_count if not donation else 0,
             defaults={

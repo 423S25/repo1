@@ -80,7 +80,6 @@ def admin_required(func):
 def get_index():
     if is_mobile():
         return redirect('/mobile')
-    
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order
