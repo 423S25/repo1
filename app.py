@@ -282,7 +282,6 @@ def get_product_add():
         form=form,
         categories=categories,
         stock_unit_list=[StockUnit.PLACEHOLDER],
-        stock_unit_count=True
     )
 
 # Create a new product
@@ -418,8 +417,7 @@ def get_product_add_inventory(product_id: int):
         "modals/product_add_stock.html",
         product=product,
         form=FlaskForm(),
-        stock_unit_list=stock_units,
-        stock_unit_count=True
+        stock_unit_list=stock_units
     )
 
 # Add inventory only for desktop
@@ -489,12 +487,21 @@ def post_product_update_inventory_mobile(product_id: int):
 def get_product_update_all(product_id: int):
     product = Product.get_product(product_id)
     stock_units = StockUnit.all_of_product(product.get_id())
+    stock_unit_ids = list(map(lambda x: x.get_id(), stock_units))
+    stock_unit_counts = [0] * len(stock_units)
+    for unit_id, count in product.get_inventory_breakdown():
+        try:
+            index = stock_unit_ids.index(unit_id)
+            stock_unit_counts[index] = count
+        except:
+            pass
     return render_template(
         "modals/product_update_all.html",
         product=product,
         form=ProductUpdateAllForm(),
         stock_unit_list=stock_units,
-        stock_unit_count=False
+        stock_unit_count_list=stock_unit_counts,
+        stock_unit_count_hidden=True
     )
 
 @app.post("/product_update_all/<int:product_id>")
@@ -512,7 +519,8 @@ def post_product_update_all(product_id: int):
         if product.product_name != form.product_name.data and possible_conflicing_product is not None:
             form_errors.append(f'Product already exists with name "{form.product_name.data}"')
 
-        stock_units = parse_stock_units(request.form, form_errors, False)
+        stock_units = parse_stock_units(request.form, form_errors, True)
+        print(stock_units, request.form)
         
         if len(form_errors) == 0:
             product_name = form.product_name.data

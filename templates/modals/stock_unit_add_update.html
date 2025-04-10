@@ -36,7 +36,7 @@
         if (countInput != null) {
             countInput.setAttribute('name', `stock_count_${newId}`);
             countInput.setAttribute('value', '0');
-            countInput.value = '';
+            countInput.value = '0';
         }
 
         newRow.querySelector('input[type="hidden"]')?.remove();
@@ -56,7 +56,7 @@
         <th>Unit Name</th>
         <th>Count/Unit</th>
         <th>Price/Unit</th>
-        {% if stock_unit_count or stock_unit_count_list %}
+        {% if not stock_unit_count_hidden %}
             <th>Count in Units</th>
         {% endif %}
     </tr>
@@ -69,11 +69,22 @@
                 {% endif %}
             </td>
             <td><input type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
-            <td><input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
-            {% if stock_unit_count_list %}
-                <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
-            {% elif stock_unit_count %}
-                <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+            <td>
+                <input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
+                {% if stock_unit_count_hidden %}
+                    {% if stock_unit_count_list %}
+                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                    {% else %}
+                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                    {% endif %}
+                {% endif %}
+            </td>
+            {% if not stock_unit_count_hidden %}
+                {% if stock_unit_count_list %}
+                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                {% else %}
+                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                {% endif %}
             {% endif %}
         </tr>
     {% endfor %}
