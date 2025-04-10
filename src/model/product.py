@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv
 import os
-load_dotenv()
+
 
 db = SqliteDatabase(os.environ.get("INVENTORY_DB_PATH", "inventory.db"))
 
@@ -36,6 +36,7 @@ class Category(Model):
             name=name,
             color = color,
             image_path = colored_icon_path)
+
 
         return category
 
