@@ -1,9 +1,10 @@
 from peewee import *
 import datetime
-from typing import Optional
+from typing import Optional, NamedTuple
 import io
 import csv
 from dateutil.relativedelta import relativedelta
+import json
 import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv
@@ -49,6 +50,7 @@ class Category(Model):
         except DoesNotExist:
             return None
 
+
     @classmethod
     def get_by_color(cls, hex_code: str) -> Optional['Category']:
         return cls.get_or_none(cls.color == hex_code)
@@ -92,12 +94,22 @@ class Category(Model):
         database = db
 
 
+
+# To hold data from the form before being added to the db
+class StockUnitSubmission(NamedTuple):
+    id: Optional[int]
+    name: str
+    multiplier: int
+    price: float
+    count: Optional[int]
+
+
+
 class Product(Model):
     product_name = CharField(unique=True)
     category = ForeignKeyField(Category, backref='products')
     inventory = IntegerField(default=0)
-    price = DecimalField(decimal_places=2, auto_round=True)
-    unit_type = CharField(null=True)
+    inventory_breakdown = TextField(null=False) # [[stock_unit.id, count]]
     ideal_stock = IntegerField()
     image_path = CharField(null=True)
     last_updated = DateTimeField(default=datetime.datetime.now)
@@ -226,24 +238,33 @@ class Product(Model):
         return list(query)
 
     @staticmethod
-    def add_product(name: str, stock: int, category: int, price: float, unit_type: str, ideal_stock: int,
-                    donation: bool, days_left: None, image_path: str = None) -> 'Product':
+    def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
+        individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
+
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
-            lifetime_donated=stock if donation else 0,
-            lifetime_purchased=stock if not donation else 0,
+            lifetime_donated=individual_count if donation else 0,
+            lifetime_purchased=individual_count if not donation else 0,
             defaults={
-                'inventory': stock,
-                'price': price,
-                'unit_type': unit_type,
+                'inventory': individual_count,
+                'inventory_breakdown': '[]',
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
                 'days_left': days_left
             }
         )
+
         product: Product = product
-        InventorySnapshot.create_snapshot(product.get_id(), product.inventory)
+        stock_units = StockUnit.commit_stock_unit_submissions(product.get_id(), stock)
+        InventorySnapshot.create_snapshot(product.get_id(), individual_count, total_price)
+
+        inventory_breakdown = []
+        for unit, submission in zip(stock_units, stock):
+            inventory_breakdown.append([unit.get_id(), submission.count or 0])
+        product.inventory_breakdown = json.dumps(inventory_breakdown)
+        product.save()
+
         return product
 
     # Fills the database with how many days till each product is out of stock
@@ -296,16 +317,21 @@ class Product(Model):
         if product is not None:
             product.delete_instance()
             InventorySnapshot.delete_snapshots_for_product(product_id)
+            StockUnit.delete_stock_units_for_product(product_id)
 
+    
     @classmethod
     def get_csv(cls):
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Name', 'Category', 'Inventory', 'Price', 'Unit Type', 'Ideal Stock', \
-                         'Days Left', 'Lifetime amount donated', 'Lifetime amount purchased'])
+        writer.writerow([
+            'Name', 'Category', 'Inventory', 'Ideal Stock',
+            'Days Left', 'Lifetime amount donated', 'Lifetime amount purchased'
+        ])
         for product in cls.select():
+            product: Product = product
             writer.writerow([product.product_name, product.category.name, product.inventory, \
-                             product.price, product.unit_type, product.ideal_stock, product.days_left,
+                             product.ideal_stock, product.days_left,
                              product.lifetime_donated, product.lifetime_purchased])
         output.seek(0)
         return output.getvalue()
@@ -314,11 +340,20 @@ class Product(Model):
     ########### INSTANCE METHODS ###########
     ########################################
 
+    def time_since_last_updated(self) -> relativedelta:
+        return relativedelta(datetime.datetime.now(), self.last_updated)
+    
+    def been_over_one_week_since_updated(self) -> relativedelta:
+        delta = self.time_since_last_updated()
+        return delta.weeks >= 1 or delta.months >= 1 or delta.years >= 1
+
     # Returns a human string for how long it has been since the product was updated (e.g., "2 days" or "1 week")
     def human_last_updated(self) -> str:
-        delta = relativedelta(datetime.datetime.now(), self.last_updated)
-        if delta.weeks > 0:
-            return f"{delta.weeks} {'week' if delta.weeks == 1 else 'weeks'}"
+        delta = self.time_since_last_updated()
+        if delta.months > 1: #allow things like "6 weeks"
+            return f"{delta.months} months"
+        if delta.weeks > 1: #allow things like "10 days"
+            return f"{delta.weeks} weeks"
         elif delta.days > 0:
             return f"{delta.days} {'day' if delta.days == 1 else 'days'}"
         elif delta.hours > 0:
@@ -339,8 +374,8 @@ class Product(Model):
             if curr.ignored or prev.ignored:
                 continue
 
-            if prev.inventory > curr.inventory:  # There must be a decrease in stock; otherwise, it was a restock
-                inventory_delta = prev.inventory - curr.inventory
+            if prev.individual_inventory > curr.individual_inventory: # There must be a decrease in stock; otherwise, it was a restock
+                inventory_delta = prev.individual_inventory - curr.individual_inventory
                 day_delta = (curr.timestamp - prev.timestamp).total_seconds() / 86_400
                 daily_usages.append(inventory_delta / day_delta)
 
@@ -355,6 +390,12 @@ class Product(Model):
         else:
             return self.inventory / daily_usage
 
+    def get_inventory_breakdown(self) -> list[list[int, int]]:
+        try:
+            return json.loads(self.inventory_breakdown)
+        except:
+            return []
+
     def set_img_path(self, img_path: str):
         self.image_path = img_path
         self.save()
@@ -365,54 +406,79 @@ class Product(Model):
         self.last_updated = datetime.datetime.now()
         self.save()
 
-    def update_product(self, product_name: str, price: float, unit_type: str, ideal_stock: int):
+    def update_product(self, product_name: str, stock_unit_submissions: list[StockUnitSubmission], ideal_stock: int):
+        individual_count, _ = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
+        stock_units = StockUnit.commit_stock_unit_submissions(self.get_id(), stock_unit_submissions)
+        
+        self.inventory = individual_count
         self.product_name = product_name
-        self.price = price
-        self.unit_type = unit_type
         self.ideal_stock = ideal_stock
-
         self.last_updated = datetime.datetime.now()
-
+        inventory_breakdown = []
+        for unit, submission in zip(stock_units, stock_unit_submissions):
+            inventory_breakdown.append([unit.get_id(), submission.count or 0])
+        self.inventory_breakdown = json.dumps(inventory_breakdown)
         self.save()
 
-    # Add to the current available inventory of a product with [`new_stock`] units
-    def add_items(self, amount: int, donation: bool):
+
+
+    # Add to the current available inventory of a product with the unit submissions
+    def add_stock(self, stock_unit_submissions: list[StockUnitSubmission], donation: bool):
+        StockUnit.commit_stock_unit_submissions(self.get_id(), stock_unit_submissions)
+
+        added_individual_inventory, _ = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
+
+        stock_units = StockUnit.all_of_product(self.get_id())
+        stock_unit_ids = list(map(lambda x: x.id, stock_units))
+        stock_unit_names = list(map(lambda x: x.name, stock_units))
+        stock_count_map: dict[int, int] = {}
+        total_individual_inventory = 0
+        total_price = 0
+
+        for unit_id, count in self.get_inventory_breakdown():
+            stock_count_map[unit_id] = count
+            index = stock_unit_ids.index(unit_id)
+            total_individual_inventory += count * stock_units[index].multiplier
+            total_price += count * stock_units[index].price
+        
+        for submission in stock_unit_submissions:
+            index = stock_unit_names.index(submission.name)
+            count = submission.count or 0
+            total_individual_inventory += count * stock_units[index].multiplier
+            total_price += count * stock_units[index].price
+            stock_unit_id = stock_units[index].get_id()
+            if stock_unit_id in stock_count_map:
+                stock_count_map[stock_unit_id] += count
+            else:
+                stock_count_map[stock_unit_id] = count
+
         if donation:
             if self.lifetime_donated is None:
                 self.lifetime_donated = 0
-            self.lifetime_donated += amount
+            self.lifetime_donated += added_individual_inventory
         else:
             if self.lifetime_purchased is None:
                 self.lifetime_purchased = 0
-            self.lifetime_purchased += amount
-        self.inventory += amount
-        self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
+            self.lifetime_purchased += added_individual_inventory
 
-    # Sets the current available stock of a product to [`new_stock`] units
-    def update_stock(self, new_stock: int):
-        self.inventory = new_stock
+        self.inventory = total_individual_inventory
+        self.inventory_breakdown = json.dumps([[k, v] for k, v in stock_count_map.items()])
+        self.save()
+        
+        InventorySnapshot.create_snapshot(self.get_id(), total_individual_inventory, total_price)
+
+    # Sets the current available stock of a product to match the stock units
+    def update_stock(self, stock_unit_submissions: list[StockUnitSubmission]):
+        individual_inventory, total_value = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
+        stock_units = StockUnit.commit_stock_unit_submissions(self.get_id(), stock_unit_submissions)
+        inventory_breakdown = []
+        for unit, submission in zip(stock_units, stock_unit_submissions):
+            inventory_breakdown.append([unit.get_id(), submission.count or 0])
+        self.inventory_breakdown = json.dumps(inventory_breakdown)
+        self.inventory = individual_inventory
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), self.inventory)
-
-    # Increment price
-    def increment_price(self, increase: float):
-        self.price += increase
-        self.last_updated = datetime.datetime.now()
-        self.save()
-
-    # Increments the ideal stock by [`increase`] units
-    def increment_ideal_stock(self, increase: int):
-        self.ideal_stock += increase
-        self.last_updated = datetime.datetime.now()
-        self.save()
-
-    # Increments the current available stock of a product by [`increase`] units
-    def increment_stock(self, increase: int):
-        self.inventory += increase
-        self.last_updated = datetime.datetime.now()
-        self.save()
+        InventorySnapshot.create_snapshot(self.get_id(), individual_inventory, total_value)
 
     # marks product as notified (after email is sent)
     def increment_notified(self):
@@ -423,13 +489,110 @@ class Product(Model):
         self.notified = 0
         self.save()
 
+
+
     class Meta:
         database = db
 
 
+
+class StockUnit(Model):
+    PLACEHOLDER = {
+        "product_id": None,
+        "id": None,
+        "name": "Individual",
+        "price": None,
+        "multiplier": 1
+    }
+    
+    product_id = ForeignKeyField(Product, backref='stockunits')
+    name = CharField(null=False)
+    price = DecimalField(decimal_places=2, auto_round=True)
+    multiplier = IntegerField(null=False)
+    
+    @staticmethod
+    def add_stock_unit(product_id: int, name: str, price: float, multiplier: int) -> 'StockUnit':
+        return StockUnit.create(
+            name=name,
+            price=price,
+            product_id=product_id,
+            multiplier=multiplier
+        )
+
+    @staticmethod
+    def get_stock_unit(name_or_id: str | int) -> Optional['StockUnit']:
+        try:
+            if type(name_or_id) is str:
+                return StockUnit.get(StockUnit.name == name_or_id)
+            else:
+                return StockUnit.get_by_id(name_or_id)
+        except DoesNotExist:
+            return None
+        
+    @staticmethod
+    def all_of_product(product_id: int) -> list['StockUnit']:
+        return list(StockUnit.select().where(
+            StockUnit.product_id==product_id
+        ))
+    
+    @staticmethod
+    def all_of_product_with_count(product_or_id: Product | int) -> list[list['StockUnit', int]]:
+        if type(product_or_id) is int:
+            product = Product.get_product(product_or_id)
+        else:
+            product = product_or_id
+        stock_units = StockUnit.all_of_product(product.get_id())
+        stock_units_with_counts = [[unit, 0] for unit in stock_units]
+        stock_unit_ids = list(map(lambda x: x.get_id(), stock_units))
+        for unit_id, count in product.get_inventory_breakdown():
+            index = stock_unit_ids.index(unit_id)
+            stock_units_with_counts[index][1] += count
+        return stock_units_with_counts
+    
+    @staticmethod
+    def delete_stock_units_for_product(product_id: int):
+        StockUnit.delete().where(StockUnit.product_id == product_id).execute()
+       
+    @staticmethod
+    def delete_stock_unit(name_or_id: str | int):
+        stock_unit = StockUnit.get_stock_unit(name_or_id)
+        if stock_unit is not None:
+            stock_unit.delete_instance()
+
+    # Tallies the total individual count and current price
+    def tally_stock_unit_submissions(submitted_units: list[StockUnitSubmission]) -> tuple[int, float]:
+        individual_count = 0
+        total_cost = 0
+        for unit in submitted_units:
+            individual_count += (unit.count or 0) * unit.multiplier
+            total_cost += (unit.count or 0) * unit.price
+        return (individual_count, round(total_cost, 2))
+
+    # Creates/updates the stock units and returns the new StockUnits
+    def commit_stock_unit_submissions(product_id: int, submitted_units: list[StockUnitSubmission]) -> list['StockUnit']:
+        collector = []
+        for unit in submitted_units:
+            if unit.id is None: #create new stock unit
+                stock_unit = StockUnit.add_stock_unit(product_id, unit.name, unit.price, unit.multiplier)
+                collector.append(stock_unit)
+            else:
+                live_unit = StockUnit.get_stock_unit(unit.id)
+                live_unit.name = unit.name
+                live_unit.price = unit.price
+                live_unit.multiplier = unit.multiplier
+                live_unit.save()
+                collector.append(live_unit)
+        return collector
+
+    class Meta:
+        database = db
+
+
+
 class InventorySnapshot(Model):
     product_id = IntegerField(null=False)
-    inventory = IntegerField(null=False)
+    individual_inventory = IntegerField(null=False)
+    value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
     ignored = BooleanField(default=False)  # To be used if a value was added in error
 
@@ -462,10 +625,11 @@ class InventorySnapshot(Model):
         return snapshots
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int) -> 'InventorySnapshot':
+    def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
         snapshot = InventorySnapshot.create(
             product_id=product_id,
-            inventory=inventory,
+            individual_inventory=inventory,
+            value_at_time=price
         )
         return snapshot
 

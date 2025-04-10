@@ -23,7 +23,7 @@ class EmailJob():
         try:
             sg = SendGridAPIClient(KEY)
             response = sg.send(message)
-            print(response.status_code)
+            print('email response code', response.status_code)
         except Exception as e:
             print(e)
 
@@ -40,7 +40,7 @@ class EmailJob():
         try:
             sg = SendGridAPIClient(KEY)
             response = sg.send(message)
-            print(response.status_code)
+            print('email response code', response.status_code)
         except Exception as e:
             print(e)
 
