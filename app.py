@@ -5,7 +5,7 @@ import io
 from PIL import Image
 from functools import wraps
 
-from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
+from flask import Flask, request, Response, render_template, redirect, abort, send_from_directory, url_for, make_response
 from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
 from flask_bcrypt import Bcrypt
@@ -726,6 +726,10 @@ def export_csv():
     response = Response(csv_file, content_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
     return response
+
+@app.route("/data/category_icons/<path:filename>")
+def serve_persisted_files(filename):
+    return send_from_directory('/data/category_icons', filename)
 
 with app.app_context():
     if not User.get_by_username('admin'):
