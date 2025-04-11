@@ -10,9 +10,10 @@ import re
 from dotenv import load_dotenv
 import os
 
+load_dotenv()
 
 db = SqliteDatabase(os.environ.get("INVENTORY_DB_PATH", "inventory.db"))
-
+CAT_ICONS_PATH = os.environ.get("CATEGORY_ICONS_PATH", "icons/category_icons/")
 
 class Category(Model):
     ALL_PRODUCTS_PLACEHOLDER = {"name": "All Products", "color": "black", "image_path": None, "id": 0}
@@ -84,7 +85,7 @@ class Category(Model):
                 new_style_text = re.sub(r'#([0-9a-fA-F]{3,6})', new_color, style.text, flags=re.IGNORECASE)
                 style.text = new_style_text
 
-        output_path = "icons/category_icons/" + name + ".svg"
+        output_path = CAT_ICONS_PATH + name + ".svg"
         tree.write("static/" + output_path)
 
         return output_path
