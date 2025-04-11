@@ -1,24 +1,31 @@
 <div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
 	<div class="modal-underlay" _="on click trigger closeModal"></div>
 	<div class="modal-content">
-		<form hx-post="/category_update/{{ category.id }}" hx-target="#modal-errors" hx-swap="innerHTML">
+		<button class="category-danger-button" _="on click trigger closeModal">
+			<img alt="Close" src="icons/close.svg" class="close-icon" />
+		</button>
+		<div class="add-category-header">EDIT CATEGORY</div><br><br>
+		<form class="edit-category-form" hx-post="/category_update/{{ category.id }}" hx-target="#modal-errors" hx-swap="innerHTML">
 			{{ form.csrf_token }}
 
             <input type="hidden" name="_method" value="PATCH">
+			
+			<div>
+				<label class="edit-category-name-label" for="category_name">Category Name:</label>
+				<input class="edit-category-name-input" type="text" id="category_name" name="category_name" value="{{ category.name }}" required><br>
+			</div>
 
-			<label for="category_name">Category Name:</label>
-			<input type="text" id="category_name" name="category_name" value="{{ category.name }}" required><br>
+			<div>
+				<label class="edit-category-color-label" for="category_color">Color:</label>
+				<input class="edit-category-color-input" type="color" id="category_color" name="category_color" value="{{ category.color }}" required><br>
+			</div>
 
-			<label for="category_color">Color:</label>
-			<input type="color" id="category_color" name="category_color" value="{{ category.color }}" required><br>
+            <button class="edit-category-submit-button" hx-delete="/category_delete/{{ category.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{ category.name }}?">Delete</button>
 
-            <button hx-delete="/category_delete/{{ category.id }}" hx-target="body" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete {{ category.name }}?">Delete</button>
-
-            <button type="submit">Update Category</button>
+            <button class="edit-category-submit-button" type="submit">Update Category</button>
 		</form>
 		<div id="modal-errors"></div>
 		<br>
 		<br>
-		<button class="btn danger" _="on click trigger closeModal">Close</button>
 	</div>
 </div>

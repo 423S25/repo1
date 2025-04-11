@@ -1,6 +1,6 @@
 {% if value == "inventory" %}
 <div class="report-navigation">
-    <p>Choose Report Type:</p>
+    <p id="report-label">Choose Report Type:</p>
     <form action="/reports" method="get">
         <button class="current-report" type="submit" name="value" value="inventory">All Products</button>
     </form>
@@ -14,7 +14,7 @@
 {% include "/reports/reports_inventory.html" %}
 {% elif value == "categories" %}
 <div class="report-navigation">
-    <p>Choose Report Type:</p>
+    <p id="report-label">Choose Report Type:</p>
     <form action="/reports" method="get">
         <button type="submit" name="value" value="inventory">All Products</button>
     </form>
@@ -28,7 +28,7 @@
 {% include "/reports/reports_categories.html" %}
 {% elif value == "product" %}
 <div class="report-navigation">
-    <p>Choose Report Type:</p>
+    <p id="report-label">Choose Report Type:</p>
     <form action="/reports" method="get">
         <button type="submit" name="value" value="inventory">All Products</button>
     </form>

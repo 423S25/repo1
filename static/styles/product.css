@@ -289,7 +289,7 @@ span#inventory_bar
 	text-align: center;
 }
 
-label
+label, th
 {
 	color: var(--hrdc-theme-teal);
     font-size: 12px;
@@ -298,7 +298,7 @@ label
 	text-align: left;
 }
 
-input#product_name, input#inventory, input#price, input#unit_type, input#ideal_stock
+input#product_name, input#inventory, input#ideal_stock, input#unit_name, input#count_unit, input#price_unit, input#count_in_unit
 {
 	color: #ffffff;
     border-color: var(--hrdc-theme-teal);
@@ -343,7 +343,7 @@ input#donation:hover
     padding: 1em 3.3em;
 }
 
-button#add-product-label
+button#add-product-label, button#new_unit
 {
 	background-color: var(--hrdc-theme-teal);
     border: none;
@@ -372,7 +372,7 @@ button.btn-danger
     filter: brightness(0) invert(1);
 }
 
-button#add-product-label:hover
+button#add-product-label:hover, button#new_unit:hover
 {
 	background-color: var(--hrdc-theme-green-yellow);
     border: none;

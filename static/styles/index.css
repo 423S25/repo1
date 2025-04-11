@@ -13,6 +13,25 @@ select:hover
     cursor: pointer;
 }
 
+p, .account
+{
+    font-family: 'Gotham Book';
+}
+
+p#filter
+{
+    font-family: 'Gotham Book';
+    color: var(--hrdc-theme-teal);
+}
+
+p#filter-label
+{
+    font-family: 'Gotham Bold';
+    color: var(--hrdc-theme-teal);
+    text-align: center;
+    font-size: 24px;
+}
+
 .form-control
 {
     padding: 15px 22%;
@@ -92,8 +111,6 @@ select:hover
 }
 
 
-
-
 .logout {
     margin-left: auto;
 }
@@ -168,6 +185,32 @@ select:hover
     text-decoration: none;
     font-size: 14px;
     padding: 15px 3%;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
+button#low-stock, button#med-stock, button#hi-stock
+{
+    background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+    padding: 5px;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
+button#low-stock:hover, button#med-stock:hover, button#hi-stock:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+    padding: 5px;
     font-weight: bold;
     font-family: 'Gotham Book';
 }

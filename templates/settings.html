@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<link rel="stylesheet" href="styles/settings.css">
 
 <head>
     <!-- HTMX CDN -->
@@ -12,15 +13,17 @@
     <link rel="stylesheet" href="styles/index.css">
 </head>
 <header>
-    <a href="/">Home</a>
+    <img alt="Go Back" src="icons/arrow_left.svg"><a href="/">BACK</a>
 </header>
 <body>
-    <h1>Admin Settings</h1>
-    <h2>Admin Email</h2>
-    <form method="post" action="/settings" hx-confirm="Update the admin email?">
-        <input name="email" type="text", placeholder={{ user.email }}>
-        <button type="submit">UPDATE</button>
-    </form>
+    <div class="settings-form">
+        <h1>Admin Settings</h1>
+        <h2>Admin Email</h2>
+        <form method="post" action="/settings" hx-confirm="Update the admin email?">
+            <input name="email" type="text", placeholder={{ user.email }}>
+            <button type="submit">UPDATE</button>
+        </form>
+    </div>
 </body>
 
 </html>
