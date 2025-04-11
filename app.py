@@ -64,7 +64,10 @@ def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not current_user.is_authenticated or getattr(current_user, "username", None) != "admin":
-            return abort(401, description="Only admins can access this resource")
+            if request.method == 'GET':
+                return render_template("not_authorized.html"), 401
+            else:
+                return abort(401, description="Only admins can access this resource")
         else:
            return func(*args, **kwargs)
     return wrapper
@@ -719,6 +722,21 @@ def export_csv():
     response = Response(csv_file, content_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
     return response
+
+###
+# Error pages
+###
+
+@app.errorhandler(404)
+def page_not_found(_):
+    if request.method == "POST":
+        return make_response('Resource not found', 404)
+    else:
+        return render_template("page_not_found.html"), 404
+
+###
+# Auth setup
+###
 
 with app.app_context():
     if not User.get_by_username('admin'):
