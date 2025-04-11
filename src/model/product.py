@@ -13,7 +13,8 @@ import os
 load_dotenv()
 
 db = SqliteDatabase(os.environ.get("INVENTORY_DB_PATH", "inventory.db"))
-CAT_ICONS_PATH = os.environ.get("CATEGORY_ICONS_PATH", "icons/category_icons/")
+CAT_ICONS_PATH = os.environ.get("CATEGORY_ICONS_PATH", "static/icons/category_icons/")
+os.makedirs(CAT_ICONS_PATH, exist_ok=True)
 
 class Category(Model):
     ALL_PRODUCTS_PLACEHOLDER = {"name": "All Products", "color": "black", "image_path": None, "id": 0}
@@ -86,8 +87,8 @@ class Category(Model):
                 style.text = new_style_text
 
         output_path = CAT_ICONS_PATH + name + ".svg"
-        tree.write("static/" + output_path)
-
+        #tree.write("static/" + output_path)
+        tree.write(output_path)
         return output_path
 
 
