@@ -9,20 +9,22 @@
 {% endif %}
 
 {% for product in product_list %}
-    <div class="mobile-product-row box-shadow-small">
+    <div class="mobile-product-row box-shadow-small" role="button" hx-get="/product_update_inventory_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend">
         {% if not product.image_path %}
-            <img src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
+            <img class="mobile-product-row-image" src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
         {% else %}
-            <img src="images/{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
+            <img class="mobile-product-row-image" src="images/{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
         {% endif %}
-        <div role="button" hx-get="/product_update_inventory_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend" class="mobile-product-row-rhs">
+        {% if product.been_over_one_week_since_updated() %}
+            <span class="mobile-product-row-name short">{{ product.product_name }}</span><br>
+            <img alt="Calendar Alert" class="mobile-inventory-calendar-alert" src="icons/calendar_alert.svg"/>
+        {% else %}
             <span class="mobile-product-row-name">{{ product.product_name }}</span><br>
-            <span class="mobile-product-last-updated">{{ product.category.name }}</span><br>
-            <span class="mobile-product-last-updated">{{ product.human_last_updated() }} Ago</span>
-            <div class="inventory-row-cont mobile-inventory-row-cont">
-                {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
-                <span>{{ product.inventory }}/{{ product.ideal_stock }}</span>
-            </div>
+        {% endif %}
+        <span class="mobile-product-last-updated">{{ product.human_last_updated() }} Ago &middot; {{ product.category.name }}</span>
+        <div class="inventory-row-cont mobile-inventory-row-cont">
+            {{ inventory_item_bar(product.inventory, product.ideal_stock) }}
+            <span>{{ product.inventory }}/{{ product.ideal_stock }}</span>
         </div>
     </div>
 {% endfor %}

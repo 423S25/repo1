@@ -6,47 +6,36 @@
         </button>
         <p class="add-label">ADD PRODUCT</p>
         <form hx-post="/product_add" hx-target="#modal-errors" hx-swap="innerHTML">
-            {{ form.csrf_token }}
+            <div class="modal-form-content"> 
+                {{ form.csrf_token }}
 
             <div>
                 <label id="add-product-name-label" for="product_name">Product Name:</label>
                 <input type="text" id="product_name" name="product_name" required>
             </div>
 
-            <div>
-                <label id="add-inventory-label" for="inventory">Inventory:</label>
-                <input type="number" id="inventory" name="inventory" value="0" required>
+                <div>
+                    <label id="add-ideal-stock-label" for="ideal_stock">Ideal Stock:</label>
+                    <input type="number" id="ideal_stock" name="ideal_stock" required>
+                </div>
+
+                <div>
+                    <label class="add-category-id-label" for="category_id">Category:</label>
+                    <select class="add-category-id" id="category_id" name="category_id">
+                        <option value="">Select a category</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: row">
+                    <label id="add-donation-label" for="donation">Donation: </label>
+                    <input type="checkbox" id="donation" name="donation">
+                </div>
             </div>
 
-            <div>
-                <label id="add-price-label" for="price">Price</label>
-                <input type="number" id="price" name="price" required>
-            </div>
-
-            <div>
-                <label id="add-unit-type-label" for="unit_type">Unit Type:</label>
-                <input type="text" id="unit_type" name="unit_type" required>
-            </div>
-
-            <div>
-                <label id="add-ideal-stock-label" for="ideal_stock">Ideal Stock:</label>
-                <input type="number" id="ideal_stock" name="ideal_stock" required>
-            </div>
-
-            <div>
-                <label class="add-category-id-label" for="category_id">Category:</label>
-                <select class="add-category-id" id="category_id" name="category_id">
-                    <option value="">Select a category</option>
-                    {% for category in categories %}
-                    <option value="{{ category.id }}">{{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label id="add-donation-label" for="donation">Donation:</label>
-                <input type="checkbox" id="donation" name="donation">
-            </div>
+            {%include "modals/stock_unit_add_update.html" %}
 
             <div class="modal-buttons">
                 <button id="add-product-label" type="submit">Submit</button>

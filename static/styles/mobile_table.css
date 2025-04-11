@@ -1,61 +1,53 @@
 .mobile-product-row {
     margin: 20px;
     width: calc(100% - 40px);
-    --row-height: 100px;
-    height: var(--row-height);
+    height: 90px;
     background-color: var(--hrdc-theme-really-light-grey);
-    display: flex;
-}
-.mobile-product-row > img {
-    height: calc(var(--row-height) - 16px);
-    width: calc(var(--row-height) - 16px);
-    padding: 8px;
-    background-color: var(--hrdc-theme-light-grey);
-}
-.mobile-product-row-rhs {
-    width: calc(100% - var(--row-height));
-    height: calc(var(--row-height) - 20px);
-    padding: 10px;
     position: relative;
 }
-.mobile-product-row-rhs > span {
-    max-width: calc(100% - 20px);
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.mobile-product-row-adjust {
+.mobile-product-row > * {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
-    font-family: 'Gotham Book', sans-serif;
-    width: calc(100% - 30px);
-    background-color: var(--hrdc-theme-teal);
-    color: white;
-    border-radius: 0;
-    border: none;
-    text-transform: uppercase;
-    font-size: 1.1em;
+}
+.mobile-product-row-image {
+    height: 40px;
+    width: 40px;
     padding: 5px;
-    text-align: center;
+    top: 10px;
+    left: 10px;
 }
 .mobile-product-row-name {
     color: black;
     font-family: 'Gotham Bold', sans-serif;
     text-transform: uppercase;
     font-size: 1.2em;
+    top: 12px;
+    left: 70px;
+    white-space: nowrap;
+    max-width: calc(100% - 80px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mobile-product-row-name.short {
+    max-width: calc(100% - 117px);
+}
+.mobile-inventory-calendar-alert {
+    height: 27px;
+    width: 27px;
+    top: 10px;
+    right: 10px;
 }
 .mobile-product-last-updated {
     color: var(--hrdc-theme-dark-teal);
     font-family: 'Gotham Book', sans-serif;
     text-transform: uppercase;
     font-size: 0.7em;
+    left: 70px;
+    top: 41px;
 }
 .mobile-inventory-row-cont {
-    position: absolute;
-    width: calc(100% - 40px);
+    width: calc(100% - 20px);
     bottom: 10px;
+    left: 10px;
 }
 .none-in-category, .result-count {
     margin: 0 20px;

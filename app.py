@@ -1,19 +1,19 @@
 import os, secrets
-from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
-
-from src.model.product import Category
-from src.model.product import Product, InventorySnapshot, db
-from src.model.user import User, user_db
-from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
-from flask_bcrypt import Bcrypt
-
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateInventoryForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, clean_price_to_float, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm
-from src.common.email_job import EmailJob
-
+from src.common.functions import helper
 from user_agents import parse
 import io
 from PIL import Image
 from functools import wraps
+
+from flask import Flask, request, Response, render_template, redirect, abort, send_from_directory, url_for, make_response
+from flask_wtf import FlaskForm
+from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
+from flask_bcrypt import Bcrypt
+
+from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
+from src.model.user import User, user_db
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -37,7 +37,7 @@ def is_mobile():
     return user_agent.is_mobile or user_agent.is_tablet
 
 with db:
-    db.create_tables([Category, Product, InventorySnapshot])
+    db.create_tables([Category, Product, InventorySnapshot, StockUnit])
 
 with user_db:
     user_db.create_tables([User])
@@ -80,7 +80,6 @@ def admin_required(func):
 def get_index():
     if is_mobile():
         return redirect('/mobile')
-    
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order
@@ -101,13 +100,37 @@ def get_index():
         flag=False
     )
 
+# The filter function for the main table page. Re-serves index.html
+@app.post("/filter")
+@login_required
+def post_filter():
+    category_id = request.form.get('category_id')
+    price = request.form.get('price')
+    amount = request.form.get('amount')
+    # Fills the days left for each product with product.get_days_until_out
+    Product.fill_days_left()
+    # Loads products in urgency order using where for category filter
+    products = Product.urgency_rank(category_id, price, amount)
+    categories = Category.all()
+    levels = Product.get_low_products()
+    return render_template("index.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id,
+                           current_price=price,
+                           current_amount=amount,
+                           levels=levels)
+
+
+
 # The reports page for an overview of all products
 @app.get("/reports")
 @admin_required
 def get_reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
-    categories = [{"id": c.id, "name": c.name, "total_inventory": 0} for c in Category.all()]
+    categories = [{"id": c.id, "name": c.name, "total_inventory": 0, "color": c.color} for c in Category.all()]
 
     # Create a mapping from category ID to total inventory
     category_inventory = {c["id"]: 0 for c in categories}
@@ -118,9 +141,13 @@ def get_reports():
             category_inventory[product.category_id] += product.inventory
 
     # Update category objects with total inventory values
+    colors = []
     for category in categories:
         category["total_inventory"] = category_inventory[category["id"]]
-
+        colors.append(category["color"])
+    data1 = helper.price_over_amount_inventory(helper)
+    data2 = helper.convert_to_rgb(helper, colors)
+    data3 = helper.ideal_over_amount_inventory(helper)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -128,7 +155,10 @@ def get_reports():
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
         value=request.args.get('value'),
-        flag=True
+        data1=data1,
+        data2=data2,
+        data3=data3,
+        Flag = True
     )
 
 # The search function for the main table page. Re-serves index.html
@@ -143,27 +173,13 @@ def get_search():
     categories = Category.all()
     return render_template("table.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
 
-# The filter function for the main table page. Re-serves index.html
-@app.post("/filter")
-@login_required
-def post_filter():
-    category_id = int(request.form.get('category_id'))
-    # Fills the days left for each product with product.get_days_until_out
-    Product.fill_days_left()
-    # Loads products in urgency order using where for category filter
-    if category_id == 0:
-        products = Product.urgency_rank()
-    else:
-        products = Product.urgency_rank(category_id)
-    categories = Category.all()
-    levels = Product.get_low_products()
-    return render_template("index.html", product_list=products, user=current_user, categories=categories, current_category=category_id, levels=levels)
-
 # The individual page for each product
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
 def post_product_page(product_id: int):
-
+    if is_mobile():
+        return redirect("/mobile")
+    
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
 
@@ -172,6 +188,7 @@ def post_product_page(product_id: int):
         return abort(404, description=f"Could not find product {product_id}")
 
     snapshots = InventorySnapshot.all_of_product(product_id)
+    stock_units_with_counts = StockUnit.all_of_product_with_count(product)
     usage = product.get_usage_per_day()
     days_until_out = product.get_days_until_out(usage)
     return render_template(
@@ -182,7 +199,8 @@ def post_product_page(product_id: int):
         daily_usage=round(usage, 1) if usage is not None else None,
         days_until_out=round(days_until_out) if days_until_out is not None else None,
         user=current_user,
-        filepath = product.image_path
+        stock_units_with_counts=stock_units_with_counts,
+        filepath=product.image_path
     )
 
 ###
@@ -193,6 +211,8 @@ def post_product_page(product_id: int):
 @app.get("/mobile")
 @login_required
 def get_mobile_index():
+    if not is_mobile():
+        return redirect("/")
     categories = [
         Category.ALL_PRODUCTS_PLACEHOLDER,
         *Category.all_alphabetized()
@@ -264,19 +284,19 @@ def post_settings():
 def get_product_add():
     form = ProductAddForm()
     categories = Category.all_alphabetized()
-    return render_template('modals/product_add.html', form=form, categories=categories)
+    return render_template(
+        'modals/product_add.html',
+        form=form,
+        categories=categories,
+        stock_unit_list=[StockUnit.PLACEHOLDER],
+    )
 
 # Create a new product
 @app.post('/product_add')
 @admin_required
 def post_product_add():
     form = ProductAddForm()
-    form.validate()
-    form_errors: list[str] = parse_errors(form)
-
-    maybe_price_float = clean_price_to_float(form.price.data) #allow '$' in price field
-    if maybe_price_float is None:
-        form_errors.append('Price could not be converted to number')
+    form_errors = parse_errors(form)
 
     if not form.category_id.errors and Category.get_category(form.category_id.data) is None:
         form_errors.append(f'No category with id {form.category_id.data}')
@@ -285,12 +305,13 @@ def post_product_add():
     if CATEGORY_MESSAGE in form_errors:
         form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
 
+    stock_units = parse_stock_units(request.form, form_errors, True)
+
     if len(form_errors) == 0: #add to database
-        Product.add_product(request.form.get("product_name"),
-            form.inventory.data,
+        Product.add_product(
+            form.product_name.data,
+            stock_units,
             form.category_id.data,
-            maybe_price_float,
-            form.unit_type.data,
             form.ideal_stock.data,
             form.donation.data,
             None
@@ -346,27 +367,43 @@ def post_product_upload_image(product_id: int):
 
 # Form to update stock only for a given product in product inventory_history.html
 @app.get("/product_update_inventory/<int:product_id>")
-@login_required
+@admin_required
 def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
-    return render_template("modals/product_update_stock.html", product=product, form=ProductUpdateInventoryForm())
+    stock_units = StockUnit.all_of_product(product_id)
+    stock_unit_ids = list(map(lambda x: x.get_id(), stock_units))
+    stock_unit_counts = [0] * len(stock_units)
+    for unit_id, count in product.get_inventory_breakdown():
+        try:
+            index = stock_unit_ids.index(unit_id)
+            stock_unit_counts[index] = count
+        except:
+            pass
+    return render_template(
+        "modals/product_update_stock.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=stock_units,
+        stock_unit_count_list=stock_unit_counts
+    )
 
 # Update inventory only for desktop
 @app.post("/product_update_inventory/<int:product_id>")
-@login_required
+@admin_required
 def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        form = ProductUpdateInventoryForm()
+        form = FlaskForm()
         form_errors = parse_errors(form)
+        stock_units = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)
         if product is None:
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data)
+            product.update_stock(stock_units)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -377,27 +414,34 @@ def post_product_update_inventory(product_id: int):
 
 # Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
 @app.get("/product_add_inventory/<int:product_id>")
-@login_required
+@admin_required
 def get_product_add_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
         return abort(404, description=f'No product found with id {product_id}')
-    return render_template("modals/product_add_stock.html", product=product, form=ProductAddInventoryForm())
+    stock_units = StockUnit.all_of_product(product_id)
+    return render_template(
+        "modals/product_add_stock.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=stock_units
+    )
 
 # Add inventory only for desktop
 @app.post("/product_add_inventory/<int:product_id>")
-@login_required
+@admin_required
 def post_product_add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductAddInventoryForm()
         form_errors = parse_errors(form)
+        stock_unit_submissions = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)
         if product is None:
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.add_items(form.stock.data, form.donation.data)
+            product.add_stock(stock_unit_submissions, form.donation.data)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/" + str(product_id))
@@ -406,32 +450,33 @@ def post_product_add_inventory(product_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
-@app.get("/product_update_inventory_options/<int:product_id>")
-@login_required
-def get_product_update_inventory_options(product_id: int):
-    product = Product.get_product(product_id)
-    return render_template("modals/product_update_stock_options.html", product=product)
-
 @app.get("/product_update_inventory_mobile/<int:product_id>")
 @login_required
 def get_product_update_inventory_mobile(product_id: int):
     product = Product.get_product(product_id)
-    return render_template("modals/product_update_stock_mobile.html", product=product, form=ProductUpdateInventoryForm())
+    return render_template(
+        "modals/product_update_stock_mobile.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=StockUnit.all_of_product(product_id)
+    )
 
 # Update inventory only for mobile
 @app.post("/product_update_inventory_mobile/<int:product_id>")
 @login_required
 def post_product_update_inventory_mobile(product_id: int):
     if request.form.get('_method') == 'PATCH':
-        form = ProductUpdateInventoryForm()
+        form = FlaskForm()
         form_errors = parse_errors(form)
+
+        stock_unit_submissions = parse_stock_units(request.form, form_errors, True)
 
         product = Product.get_product(product_id)
         if product is None:
             form_errors.append(f"Could not find product {product_id}")
         
         if len(form_errors) == 0:
-            product.update_stock(form.stock.data)
+            product.update_stock(stock_unit_submissions)
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
             return htmx_redirect("/mobile")
@@ -448,7 +493,23 @@ def post_product_update_inventory_mobile(product_id: int):
 @admin_required
 def get_product_update_all(product_id: int):
     product = Product.get_product(product_id)
-    return render_template("modals/product_update_all.html", product=product, form=ProductUpdateAllForm())
+    stock_units = StockUnit.all_of_product(product.get_id())
+    stock_unit_ids = list(map(lambda x: x.get_id(), stock_units))
+    stock_unit_counts = [0] * len(stock_units)
+    for unit_id, count in product.get_inventory_breakdown():
+        try:
+            index = stock_unit_ids.index(unit_id)
+            stock_unit_counts[index] = count
+        except:
+            pass
+    return render_template(
+        "modals/product_update_all.html",
+        product=product,
+        form=ProductUpdateAllForm(),
+        stock_unit_list=stock_units,
+        stock_unit_count_list=stock_unit_counts,
+        stock_unit_count_hidden=True
+    )
 
 @app.post("/product_update_all/<int:product_id>")
 @admin_required
@@ -461,20 +522,18 @@ def post_product_update_all(product_id: int):
         if product is None:
             form_errors.append(f'No product found with id {product_id}')
 
-        price = clean_price_to_float(form.price.data)
-        if price is None:
-            form_errors.append(f'Price "{form.price.data}" cound not be converted to a number')
-
         possible_conflicing_product = Product.get_product(form.product_name.data)
         if product.product_name != form.product_name.data and possible_conflicing_product is not None:
             form_errors.append(f'Product already exists with name "{form.product_name.data}"')
+
+        stock_units = parse_stock_units(request.form, form_errors, True)
+        print(stock_units, request.form)
         
         if len(form_errors) == 0:
             product_name = form.product_name.data
-            unit_type = form.unit_type.data
             ideal_stock = form.ideal_stock.data
 
-            product.update_product(product_name, float(price), unit_type, int(ideal_stock))
+            product.update_product(product_name, stock_units, ideal_stock)
             Product.fill_days_left()
             product.mark_not_notified()
             EmailJob.process_emails(User.get_by_username('admin').email)
@@ -580,7 +639,8 @@ def get_product_search_filter_mobile():
 @app.get("/category_add")
 @admin_required
 def get_category_add():
-    return render_template("modals/category_add.html", form=CategoryAddForm())
+    icons = ["icons/cat_icons/Cleaning.svg", "icons/cat_icons/Hygiene.svg", "icons/cat_icons/Kitchen.svg", "icons/cat_icons/Paper.svg"]
+    return render_template("modals/category_add.html", form=CategoryAddForm(), icons = icons)
 
 # Create a new category
 @app.post("/category_add")
@@ -588,7 +648,6 @@ def get_category_add():
 def post_category_add():
     form = CategoryAddForm()
     form_errors = parse_errors(form)
-
     existing_category = Category.get_category(form.category_name.data)
     if existing_category is not None:
         form_errors.append(f'There already is a category with name "{form.category_name.data}"')
@@ -598,7 +657,7 @@ def post_category_add():
         form_errors.append(f'Category "{possible_color_conflicting_category.name}" already exists with color "{form.category_color.data}"')
 
     if len(form_errors) == 0:
-        Category.add_category(form.category_name.data, form.category_color.data)
+        Category.add_category(form.category_name.data, form.category_color.data, form.selected_icon.data)
         return htmx_redirect('/')
     else:
         return htmx_errors(form_errors)
@@ -667,6 +726,10 @@ def export_csv():
     response = Response(csv_file, content_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
     return response
+
+@app.route("/data/category_icons/<path:filename>")
+def serve_persisted_files(filename):
+    return send_from_directory('/data/category_icons', filename)
 
 with app.app_context():
     if not User.get_by_username('admin'):

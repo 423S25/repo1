@@ -1,6 +1,7 @@
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, BooleanField, validators, ColorField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField
 from flask_wtf import FlaskForm
-from flask import Response, make_response, redirect
+from flask import Response, make_response
+from ..model.product import StockUnitSubmission
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[validators.input_required()])
@@ -10,19 +11,17 @@ class LoginForm(FlaskForm):
 class ProductUpdateAllForm(FlaskForm):
     product_name = StringField('Product Name', validators=[validators.input_required()])
     ideal_stock = IntegerField('Ideal Stock', validators=[validators.NumberRange(min=1)])
-    price = StringField('Price', validators=[validators.input_required()]) #string to allow '$' in entry
-    unit_type = StringField('Unit Type', validators=[validators.input_required()])
     submit = SubmitField('Submit')
+    #also stock unit fields
 
 class ProductAddForm(ProductUpdateAllForm):
-    inventory = IntegerField('Inventory', validators=[validators.NumberRange(min=0)])
     donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
+    #also stock unit fields
 
 # also for mobile
 class ProductUpdateInventoryForm(FlaskForm):
     _method = StringField('_method', validators=[validators.AnyOf(['PATCH', 'patch'])])
-    stock = IntegerField('Stock', validators=[validators.NumberRange(min=0)])
     submit = SubmitField('Submit')
 
 class ProductAddInventoryForm(ProductUpdateInventoryForm):
@@ -41,9 +40,11 @@ class ProductUpdatePurchasedForm(FlaskForm):
 class CategoryAddForm(FlaskForm):
     category_name = StringField('Category Name', validators=[validators.input_required()])
     category_color = ColorField('Category Color', validators=[validators.input_required()])
+    selected_icon = ColorField('Selected Icon', validators=[validators.input_required()])
 
-class CategoryUpdateAllForm(CategoryAddForm):
-    pass
+class CategoryUpdateAllForm(FlaskForm):
+    category_name = StringField('Category Name', validators=[validators.input_required()])
+    category_color = ColorField('Category Color', validators=[validators.input_required()])
 
 
 
@@ -82,6 +83,9 @@ def parse_errors(form: FlaskForm) -> list[str]:
             else:
                 errors_list.append(error_msg)
 
+    if 'Field "Selected Icon" is required' in errors_list:
+        errors_list[errors_list.index('Field "Selected Icon" is required')] = "Please Select an Icon"
+
     return errors_list
 
 def htmx_redirect(url: str) -> Response:
@@ -94,4 +98,66 @@ def htmx_errors(errors: list[str]) -> Response:
     response = make_response(html, 400)
     response.headers['Content-Type'] = 'text/html'
     return response
+
+# Parses the stock units in the form, appending any errors to the list and returning the successfully parsed units
+def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bool) -> list[StockUnitSubmission]:
+    assert not isinstance(form, FlaskForm), 'form should be from `request.form`, not the form class itself'
+    index = 1
+    stock_units: list[StockUnitSubmission] = []
+    while f'stock_name_{index}' in form and f'stock_multiplier_{index}' in form and f'stock_price_{index}' in form:
+        name = form[f'stock_name_{index}']
+        mult_key = f'stock_multiplier_{index}'
+        price_key = f'stock_price_{index}'
+        count_key = f'stock_count_{index}'
+
+        if name is None or name == '':
+            mult_is_missing = mult_key not in form or form[mult_key] == ''
+            price_is_missing = price_key not in form or form[price_key] == ''
+            count_is_missing = not include_count or count_key not in form or form[count_key] == ''
+            if not (mult_is_missing and price_is_missing and count_is_missing):
+                errors.append(f'Missing name for stock unit {index}')
+            index += 1
+            continue
+
+        okay = True
+        multiplier = form[mult_key]
+        price = clean_price_to_float(form[price_key])
+
+        try:
+            multiplier = int(multiplier)
+        except:
+            errors.append(f'Multiplier for stock unit "{name}" is not an integer')
+            okay = False
+        if multiplier < 1:
+            errors.append(f'Multiplier for stock unit "{name}" must be at least 1')
+            okay = False
+
+        if price is None:
+            errors.append(f'Price for stock unit "{name}" is not valid')
+            okay = False
+
+        count = None
+        if count_key in form:
+            try:
+                count = int(form[count_key])
+            except:
+                errors.append(f'Count for stock unit "{name}" is not an integer')
+                okay = False
+        elif include_count:
+            errors.append(f'Count for stock unit "{name}" is missing')
+            okay = False
+
+        id = None
+        if f'stock_id_{index}' in form:
+            try:
+                id = int(form[f'stock_id_{index}'])
+            except:
+                pass
+
+        if okay:
+            stock_units.append(StockUnitSubmission(id, name, multiplier, price, count))
+
+        index += 1
+
+    return stock_units
 

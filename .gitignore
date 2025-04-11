@@ -174,3 +174,4 @@ cython_debug/
 *.db
 .vscode
 static/images/*
+static/icons/category_icons/*
