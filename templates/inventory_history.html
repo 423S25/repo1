@@ -24,9 +24,11 @@
             <div class="row2">
                 <div class="product_content">
                     <h1 id="product_name">{{ product.product_name }}</h1>
-                    <h2 id="category_name"><img alt="Category Icon" src="icons/map.svg" class="category_icon">
-                        <p>{{ product.category.name }}</p>
-                    </h2>
+                    <div style="display: flex; flex-direction: row">
+                        <img alt="Category Icon" src="icons/map.svg" class="category_icon">
+                        <p style="align-content: center; font-size: 1.25rem; color: #146F76FF; font-weight: bold">{{ product.category.name }}</p>
+                    </div>
+
                 </div>
 
                 <div class="inventory_content">
@@ -73,18 +75,11 @@
                             <td class="value-column">${{product.price }}</td>
                         </tr>
                         <tr>
-                            <td class="title-column">Perferred Quantity</td>
+                            <td class="title-column">Preferred Quantity</td>
                             <td class="dash-column">
                                 <hr class="line">
                             </td>
                             <td class="value-column">{{product.ideal_stock }}</td>
-                        </tr>
-                        <tr>
-                            <td class="title-column">Minimum Quantity</td>
-                            <td class="dash-column">
-                                <hr class="line">
-                            </td>
-                            <td class="value-column">min</td>
                         </tr>
                     </table>
                 </div>
@@ -127,6 +122,57 @@
         </table>
 
     </div>
+    <div>
+        <canvas id="donatedPurchasedChart"></canvas>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById("donatedPurchasedChart").getContext("2d");
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['{{ product.product_name }}'],
+                    datasets: [
+                        {
+                            label: 'Purchased',
+                            data: [{{ product.lifetime_purchased }}],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                        },
+                        {
+                            label: 'Donated',
+                            data: [{{ product.lifetime_donated }}],
+                            backgroundColor: 'rgba(255, 205, 86, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Purchased vs Donated For Lifetime of Product'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Products'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Individual Units'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </div>
 </div>
 
