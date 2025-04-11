@@ -1,4 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1 stye="color: orchid;">Not Authorized</h1>
+<form action="/logout" method="POST">
+    <button type="submit">Sign out and back in</button>
+</form>
 {% endblock %}

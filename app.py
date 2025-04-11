@@ -125,8 +125,6 @@ def post_filter():
                            current_amount=amount,
                            levels=levels)
 
-
-
 # The reports page for an overview of all products
 @app.get("/reports")
 @admin_required
