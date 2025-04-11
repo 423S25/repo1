@@ -74,8 +74,10 @@ class Category(Model):
 
     @staticmethod
     def change_svg_color(input_svg: str, new_color: str, name : str):
-
-        tree = ET.parse("static/" + input_svg)
+        try:
+            tree = ET.parse("static/" + input_svg)
+        except FileNotFoundError:
+            tree = ET.parse(input_svg)
         root = tree.getroot()
 
         namespace = {'svg': 'http://www.w3.org/2000/svg'}
