@@ -212,7 +212,7 @@ span#inventory_bar
 	left:0px;
 	right:0px;
 	background-color:rgba(0,0,0,0.5);
-	z-index:1000;
+	z-index:100;
 
 	/* Flexbox centers the .modal-content vertically and horizontally */
 	display:flex;
