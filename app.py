@@ -109,7 +109,7 @@ def post_filter():
     amount = request.form.get('amount')
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
-    # Loads products in urgency order using where for category filter
+    # I do not think it does urgency ranking anymore. just loads the products that fit the filters
     products = Product.urgency_rank(category_id, price, amount)
     categories = Category.all()
     levels = Product.get_low_products()
@@ -179,7 +179,6 @@ def get_search():
 def post_product_page(product_id: int):
     if is_mobile():
         return redirect("/mobile")
-    
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
 
