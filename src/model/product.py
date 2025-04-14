@@ -197,7 +197,7 @@ class Product(Model):
             if price == '1':
                 query = query.where(Product.price <= 5)
             elif price == '2':
-                query = query.where(Product.price <= 10)
+                query = query.where(10 >= Product.price > 5)
             elif price == '3':
                 query = query.where(Product.price > 10)
         if amount is None or amount == '0':
