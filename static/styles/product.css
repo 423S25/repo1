@@ -255,6 +255,8 @@ span#inventory_bar
 	animation-name:zoomIn;
 	animation-duration:150ms;
 	animation-timing-function: ease;
+
+    position: relative;
 }
 
 #modal.closing {

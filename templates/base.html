@@ -48,9 +48,9 @@
             if (direction == null) {
                 const centerX = rect.x + rect.width / 2;
                 const centerY = rect.y + rect.height / 2;
-                if (centerX > width * 0.75) {
+                if (centerX > width * 0.6) {
                     direction = 'left';
-                } else if (centerX < width * 0.25) {
+                } else if (centerX < width * 0.4) {
                     direction = 'right';
                 } else if (centerY < height * 0.2) {
                     direction = 'bottom';
@@ -72,7 +72,11 @@
                 document.body.appendChild(sharedBlurb);
             }
             sharedBlurb.style.display = 'block';
-
+            sharedBlurb.style.removeProperty('left');
+            sharedBlurb.style.removeProperty('right');
+            sharedBlurb.style.removeProperty('top');
+            sharedBlurb.style.removeProperty('bottom');
+            
             sharedBlurb.children[0].textContent = btn.getAttribute('data-message');
             sharedBlurb.className = direction;
 
