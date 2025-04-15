@@ -102,36 +102,36 @@
                 Over $10
             </option>
         </select>
-        <p>Amount:</p>
-        <select class="filter-input" id="amount" name="amount"
+        <p>Ideal Stock:</p>
+        <select class="filter-input" id="ideal" name="ideal"
                 hx-trigger="change"
                 hx-get="/filter"
                 hx-target=".container"
                 hx-swap="innerHTML"
                 hx-include=".scaffolding">
             <option value="0"
-                    {% if current_amount is none or current_amount == 0 %}
+                    {% if ideal is none or ideal == 0 %}
                     selected
                     {% endif %}>
                 All
             </option>
             <option value="1"
-                    {% if current_amount == '1' %}
+                    {% if ideal == '1' %}
                     selected
                     {% endif %}>
-                Under 25%
+                Under 50 units
             </option>
             <option value="2"
-                    {% if current_amount == '2' %}
+                    {% if ideal == '2' %}
                     selected
                     {% endif %}>
-                Under 50%
+                Between 50 and 100
             </option>
             <option value="3"
-                    {% if current_amount == '3' %}
+                    {% if ideal == '3' %}
                     selected
                     {% endif %}>
-                Over 50%
+                Over 100 Units
             </option>
         </select>
         <button
@@ -139,7 +139,7 @@
                 hx-post="/filter"
                 hx-target="body"
                 hx-swap="outerHTML"
-                hx-vals='{"category_id": "0", "price": "0", "amount": "0"}'>
+                hx-vals='{"category_id": "0", "price": "0", "amount": "0", "ideal": "0"}'>
             Clear Filters
         </button>
     </div>

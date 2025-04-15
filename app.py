@@ -130,8 +130,9 @@ def get_filter():
     price = request.args.get('price', '0')
     amount = request.args.get('amount', '0')
     search_term = request.args.get('q', '')
+    ideal = request.args.get('ideal', '0')
     # I do not think it does urgency ranking anymore. just loads the products that fit the filters
-    products = Product.urgency_rank(category_id, price, amount, search_term)
+    products = Product.urgency_rank(category_id, price, amount, search_term, ideal)
     categories = Category.all()
     levels = Product.get_low_products()
     return render_template("table.html",
@@ -141,7 +142,8 @@ def get_filter():
                            current_category=category_id,
                            current_price=price,
                            current_amount=amount,
-                           levels=levels)
+                           levels=levels,
+                           ideal=ideal)
 
 
 
