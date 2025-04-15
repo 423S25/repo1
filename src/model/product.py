@@ -273,7 +273,7 @@ class Product(Model):
     @staticmethod
     def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
         individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
-        price = total_price / individual_count
+        price = 0 if individual_count==0 else total_price / individual_count
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
@@ -439,9 +439,10 @@ class Product(Model):
         self.save()
 
     def update_product(self, product_name: str, stock_unit_submissions: list[StockUnitSubmission], ideal_stock: int):
-        individual_count, _ = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
+        individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
         stock_units = StockUnit.commit_stock_unit_submissions(self.get_id(), stock_unit_submissions)
         
+        self.price = 0 if individual_count==0 else total_price / individual_count
         self.inventory = individual_count
         self.product_name = product_name
         self.ideal_stock = ideal_stock
@@ -494,6 +495,7 @@ class Product(Model):
             self.lifetime_purchased += added_individual_inventory
 
         self.inventory = total_individual_inventory
+        self.price = 0 if total_individual_inventory==0 else total_price / total_individual_inventory
         self.inventory_breakdown = json.dumps([[k, v] for k, v in stock_count_map.items()])
         self.save()
         
@@ -508,6 +510,7 @@ class Product(Model):
             inventory_breakdown.append([unit.get_id(), submission.count or 0])
         self.inventory_breakdown = json.dumps(inventory_breakdown)
         self.inventory = individual_inventory
+        self.price = 0 if individual_inventory==0 else total_value / individual_inventory
         self.last_updated = datetime.datetime.now()
         self.save()
         InventorySnapshot.create_snapshot(self.get_id(), individual_inventory, total_value)
