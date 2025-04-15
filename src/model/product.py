@@ -405,8 +405,6 @@ class Product(Model):
         for index in range(len(snapshots) - 1):
             curr = snapshots[index]
             prev = snapshots[index + 1]  # Previous in time, not in list
-            if curr.ignored or prev.ignored:
-                continue
 
             if prev.individual_inventory > curr.individual_inventory: # There must be a decrease in stock; otherwise, it was a restock
                 inventory_delta = prev.individual_inventory - curr.individual_inventory
@@ -628,7 +626,6 @@ class InventorySnapshot(Model):
     individual_inventory = IntegerField(null=False)
     value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
-    ignored = BooleanField(default=False)  # To be used if a value was added in error
 
     @staticmethod
     def all() -> list['InventorySnapshot']:
@@ -636,45 +633,27 @@ class InventorySnapshot(Model):
 
     @staticmethod
     def all_of_product(product_id: int) -> list['InventorySnapshot']:
-        snapshots: list['InventorySnapshot'] = list(reversed(InventorySnapshot.select().where(
+        return list(reversed(InventorySnapshot.select().where(
             InventorySnapshot.product_id == product_id
         )))
-        MIN_ALLOWED_DIFFERENCE = datetime.timedelta(seconds=45)
-
-        for i in range(
-                len(snapshots) - 1):  # if a value as immediately overwritten, it was probably in error and should be ignored
-            curr = snapshots[i]
-            prev = snapshots[i + 1]
-            delta = curr.timestamp - prev.timestamp
-            if delta < MIN_ALLOWED_DIFFERENCE:
-                prev.ignore()
-
-        return snapshots
 
     @staticmethod
     def product_snapshots_chronological(product_id: int) -> list['InventorySnapshot']:
-        snapshots: list['InventorySnapshot'] = list(InventorySnapshot.select().where(
+        return list(InventorySnapshot.select().where(
             InventorySnapshot.product_id == product_id
         ))
-        return snapshots
 
     @staticmethod
     def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
-        snapshot = InventorySnapshot.create(
+        return InventorySnapshot.create(
             product_id=product_id,
             individual_inventory=inventory,
             value_at_time=price
         )
-        return snapshot
 
     @staticmethod
     def delete_snapshots_for_product(product_id: int):
         InventorySnapshot.delete().where(InventorySnapshot.product_id == product_id).execute()
-
-    # Sets this snapshot to be ignored. For use if the entry was likely in error
-    def ignore(self):
-        self.ignored = True
-        self.save()
 
     class Meta:
         database = db

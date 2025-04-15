@@ -198,10 +198,11 @@ def get_search():
         products = Product.all()
     categories = Category.all()
     return render_template("table.html",
-                           product_list=products,
-                           user=current_user,
-                           categories=categories,
-                           current_category=category_id)
+        product_list=products,
+        user=current_user,
+        categories=categories,
+        current_category=category_id
+    )
 
 # The individual page for each product
 @app.get("/<int:product_id>")
