@@ -22,6 +22,7 @@ class Category(Model):
     name = CharField(unique=True)
     color = CharField(unique=True)
     image_path = CharField(null=True)
+    price = DecimalField(null=True)
 
     @staticmethod
     def all() -> list['Category']:

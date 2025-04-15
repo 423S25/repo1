@@ -157,16 +157,18 @@ def get_reports():
 
     # Create a mapping from category ID to total inventory
     category_inventory = {c["id"]: 0 for c in categories}
-
+    category_price = {c["id"]: 0 for c in categories}
     # Sum up inventory for each product's category
     for product in products:
         if product.category_id in category_inventory:
             category_inventory[product.category_id] += product.inventory
+            category_price[product.category_id] += product.price
 
     # Update category objects with total inventory values
     colors = []
     for category in categories:
         category["total_inventory"] = category_inventory[category["id"]]
+        category["price"] = category_price[category["id"]]
         colors.append(category["color"])
     data1 = helper.price_over_amount_inventory(helper)
     data2 = helper.convert_to_rgb(helper, colors)
@@ -177,6 +179,7 @@ def get_reports():
         user=current_user,
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
+        price=[c["price"] for c in categories],
         value=request.args.get('value'),
         data1=data1,
         data2=data2,
