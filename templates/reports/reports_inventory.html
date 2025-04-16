@@ -2,7 +2,11 @@
     <button type="submit" class="product-button">EXPORT CSV</button>
 </form>
 
-
+<div id="scatter-chart-container">
+    <canvas id="inventoryChart"></canvas>
+</div>
+<br>
+<br>
 <div id="scatter-chart-container">
     <canvas id="inventoryScatterChart"></canvas>
 </div>
@@ -11,6 +15,35 @@
 <div id="scatter-chart-container">
     <canvas id="amountIdealChartContainer"></canvas>
 </div>
+
+<canvas id="inventoryChart"></canvas>
+<script>
+const ctx = document.getElementById('inventoryChart').getContext('2d');
+const inventoryChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_data.labels | tojson }},
+        datasets: {{ chart_data.datasets | tojson }}
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Inventory Count' }
+            },
+            x: {
+                title: { display: true, text: 'Month' }
+            }
+        }
+    }
+});
+</script>
+
+
+
+
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {

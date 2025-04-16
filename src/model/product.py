@@ -646,7 +646,7 @@ class InventorySnapshot(Model):
     @staticmethod
     def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
         return InventorySnapshot.create(
-            product=product_id,  # Peewee lets you pass either ID or Product instance
+            product=product_id,
             individual_inventory=inventory,
             value_at_time=price
         )

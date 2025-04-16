@@ -173,6 +173,7 @@ def get_reports():
     data1 = helper.price_over_amount_inventory(helper)
     data2 = helper.convert_to_rgb(helper, colors)
     data3 = helper.ideal_over_amount_inventory(helper)
+    chart_data = helper.get_inventory_chart_data(helper)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -184,6 +185,7 @@ def get_reports():
         data1=data1,
         data2=data2,
         data3=data3,
+        chart_data=chart_data,
         Flag = True
     )
 
