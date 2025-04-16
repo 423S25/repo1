@@ -1,181 +1,138 @@
 {% extends "base.html" %}
 {% from "macros.html" import inventory_item_bar %}
+
 {% block content %}
+<link rel="stylesheet" href="styles/mobile_table.css" />
+<link rel="stylesheet" href="styles/product_page.css" />
 
-{% include 'nav.html' %}
-<div class="back"><img alt="Go Back" src="icons/arrow_left.svg"><a href=".">BACK</a></div>
-
-<div class="content_container">
-    <div class="top_container">
-        <div class="column">
-
-            <div class="row1">
-                <div class="image-box">
-                    <label for="fileInput">
-                        {% if not filepath %}
-                        <img src="icons/image-camera.svg" class="upload-trigger" />
-                        {% else %}
-                        <img src="images/{{ filepath }}" />
-                        {% endif %}
-                    </label>
-                </div>
-            </div>
-
-            <div class="row2">
-                <div class="product_content">
-                    <h1 id="product_name">{{ product.product_name }}</h1>
-                    <div style="display: flex; flex-direction: row">
-                        <img alt="Category Icon" src="icons/map.svg" class="category_icon">
-                        <p style="align-content: center; font-size: 1.25rem; color: #146F76FF; font-weight: bold">{{ product.category.name }}</p>
-                    </div>
-
-                </div>
-
-                <div class="inventory_content">
-                    <h1 id="inventory_stock">{{ product.inventory }} / {{ product.ideal_stock }}</h1>
-                    <span id="inventory_bar">{{ inventory_item_bar(product.inventory, product.ideal_stock) }}</span>
-                </div>
-            </div>
-
-            <div class="row3">
-                <div class="adjust_content">
-                    <button class="product-button" hx-get="/product_update_inventory/{{ product.id }}"
-                        hx-target="body" hx-swap="beforeend">
-                        SET INVENTORY
-                    </button>
-                    <button class="product-button" hx-get="/product_add_inventory/{{ product.id }}"
-                        hx-target="body" hx-swap="beforeend">
-                        ADD INVENTORY
-                    </button>
-
-                    <div class="dropdown">
-                        <button class="dropdown-btn">
-                            <img src="icons/three_dot.svg" width="40" height="30">
-                        </button>
-
-
-                        <div class="dropdown-content">
-                            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body"
-                                hx-swap="outerHTML"
-                                hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete
-                                Item</a>
-                            <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update
-                                Info</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info_container">
-                    <table id="info_table">
-                        <tr>
-                            <td class="title-column">Price per Unit</td>
-                            <td class="dash-column">
-                                <hr class="line">
-                            </td>
-                            <td class="value-column">${{product.price }}</td>
-                        </tr>
-                        <tr>
-                            <td class="title-column">Preferred Quantity</td>
-                            <td class="dash-column">
-                                <hr class="line">
-                            </td>
-                            <td class="value-column">{{product.ideal_stock }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-
-            <form action="/product_upload_image/{{ product.get_id() }}"
-                hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
-                hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder"
-                hx-swap="innerHTML">
-                <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
-            </form>
-            <div id="image-message-placeholder"></div>
-            <script>
-                document.getElementById('fileInput').addEventListener('change', function (ev) {
-                    ev.preventDefault();
-                    htmx.trigger(this.form, 'submit');
-                });
-            </script>
-        </div>
-
-        <table>
-            <tbody>
-                <tr>
-                    <th>Unit Name</th>
-                    <th>Count per Unit</th>
-                    <th>Unit Price</th>
-                    <th>Individual Price</th>
-                    <th>Count in Units</th>
-                </tr>
-                {% for unit, count in stock_units_with_counts %}
-                <tr>
-                    <td>{{ unit.name }}</td>
-                    <td>{{ unit.multiplier }}</td>
-                    <td>${{ "%.2f" | format(unit.price) }}</td>
-                    <td>${{ "%.2f" | format(unit.price / unit.multiplier) }}</td>
-                    <td>{{ count }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-    </div>
-    <div>
-        <canvas id="donatedPurchasedChart"></canvas>
-    </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const ctx = document.getElementById("donatedPurchasedChart").getContext("2d");
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['{{ product.product_name }}'],
-                    datasets: [
-                        {
-                            label: 'Purchased',
-                            data: [{{ product.lifetime_purchased }}],
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
-                        },
-                        {
-                            label: 'Donated',
-                            data: [{{ product.lifetime_donated }}],
-                            backgroundColor: 'rgba(255, 205, 86, 0.7)'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Purchased vs Donated For Lifetime of Product'
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Products'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Individual Units'
-                            }
-                        }
+<script>
+    window.onload = () => {
+        const ctx = document.getElementById('lifetime-breakdown-chart').getContext('2d');
+        const myDonutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Donated', 'Purchased'],
+                datasets: [{
+                    data: [{{ product.lifetime_donated }}, {{ product.lifetime_purchased }}],
+                    backgroundColor: ['#4ead1f', '#146f76'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Lifetime Product Intake'
                     }
                 }
-            });
+            }
         });
-    </script>
-</div>
+    };
+</script>
+
+<div class="main-grid">
+    <div class="left-nav">
+        {% include "mobile_table.html" %}
+    </div>
+
+    <div class="column box-shadow-small">
+
+        <div class="image-box">
+            <label for="fileInput">
+                {% if not filepath %}
+                    <img src="icons/image-camera.svg" class="upload-trigger" />
+                {% else %}
+                    <img src="images/{{ filepath }}" />
+                {% endif %}
+            </label>
+        </div>
+
+        <div class="top-right-grid">
+            <div class="product-action-name">{{ product.product_name }}</div>
+            <div class="product-action-row">
+                <button class="product-action-inventory"
+                    hx-get="/product_update_inventory/{{ product.id }}"
+                    hx-target="body"
+                    hx-swap="beforeend"
+                >Set Inventory</button>
+                <button class="product-action-inventory"
+                    hx-get="/product_add_inventory/{{ product.id }}"
+                    hx-target="body"
+                    hx-swap="beforeend"
+                >Add Inventory</button>
+                <div>
+                    <button class="product-action-more">
+                        <img src="icons/three_dot.svg">
+                    </button>
+                    <div class="dropdown-content">
+                        <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+                            Update Info
+                        </a>
+                        <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body"
+                            hx-swap="outerHTML"
+                            hx-confirm="Are you sure you want to delete {{  product.product_name }}?">
+                            Delete Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="category-row">
+                    {% if not product.category.image_path %}
+                        <img alt="Category Icon" src="icons/map.svg" class="category-icon">
+                    {% else %}
+                        <img alt="Category Icon" src="{{ product.category.image_path.removeprefix('static/') }}" class="category-icon">
+                    {% endif %}
+                    <p class="category-name">{{ product.category.name }}</p>
+                </div>
+                <div class="inventory-content">
+                    <span id="inventory-stock">{{ product.inventory }} / {{ product.ideal_stock }}</span>
+                    <span id="inventory-bar">{{ inventory_item_bar(product.inventory, product.ideal_stock) }}</span>
+                </div>
+            </div>
+            <div>
+                <div class="info-row">
+                    <span>Price Per Unit</span>
+                    <div></div>
+                    <span>${{ "%.2f" | format(product.price) }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Preferred Quantity</span>
+                    <div></div>
+                    <span>{{ product.ideal_stock }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Current Inventory Value</span>
+                    <div></div>
+                    <span>${{ "%.2f" | format(product.price * product.inventory) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <form style="display: none;" action="/product_upload_image/{{ product.get_id() }}"
+            hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
+            hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder"
+            hx-swap="innerHTML">
+            <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
+        </form>
+        <div id="image-message-placeholder"></div>
+        <script>
+            document.getElementById('fileInput').addEventListener('change', function (ev) {
+                ev.preventDefault();
+                htmx.trigger(this.form, 'submit');
+            });
+        </script>
+    </div>
+
+    <div class="box-shadow-small" style="grid-column: 2;">
+        <canvas id="lifetime-breakdown-chart"></canvas>
+    </div>
+    <div class="box-shadow-small" style="grid-column: 3;">
+
+    </div>
 </div>
 
-</div>
-</body>
+
 {% endblock %}

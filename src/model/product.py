@@ -154,8 +154,12 @@ class Product(Model):
         return list(Product.select().where(Product.product_name.ilike(f'%{product}%')))
 
     @staticmethod
-    def search_filter_and_sort(product_name_fragment: str = '', product_category_id: int = 0,
-                               product_sort_method: str = None) -> list['Product']:
+    def search_filter_and_sort(
+        product_name_fragment: str = '',
+        product_category_id: int = 0,
+        product_sort_method: str = None,
+        product_force_first: int = None
+    ) -> list['Product']:
         query = Product.select()
 
         if len(product_name_fragment) > 0:
@@ -163,25 +167,33 @@ class Product(Model):
         if product_category_id != 0:
             query = query.where(Product.category_id == product_category_id)
 
-        products = list(query)
+        products: list['Product'] = list(query)
 
-        if product_sort_method == 'alpha_a_z' or (
-                product_sort_method == 'best_match' and len(product_name_fragment) == 0):
-            return list(sorted(products, key=lambda p: p.product_name.lower()))
+        if product_sort_method == 'alpha_a_z' or (product_sort_method == 'best_match' and len(product_name_fragment) == 0):
+            products = list(sorted(products, key=lambda p: p.product_name.lower()))
         elif product_sort_method == 'alpha_z_a':
-            return list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
+            products = list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
         elif product_sort_method == 'best_match':
-            return list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
+            products = list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
         elif product_sort_method == 'lowest_stock':
-            return list(
-                sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
+            products = list(sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
         elif product_sort_method == 'highest_stock':
-            return list(
-                reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
+            products = list(reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
         elif product_sort_method == 'most_recent':
-            return list(reversed(sorted(products, key=lambda p: p.last_updated)))
+            products = list(reversed(sorted(products, key=lambda p: p.last_updated)))
         else:  # default to least recent
-            return list(sorted(products, key=lambda p: p.last_updated))
+            products = list(sorted(products, key=lambda p: p.last_updated))
+
+        if product_force_first is not None and product_force_first > 0:
+            try:
+                index = list(map(lambda x: x.get_id(), products)).index(product_force_first)
+                first_product = products[index]
+                del products[index]
+                products.insert(0, first_product)
+            except: #not in list
+                pass
+
+        return products
 
     @staticmethod
     # overloaded with category id for filter
@@ -657,6 +669,9 @@ class InventorySnapshot(Model):
     @staticmethod
     def delete_snapshots_for_product(product_id: int):
         InventorySnapshot.delete().where(InventorySnapshot.product_id == product_id).execute()
+
+    def get_average_price(self) -> float:
+        return 0 if self.individual_inventory==0 else self.value_at_time / self.individual_inventory
 
     class Meta:
         database = db

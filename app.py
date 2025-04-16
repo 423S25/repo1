@@ -207,7 +207,7 @@ def get_search():
 # The individual page for each product
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
-def post_product_page(product_id: int):
+def get_product_page(product_id: int):
     if is_mobile():
         return redirect("/mobile")
     if product_id is None: # TODO: have actual error page
@@ -217,20 +217,17 @@ def post_product_page(product_id: int):
     if product is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product {product_id}")
 
+    product_list = Product.search_filter_and_sort(product_force_first=product_id, product_sort_method='alpha_a_z')
     snapshots = InventorySnapshot.all_of_product(product_id)
     stock_units_with_counts = StockUnit.all_of_product_with_count(product)
     usage = product.get_usage_per_day()
     days_until_out = product.get_days_until_out(usage)
     return render_template(
         "inventory_history.html",
-        product=product,
-        snapshots=snapshots,
-        snapshot_count=len(snapshots),
-        daily_usage=round(usage, 1) if usage is not None else None,
-        days_until_out=round(days_until_out) if days_until_out is not None else None,
-        user=current_user,
+        product_list=product_list,
+        filepath=product.image_path,
         stock_units_with_counts=stock_units_with_counts,
-        filepath=product.image_path
+        product=product
     )
 
 ###

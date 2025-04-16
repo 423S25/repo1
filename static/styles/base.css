@@ -8,6 +8,7 @@
     --hrdc-theme-yellow: hsl(39, 87%, 61%);
     --hrdc-theme-green: hsl(100, 70%, 40%);
     --hrdc-theme-light-grey: hsl(0, 0%, 85%);
+    --hrdc-theme-medium-grey: hsl(0, 0%, 75%);
 
     --hrdc-theme-alert: var(--hrdc-theme-red);
     --hrdc-theme-warning: var(--hrdc-theme-yellow);
@@ -69,7 +70,7 @@ body {
     margin-right: auto;
 }
 
-.header a{
+.header a {
     position: absolute;
     bottom: 10px;
     right: 10px;
@@ -81,8 +82,8 @@ body {
 
 .box-shadow-small {
     box-shadow: 0 3px 6px hsla(0, 0%, 20%, 0.3),
-    -3px 0 6px hsla(0, 0%, 20%, 0.3),
-    3px 0 6px hsla(0, 0%, 20%, 0.3);
+        -3px 0 6px hsla(0, 0%, 20%, 0.3),
+        3px 0 6px hsla(0, 0%, 20%, 0.3);
 }
 
 .center-all {
@@ -129,24 +130,20 @@ body {
     color: var(--hrdc-theme-dark-teal);
 }
 
-.logout
-{
+.logout {
     margin-left: auto;
 }
 
-.logout-icon
-{
+.logout-icon {
     width: 1.1em;
     margin-right: 0.5em;
     vertical-align: bottom;
 }
 
-.logout:hover .logout-icon
-{
+.logout:hover .logout-icon {
     filter: brightness(0) invert(1);
 }
 
-.logout:active .logout-icon
-{
+.logout:active .logout-icon {
     filter: brightness(1) invert(0);
 }

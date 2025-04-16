@@ -2,7 +2,7 @@
     margin: 20px;
     width: calc(100% - 40px);
     height: 90px;
-    background-color: var(--hrdc-theme-really-light-grey);
+    background-color: white;
     position: relative;
 }
 .mobile-product-row > * {
