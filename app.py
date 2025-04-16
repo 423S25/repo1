@@ -104,12 +104,12 @@ def get_index():
 @app.post("/filter")
 @login_required
 def post_filter():
-    category_id = request.form.get('category_id')
-    price = request.form.get('price')
-    amount = request.form.get('amount')
+    category_id = request.args.get('category_id')
+    price = request.args.get('price')
+    amount = request.args.get('amount')
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
-    # Loads products in urgency order using where for category filter
+    # I do not think it does urgency ranking anymore. just loads the products that fit the filters
     products = Product.urgency_rank(category_id, price, amount)
     categories = Category.all()
     levels = Product.get_low_products()
@@ -121,6 +121,29 @@ def post_filter():
                            current_price=price,
                            current_amount=amount,
                            levels=levels)
+
+# The filter function for the main table page. Re-serves index.html
+@app.get("/filter")
+@login_required
+def get_filter():
+    category_id = request.args.get('category_id', '0')
+    price = request.args.get('price', '0')
+    amount = request.args.get('amount', '0')
+    search_term = request.args.get('q', '')
+    ideal = request.args.get('ideal', '0')
+    # I do not think it does urgency ranking anymore. just loads the products that fit the filters
+    products = Product.urgency_rank(category_id, price, amount, search_term, ideal)
+    categories = Category.all()
+    levels = Product.get_low_products()
+    return render_template("table.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id,
+                           current_price=price,
+                           current_amount=amount,
+                           levels=levels,
+                           ideal=ideal)
 
 
 
@@ -171,7 +194,11 @@ def get_search():
     else:
         products = Product.all()
     categories = Category.all()
-    return render_template("table.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
+    return render_template("table.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id)
 
 # The individual page for each product
 @app.get("/<int:product_id>")
@@ -179,7 +206,6 @@ def get_search():
 def post_product_page(product_id: int):
     if is_mobile():
         return redirect("/mobile")
-    
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
 

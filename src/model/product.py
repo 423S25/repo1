@@ -184,20 +184,19 @@ class Product(Model):
 
     @staticmethod
     # overloaded with category id for filter
-    def urgency_rank(category_id: str = None, price: str = None, amount: str = None) -> list['Product']:
+    def urgency_rank(category_id: str = None, price: str = None, amount: str = None, text: str = None, ideal: str = None,) -> list['Product']:
         query = Product.select(Product)
         if category_id == '0' or category_id is None:
             pass
         else:
             query = query.where(Product.category_id == category_id)
-
         if price is None or price == '0':
             pass
         else:
             if price == '1':
                 query = query.where(Product.price <= 5)
             elif price == '2':
-                query = query.where(Product.price <= 10)
+                query = query.where(10 >= Product.price > 5)
             elif price == '3':
                 query = query.where(Product.price > 10)
         if amount is None or amount == '0':
@@ -224,7 +223,35 @@ class Product(Model):
                     if ratio > 0.5:
                         filtered_ids.append(product.id)
                 query = Product.select().where(Product.id.in_(filtered_ids))
-
+        if ideal is None or ideal == '0':
+            pass
+        else:
+            if ideal == '1':
+                filtered_ids = []
+                for p in query:
+                    if p.ideal_stock <= 50:
+                        filtered_ids.append(p.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+            elif ideal == '2':
+                filtered_ids = []
+                for p in query:
+                    if 50 < p.ideal_stock <= 100:
+                        filtered_ids.append(p.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+            elif ideal == '3':
+                filtered_ids = []
+                for p in query:
+                    if p.ideal_stock > 100:
+                        filtered_ids.append(p.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+        if text is None or text == '':
+            pass
+        else:
+            hold = []
+            for p in query:
+                if text in p.product_name:
+                    hold.append(p.id)
+            query = Product.select().where(Product.id.in_(hold))
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
         return list(query)
 

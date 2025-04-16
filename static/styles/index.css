@@ -235,6 +235,10 @@ select:hover
     text-align: center;
 }
 
+.banner:hover {
+    background-color: #146F76FF;
+}
+
 .red_rectangle {
     height: 1%;
     width: 100%;
