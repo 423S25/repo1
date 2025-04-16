@@ -1,6 +1,8 @@
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField, DateField
 from flask_wtf import FlaskForm
 from flask import Response, make_response
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from ..model.product import StockUnitSubmission
 
 class LoginForm(FlaskForm):
@@ -46,6 +48,22 @@ class CategoryUpdateAllForm(FlaskForm):
     category_name = StringField('Category Name', validators=[validators.input_required()])
     category_color = ColorField('Category Color', validators=[validators.input_required()])
 
+class TimeFrameForm(FlaskForm):
+    timeframe = StringField(
+        'Time Frame',
+        validators=[validators.AnyOf([
+            "lifetime",
+            "last_year",
+            "year_to_date",
+            "last_month",
+            "last_week",
+            "last_24_hours",
+            "custom"
+        ])]
+    )
+    startdate = DateField('Start Date', validators=[validators.Optional()])
+    enddate = DateField('End Date', validators=[validators.Optional()])
+
 
 
 def clean_price_to_float(val: str | None) -> float | None:
@@ -87,6 +105,33 @@ def parse_errors(form: FlaskForm) -> list[str]:
         errors_list[errors_list.index('Field "Selected Icon" is required')] = "Please Select an Icon"
 
     return errors_list
+
+def parse_timeframe_form_errors(form: TimeFrameForm) -> tuple[list[str], datetime | None, datetime | None]:
+    base_errors = parse_errors(form)
+    timeframe = form.timeframe.data
+    now = datetime.now()
+    if timeframe == 'lifetime':
+        return base_errors, datetime(year=1970, month=1, day=1), now
+    elif timeframe == 'last_year':
+        return base_errors, now - relativedelta(year=1), now
+    elif timeframe == 'last_month':
+        return base_errors, now - relativedelta(month=1), now
+    elif timeframe == 'last_week':
+        return base_errors, now - relativedelta(week=1), now
+    elif timeframe == 'last_24_hours':
+        return base_errors, now - relativedelta(day=1), now
+    elif timeframe == 'year_to_date':
+        return base_errors, datetime(year=now.year, month=1, day=1), now
+    elif timeframe == 'custom':
+        if form.startdate.data is None:
+            base_errors.append('Missing start date for custom range')
+        if form.enddate.data is None:
+            base_errors.append('Missing end date for custom range')
+        if form.startdate.data is not None and form.enddate.data is not None and form.startdate.data > form.enddate.data:
+            base_errors.append('Start date cannot be after end date')
+        return base_errors, form.startdate.data, form.enddate.data
+    else:
+        return base_errors, None, None
 
 def htmx_redirect(url: str) -> Response:
     response = make_response(url, 200)

@@ -1,35 +1,11 @@
 {% extends "base.html" %}
-{% from "macros.html" import inventory_item_bar %}
+{% from "macros.html" import inventory_item_bar, timeframe_form %}
 
 {% block content %}
 <link rel="stylesheet" href="styles/mobile_table.css" />
 <link rel="stylesheet" href="styles/product_page.css" />
 
-<script>
-    window.onload = () => {
-        const ctx = document.getElementById('lifetime-breakdown-chart').getContext('2d');
-        const myDonutChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Donated', 'Purchased'],
-                datasets: [{
-                    data: [{{ product.lifetime_donated }}, {{ product.lifetime_purchased }}],
-                    backgroundColor: ['#4ead1f', '#146f76'],
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Lifetime Product Intake'
-                    }
-                }
-            }
-        });
-    };
-</script>
+
 
 <div class="main-grid">
     <div class="left-nav">
@@ -126,10 +102,13 @@
         </script>
     </div>
 
-    <div class="box-shadow-small" style="grid-column: 2;">
-        <canvas id="lifetime-breakdown-chart"></canvas>
+    <div class="box-shadow-small chart-parent" style="grid-column: 2;">
+        {{ timeframe_form('/lifetime/' ~ product.get_id(), '#temp') }}
+        <div style="height: 300px; width: 100%;" id="temp">
+            {% include "charts/lifetime_split.html" %}
+        </div>
     </div>
-    <div class="box-shadow-small" style="grid-column: 3;">
+    <div class="box-shadow-small chart-parent" style="grid-column: 3;">
 
     </div>
 </div>

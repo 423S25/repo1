@@ -1,4 +1,4 @@
-import os, secrets
+import os
 from src.common.functions import helper
 from user_agents import parse
 import io
@@ -7,12 +7,12 @@ from functools import wraps
 
 from flask import Flask, request, Response, render_template, redirect, abort, send_from_directory, url_for, make_response
 from flask_wtf import FlaskForm
-from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
+from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units, TimeFrameForm, parse_timeframe_form_errors
 from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
@@ -204,17 +204,43 @@ def get_search():
         current_category=category_id
     )
 
+
+
+
+@app.get("/lifetime/<int:product_id>")
+def get_lifetime_of_product(product_id: int):
+    if product_id is None:
+        return abort(404, description=f"Could not find product id")
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f"Could not find product {product_id}")
+
+    form = TimeFrameForm(request.args, meta={'csrf': False})
+    errors, start, end = parse_timeframe_form_errors(form)
+
+    if len(errors) == 0 and start is not None and end is not None:
+        relevant_snapshots = InventorySnapshot.all_of_product_in_time_period(product_id, start, end)
+        if len(relevant_snapshots) == 0:
+            return make_response('No Data', 200)
+        lifetime_donated = 0
+        lifetime_purchased = 0
+        return render_template('charts/lifetime_split', lifetime_donated=lifetime_donated, lifetime_purchased=lifetime_purchased)
+    else:
+        return htmx_errors(errors)
+
+
+
 # The individual page for each product
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
 def get_product_page(product_id: int):
     if is_mobile():
         return redirect("/mobile")
-    if product_id is None: # TODO: have actual error page
-        return abort(404, description=f"Could not find product id")
 
+    if product_id is None:
+        return abort(404, description=f"Could not find product id")
     product = Product.get_product(product_id)
-    if product is None: # TODO: have actual error page
+    if product is None:
         return abort(404, description=f"Could not find product {product_id}")
 
     product_list = Product.search_filter_and_sort(product_force_first=product_id, product_sort_method='alpha_a_z')
@@ -227,7 +253,9 @@ def get_product_page(product_id: int):
         product_list=product_list,
         filepath=product.image_path,
         stock_units_with_counts=stock_units_with_counts,
-        product=product
+        product=product,
+        lifetime_donated=product.lifetime_donated,
+        lifetime_purchased=product.lifetime_purchased
     )
 
 ###

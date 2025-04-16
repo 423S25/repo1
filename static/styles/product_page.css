@@ -6,15 +6,16 @@
     padding: 20px;
     gap: 20px;
     display: grid;
-    grid-template-columns: 1fr 2fr 2fr;
+    grid-template-columns: 1fr 3fr 2fr;
 }
-.main-grid > div:not(.left-nav):not(.column) {
+.chart-parent {
     padding: 5px;
+    display: grid;
+    grid-template-columns: 1fr 3fr;
 }
 .left-nav {
     grid-row: 1 / -1;
     grid-column: 1;
-    background-color: orchid;
 }
 .mobile-product-row {
     margin-left: 0;
@@ -169,6 +170,22 @@
 .info-row > div {
     height: 0;
     width: 100%;
-    border-top: 2px dotted var(--hrdc-theme-light-grey);
+    border-top: 2px dotted var(--hrdc-theme-medium-grey);
     margin: 0 8px;
+}
+
+.timeframe-form > *:not(label) {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 5px 0;
+    border: 2px solid var(--hrdc-theme-teal);
+    padding: 3px 5px;
+    background-color: white;
+    border-radius: 3px;
+}
+.timeframe-form > *:hover {
+    background-color: var(--hrdc-theme-light-grey);
+}
+.timeframe-form > :first-child {
+    margin-top: 0;
 }

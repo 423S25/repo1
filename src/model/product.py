@@ -653,6 +653,12 @@ class InventorySnapshot(Model):
         )))
 
     @staticmethod
+    def all_of_product_in_time_period(product_id: int, start_date: datetime.datetime, end_date: datetime.datetime) -> list['InventorySnapshot']:
+        return list(InventorySnapshot.select().where(
+            InventorySnapshot.product_id == product_id & InventorySnapshot.timestamp.between(start_date, end_date)
+        ))
+
+    @staticmethod
     def product_snapshots_chronological(product_id: int) -> list['InventorySnapshot']:
         return list(InventorySnapshot.select().where(
             InventorySnapshot.product_id == product_id

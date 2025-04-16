@@ -13,3 +13,31 @@
     {% endif %}
 </div>
 {% endmacro %}
+
+{% macro timeframe_form(endpoint, target) %}
+<form class="timeframe-form" hx-trigger="change" hx-get="{{ endpoint }}" hx-target="{{ target }}">
+    <select name="timeframe" onchange="updateVisibility(this.value, this.parentElement)">
+        <option value="lifetime">Lifetime</option>
+        <option value="last_year">Last Year</option>
+        <option value="year_to_date">Year To Date</option>
+        <option value="last_month">Last Month</option>
+        <option value="last_week">Last Week</option>
+        <option value="last_24_hours">Last 24 Hours</option>
+        <option value="custom">Custom</option>
+    </select>
+    <script>
+        function updateVisibility(value, form) {
+            for (const dateInput of form.querySelectorAll('input[type="date"]')) {
+                dateInput.style.display = value=='custom' ? 'block' : 'none';
+            }
+            for (const dateLabel of form.querySelectorAll('label')) {
+                dateLabel.style.display = value=='custom' ? 'block' : 'none';
+            }
+        }
+    </script>
+    <label style="display: none;" for="startdate">Start Date</label>
+    <input id="startdate" name="startdate" style="display: none;" type="date"/>
+    <label style="display: none;" for="enddate">End Date</label>
+    <input id="enddate" name="enddate" style="display: none;" type="date"/>
+</form>
+{% endmacro %}
