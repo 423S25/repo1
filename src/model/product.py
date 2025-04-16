@@ -622,7 +622,7 @@ class StockUnit(Model):
 
 
 class InventorySnapshot(Model):
-    product_id = IntegerField(null=False)
+    product = ForeignKeyField(Product, backref='snapshots', on_delete='CASCADE')
     individual_inventory = IntegerField(null=False)
     value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
@@ -634,26 +634,27 @@ class InventorySnapshot(Model):
     @staticmethod
     def all_of_product(product_id: int) -> list['InventorySnapshot']:
         return list(reversed(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id
+            InventorySnapshot.product == product_id
         )))
 
     @staticmethod
     def product_snapshots_chronological(product_id: int) -> list['InventorySnapshot']:
         return list(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id
+            InventorySnapshot.product == product_id
         ))
 
     @staticmethod
     def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
         return InventorySnapshot.create(
-            product_id=product_id,
+            product=product_id,  # Peewee lets you pass either ID or Product instance
             individual_inventory=inventory,
             value_at_time=price
         )
 
     @staticmethod
     def delete_snapshots_for_product(product_id: int):
-        InventorySnapshot.delete().where(InventorySnapshot.product_id == product_id).execute()
+        InventorySnapshot.delete().where(InventorySnapshot.product == product_id).execute()
 
     class Meta:
         database = db
+
