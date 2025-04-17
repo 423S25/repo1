@@ -1,27 +1,5 @@
-<script>
-    window.onload = () => {
-        const ctx = document.getElementById('lifetime-breakdown-chart').getContext('2d');
-        const myDonutChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Donated', 'Purchased'],
-                datasets: [{
-                    data: [{{ lifetime_donated }}, {{ lifetime_purchased }}],
-                    backgroundColor: ['#4ead1f', '#146f76'],
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Product Intake'
-                    }
-                }
-            }
-        });
-    };
-</script>
-
-<canvas id="lifetime-breakdown-chart"></canvas>
+{% if lifetime_donated + lifetime_purchased == 0 %}
+No Data
+{% else %}
+<canvas id="lifetime-breakdown-chart" data-lifetime-donated="{{ lifetime_donated }}" data-lifetime-purchased="{{ lifetime_purchased }}"></canvas>
+{% endif %}

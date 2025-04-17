@@ -22,7 +22,7 @@ def test_list_snapshots(setup_inventory: Category):
 
 def test_create_snapshot(setup_inventory: Category):
     p = Product.get_product("lysol")
-    InventorySnapshot.create_snapshot(p.get_id(), 2, 5)
+    InventorySnapshot.create_snapshot(p.get_id(), 2, 5, 0, 0)
     snapshots = InventorySnapshot.all_of_product(p.get_id())
     assert snapshots[0].individual_inventory == 2
     assert snapshots[1].individual_inventory == 10

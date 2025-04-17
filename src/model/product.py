@@ -286,7 +286,7 @@ class Product(Model):
     def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
         individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
         price = 0 if individual_count==0 else total_price / individual_count
-        product, created = Product.get_or_create(
+        product, _created = Product.get_or_create(
             product_name=name,
             category=category,
             price=price,
@@ -303,7 +303,13 @@ class Product(Model):
 
         product: Product = product
         stock_units = StockUnit.commit_stock_unit_submissions(product.get_id(), stock)
-        InventorySnapshot.create_snapshot(product.get_id(), individual_count, total_price)
+        InventorySnapshot.create_snapshot(
+            product.get_id(),
+            individual_count,
+            total_price,
+            added_donated=individual_count if donation else 0,
+            added_purchased=individual_count if not donation else 0,
+        )
 
         inventory_breakdown = []
         for unit, submission in zip(stock_units, stock):
@@ -511,7 +517,13 @@ class Product(Model):
         self.inventory_breakdown = json.dumps([[k, v] for k, v in stock_count_map.items()])
         self.save()
         
-        InventorySnapshot.create_snapshot(self.get_id(), total_individual_inventory, total_price)
+        InventorySnapshot.create_snapshot(
+            self.get_id(),
+            total_individual_inventory,
+            total_price,
+            added_donated=added_individual_inventory if donation else 0,
+            added_purchased=added_individual_inventory if not donation else 0
+        )
 
     # Sets the current available stock of a product to match the stock units
     def update_stock(self, stock_unit_submissions: list[StockUnitSubmission]):
@@ -525,7 +537,7 @@ class Product(Model):
         self.price = 0 if individual_inventory==0 else total_value / individual_inventory
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), individual_inventory, total_value)
+        InventorySnapshot.create_snapshot(self.get_id(), individual_inventory, total_value, added_donated=0, added_purchased=0)
 
     # marks product as notified (after email is sent)
     def increment_notified(self):
@@ -641,6 +653,8 @@ class InventorySnapshot(Model):
     individual_inventory = IntegerField(null=False)
     value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
+    added_donated = IntegerField(null=False, default=0)
+    added_purchased = IntegerField(null=False, default=0)
 
     @staticmethod
     def all() -> list['InventorySnapshot']:
@@ -655,7 +669,7 @@ class InventorySnapshot(Model):
     @staticmethod
     def all_of_product_in_time_period(product_id: int, start_date: datetime.datetime, end_date: datetime.datetime) -> list['InventorySnapshot']:
         return list(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id & InventorySnapshot.timestamp.between(start_date, end_date)
+            InventorySnapshot.product == product_id & InventorySnapshot.timestamp.between(start_date, end_date)
         ))
 
     @staticmethod
@@ -665,11 +679,13 @@ class InventorySnapshot(Model):
         ))
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
+    def create_snapshot(product_id: int, inventory: int, price: float, added_donated: int, added_purchased: int) -> 'InventorySnapshot':
         return InventorySnapshot.create(
             product=product_id,
             individual_inventory=inventory,
-            value_at_time=price
+            value_at_time=price,
+            added_donated=added_donated,
+            added_purchased=added_purchased
         )
 
     @staticmethod

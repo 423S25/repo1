@@ -15,9 +15,9 @@
 {% endmacro %}
 
 {% macro timeframe_form(endpoint, target) %}
-<form class="timeframe-form" hx-trigger="change" hx-get="{{ endpoint }}" hx-target="{{ target }}">
+<form autocomplete="off" class="timeframe-form" hx-trigger="change" hx-get="{{ endpoint }}" hx-target="{{ target }}" hx-swap="innerHTML">
     <select name="timeframe" onchange="updateVisibility(this.value, this.parentElement)">
-        <option value="lifetime">Lifetime</option>
+        <option value="lifetime" selected>Lifetime</option>
         <option value="last_year">Last Year</option>
         <option value="year_to_date">Year To Date</option>
         <option value="last_month">Last Month</option>

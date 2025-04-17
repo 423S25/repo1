@@ -4,6 +4,174 @@
 {% block content %}
 <link rel="stylesheet" href="styles/mobile_table.css" />
 <link rel="stylesheet" href="styles/product_page.css" />
+<script>
+    const HRDC_THEME_GREEN = '#4ead1f';
+    const HRDC_THEME_TEAL = '#146f76';
+
+    let lifetimeChart = null;
+    let priceHistoryChart = null;
+    let inventoryHistoryChart = null;
+
+    function loadLifetimeChart() {
+        requestAnimationFrame(() => {
+            if (lifetimeChart != null) {
+                lifetimeChart.destroy();
+            }
+
+            const canvas = document.getElementById('lifetime-breakdown-chart');
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            const lifetimeDonated = parseFloat(canvas.getAttribute('data-lifetime-donated'));
+            const lifetimePurchased = parseFloat(canvas.getAttribute('data-lifetime-purchased'));
+            const ctx = canvas.getContext('2d');
+
+            lifetimeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Donated', 'Purchased'],
+                    datasets: [{
+                        data: [lifetimeDonated, lifetimePurchased],
+                        backgroundColor: [HRDC_THEME_GREEN, HRDC_THEME_TEAL],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Product Intake'
+                        }
+                    }
+                }
+            });
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+    }
+    
+    function loadPriceChart() {
+        requestAnimationFrame(() => {
+            if (priceHistoryChart != null) {
+                priceHistoryChart.destroy();
+            }
+
+            const canvas = document.getElementById('price-history-chart');
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            const dates = JSON.parse(canvas.getAttribute('data-dates'));
+            const prices = JSON.parse(canvas.getAttribute('data-prices'));
+            const data = dates.map((e,i) => ({x: e, y: prices[i]}));
+            const ctx = canvas.getContext('2d');
+
+            priceHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Average Price',
+                        data,
+                        borderColor: HRDC_THEME_GREEN,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'MMM dd'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            }
+                        }
+                    }
+                }
+            });
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+    }
+    
+    function loadInventoryChart() {
+        requestAnimationFrame(() => {
+            if (inventoryHistoryChart != null) {
+                inventoryHistoryChart.destroy();
+            }
+
+            const canvas = document.getElementById('inventory-history-chart');
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            const dates = JSON.parse(canvas.getAttribute('data-dates'));
+            const counts = JSON.parse(canvas.getAttribute('data-counts'));
+            const data = dates.map((e,i) => ({x: e, y: counts[i]}));
+            const ctx = canvas.getContext('2d');
+
+            inventoryHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Individual Inventory',
+                        data,
+                        borderColor: HRDC_THEME_TEAL,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'MMM dd'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            }
+                        }
+                    }
+                }
+            });
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+    }
+    
+    window.addEventListener('load', () => {
+        loadLifetimeChart();
+        loadPriceChart();
+        loadInventoryChart();
+    });
+    document.body.addEventListener('htmx:afterSwap', e => {
+        if (e.target.querySelector && e.target.querySelector(':scope > #lifetime-breakdown-chart')) {
+            loadLifetimeChart();
+        } else if (e.target.querySelector && e.target.querySelector(':scope > #price-history-chart')) {
+            loadPriceChart();
+        } else if (e.target.querySelector && e.target.querySelector(':scope > #inventory-history-chart')) {
+            loadInventoryChart();
+        }
+    });
+</script>
 
 
 
@@ -100,16 +268,45 @@
                 htmx.trigger(this.form, 'submit');
             });
         </script>
+
     </div>
 
     <div class="box-shadow-small chart-parent" style="grid-column: 2;">
-        {{ timeframe_form('/lifetime/' ~ product.get_id(), '#temp') }}
-        <div style="height: 300px; width: 100%;" id="temp">
+        {{ timeframe_form('/product_lifetime/' ~ product.get_id(), '#lifetime-chart-cont') }}
+        <div style="height: 300px; width: 100%;" class="center-all" id="lifetime-chart-cont">
             {% include "charts/lifetime_split.html" %}
         </div>
     </div>
-    <div class="box-shadow-small chart-parent" style="grid-column: 3;">
+    <div class="box-shadow-small" style="grid-column: 3;">
+        <table><tbody>
+            <tr>
+                <th>Unit Name</th>
+                <th>Individual/Unit</th>
+                <th>Price/Unit</th>
+                <th>Count in Units</th>
+            </tr>
+            {% for stock_unit, count in stock_units_with_counts %}
+                <tr>
+                    <td style="text-align: center;">{{ stock_unit.name }}</td>
+                    <td style="text-align: center;">{{ stock_unit.multiplier }}</td>
+                    <td style="text-align: center;">{{ stock_unit.price }}</td>
+                    <td style="text-align: center;">{{ count }}</td>
+                </tr>
+            {% endfor %}
+        </tbody></table>
+    </div>
 
+    <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
+        {{ timeframe_form('/product_price_history/' ~ product.get_id(), '#price-chart-cont') }}
+        <div style="height: 300px; width: 100%;" class="center-all" id="price-chart-cont">
+            {% include "charts/price_line_chart.html" %}
+        </div>
+    </div>
+    <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
+        {{ timeframe_form('/product_inventory_history/' ~ product.get_id(), '#inventory-chart-cont') }}
+        <div style="height: 300px; width: 100%;" class="center-all" id="inventory-chart-cont">
+            {% include "charts/inventory_line_chart.html" %}
+        </div>
     </div>
 </div>
 

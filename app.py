@@ -145,8 +145,6 @@ def get_filter():
                            levels=levels,
                            ideal=ideal)
 
-
-
 # The reports page for an overview of all products
 @app.get("/reports")
 @admin_required
@@ -206,32 +204,6 @@ def get_search():
         current_category=category_id
     )
 
-
-
-
-@app.get("/lifetime/<int:product_id>")
-def get_lifetime_of_product(product_id: int):
-    if product_id is None:
-        return abort(404, description=f"Could not find product id")
-    product = Product.get_product(product_id)
-    if product is None:
-        return abort(404, description=f"Could not find product {product_id}")
-
-    form = TimeFrameForm(request.args, meta={'csrf': False})
-    errors, start, end = parse_timeframe_form_errors(form)
-
-    if len(errors) == 0 and start is not None and end is not None:
-        relevant_snapshots = InventorySnapshot.all_of_product_in_time_period(product_id, start, end)
-        if len(relevant_snapshots) == 0:
-            return make_response('No Data', 200)
-        lifetime_donated = 0
-        lifetime_purchased = 0
-        return render_template('charts/lifetime_split', lifetime_donated=lifetime_donated, lifetime_purchased=lifetime_purchased)
-    else:
-        return htmx_errors(errors)
-
-
-
 # The individual page for each product
 @app.get("/<int:product_id>")
 @login_required #any user can access this page
@@ -246,10 +218,13 @@ def get_product_page(product_id: int):
         return abort(404, description=f"Could not find product {product_id}")
 
     product_list = Product.search_filter_and_sort(product_force_first=product_id, product_sort_method='alpha_a_z')
-    snapshots = InventorySnapshot.all_of_product(product_id)
     stock_units_with_counts = StockUnit.all_of_product_with_count(product)
-    usage = product.get_usage_per_day()
-    days_until_out = product.get_days_until_out(usage)
+    all_time_snapshots = InventorySnapshot.all_of_product(product_id)
+    # usage = product.get_usage_per_day()
+    dates: list[str] = [rs.timestamp.strftime('%Y-%m-%d') for rs in all_time_snapshots]
+    prices: list[str] = [rs.get_average_price() for rs in all_time_snapshots]
+    counts: list[str] = [rs.individual_inventory for rs in all_time_snapshots]
+    # days_until_out = product.get_days_until_out(usage)
     return render_template(
         "inventory_history.html",
         product_list=product_list,
@@ -257,7 +232,10 @@ def get_product_page(product_id: int):
         stock_units_with_counts=stock_units_with_counts,
         product=product,
         lifetime_donated=product.lifetime_donated,
-        lifetime_purchased=product.lifetime_purchased
+        lifetime_purchased=product.lifetime_purchased,
+        dates=dates,
+        prices=prices,
+        counts=counts
     )
 
 ###
@@ -277,6 +255,84 @@ def get_mobile_index():
     products = Product.alphabetized_of_category()
     products = list(sorted(products, key=lambda p: p.last_updated))
     return render_template("mobile_index.html", category_list=categories, product_list=products)
+
+###
+# Product data endpoints
+###
+
+@app.get("/product_lifetime/<int:product_id>")
+def get_lifetime_of_product(product_id: int):
+    if product_id is None:
+        return abort(404, description=f"Could not find product id")
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f"Could not find product {product_id}")
+
+    form = TimeFrameForm(request.args, meta={'csrf': False})
+    errors, start, end = parse_timeframe_form_errors(form)
+
+    if len(errors) == 0 and start is not None and end is not None:
+        relevant_snapshots = InventorySnapshot.all_of_product_in_time_period(product_id, start, end)
+        if len(relevant_snapshots) == 0:
+            return make_response('No Data', 200)
+        
+        lifetime_donated = 0
+        lifetime_purchased = 0
+        for snapshot in relevant_snapshots:
+            lifetime_donated += snapshot.added_donated
+            lifetime_purchased += snapshot.added_purchased
+        if lifetime_purchased + lifetime_donated == 0:
+            return make_response('No Data', 200)
+        
+        return render_template('charts/lifetime_split.html', lifetime_donated=lifetime_donated, lifetime_purchased=lifetime_purchased)
+    else:
+        return htmx_errors(errors)
+
+@app.get("/product_price_history/<int:product_id>")
+def get_price_history_of_product(product_id: int):
+    if product_id is None:
+        return abort(404, description=f"Could not find product id")
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f"Could not find product {product_id}")
+    
+    form = TimeFrameForm(request.args, meta={'csrf': False})
+    errors, start, end = parse_timeframe_form_errors(form)
+
+    if len(errors) == 0 and start is not None and end is not None:
+        relevant_snapshots = InventorySnapshot.all_of_product_in_time_period(product_id, start, end)
+        dates: list[str] = [rs.timestamp.strftime('%Y-%m-%d') for rs in relevant_snapshots]
+        prices: list[str] = [rs.get_average_price() for rs in relevant_snapshots]
+        return render_template(
+            "charts/price_line_chart.html",
+            prices=prices,
+            dates=dates
+        )
+    else:
+        return htmx_errors(errors)
+
+@app.get("/product_inventory_history/<int:product_id>")
+def get_inventory_history_of_product(product_id: int):
+    if product_id is None:
+        return abort(404, description=f"Could not find product id")
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f"Could not find product {product_id}")
+    
+    form = TimeFrameForm(request.args, meta={'csrf': False})
+    errors, start, end = parse_timeframe_form_errors(form)
+
+    if len(errors) == 0 and start is not None and end is not None:
+        relevant_snapshots = InventorySnapshot.all_of_product_in_time_period(product_id, start, end)
+        dates: list[str] = [rs.timestamp.strftime('%Y-%m-%d') for rs in relevant_snapshots]
+        counts: list[str] = [rs.individual_inventory for rs in relevant_snapshots]
+        return render_template(
+            "charts/inventory_line_chart.html",
+            counts=counts,
+            dates=dates
+        )
+    else:
+        return htmx_errors(errors)
 
 ###
 # Login and logout POST endpoints

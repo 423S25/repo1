@@ -113,13 +113,13 @@ def parse_timeframe_form_errors(form: TimeFrameForm) -> tuple[list[str], datetim
     if timeframe == 'lifetime':
         return base_errors, datetime(year=1970, month=1, day=1), now
     elif timeframe == 'last_year':
-        return base_errors, now - relativedelta(year=1), now
+        return base_errors, now - relativedelta(years=1), now
     elif timeframe == 'last_month':
-        return base_errors, now - relativedelta(month=1), now
+        return base_errors, now - relativedelta(months=1), now
     elif timeframe == 'last_week':
-        return base_errors, now - relativedelta(week=1), now
+        return base_errors, now - relativedelta(weeks=1), now
     elif timeframe == 'last_24_hours':
-        return base_errors, now - relativedelta(day=1), now
+        return base_errors, now - relativedelta(days=1), now
     elif timeframe == 'year_to_date':
         return base_errors, datetime(year=now.year, month=1, day=1), now
     elif timeframe == 'custom':
