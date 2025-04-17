@@ -637,7 +637,7 @@ class StockUnit(Model):
 
 
 class InventorySnapshot(Model):
-    product_id = IntegerField(null=False)
+    product = ForeignKeyField(Product, backref='snapshots', on_delete='CASCADE')
     individual_inventory = IntegerField(null=False)
     value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
@@ -649,7 +649,7 @@ class InventorySnapshot(Model):
     @staticmethod
     def all_of_product(product_id: int) -> list['InventorySnapshot']:
         return list(reversed(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id
+            InventorySnapshot.product == product_id
         )))
 
     @staticmethod
@@ -661,23 +661,24 @@ class InventorySnapshot(Model):
     @staticmethod
     def product_snapshots_chronological(product_id: int) -> list['InventorySnapshot']:
         return list(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id
+            InventorySnapshot.product == product_id
         ))
 
     @staticmethod
     def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
         return InventorySnapshot.create(
-            product_id=product_id,
+            product=product_id,
             individual_inventory=inventory,
             value_at_time=price
         )
 
     @staticmethod
     def delete_snapshots_for_product(product_id: int):
-        InventorySnapshot.delete().where(InventorySnapshot.product_id == product_id).execute()
+        InventorySnapshot.delete().where(InventorySnapshot.product == product_id).execute()
 
     def get_average_price(self) -> float:
         return 0 if self.individual_inventory==0 else self.value_at_time / self.individual_inventory
 
     class Meta:
         database = db
+
