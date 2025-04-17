@@ -5,6 +5,10 @@
     background-color: white;
     position: relative;
 }
+.mobile-product-row:hover {
+    cursor: pointer;
+    background-color: var(--hrdc-theme-light-grey);
+}
 .mobile-product-row > * {
     position: absolute;
 }
@@ -49,7 +53,7 @@
     bottom: 10px;
     left: 10px;
 }
-.none-in-category, .result-count {
+.none-in-category, .result-count, .hiddent-count {
     margin: 0 20px;
     margin-top: 0;
     font-family: 'Gotham Book', sans-serif;
@@ -60,7 +64,7 @@
 .none-in-category {
     color: var(--hrdc-theme-alert);
 }
-.result-count {
+.result-count, .hidden-count {
     color: var(--hrdc-theme-medium-grey);
     font-size: 0.8em;
 }

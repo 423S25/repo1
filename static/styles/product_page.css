@@ -18,7 +18,7 @@ canvas {
     width: 100%;
 }
 .left-nav {
-    grid-row: 1 / -1;
+    grid-row: 1 / span 4;
     grid-column: 1;
 }
 .mobile-product-row {
@@ -28,6 +28,13 @@ canvas {
 }
 .result-count {
     display: none;
+}
+.mobile-form-control, .mobile-form-container, .mobile-select {
+    margin: 0;
+    width: 100%;
+}
+.mobile-select {
+    margin-top: 10px;
 }
 
 .column {

@@ -9,7 +9,11 @@
 {% endif %}
 
 {% for product in product_list %}
-    <div class="mobile-product-row box-shadow-small" role="button" hx-get="/product_update_inventory_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+    {% if table_mode == 'link' %}
+        <div class="mobile-product-row box-shadow-small" role="button" onclick="window.open('/{{ product.id }}', '_self')">
+    {% else %}
+        <div class="mobile-product-row box-shadow-small" role="button" hx-get="/product_update_inventory_mobile/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+    {% endif %}
         {% if not product.image_path %}
             <img class="mobile-product-row-image" src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
         {% else %}
@@ -28,3 +32,7 @@
         </div>
     </div>
 {% endfor %}
+
+{% if hidden_count %}
+    <span class="hidden-count">Hiding {{ hidden_count }} results</span>
+{% endif %}

@@ -218,13 +218,25 @@ def get_product_page(product_id: int):
         return abort(404, description=f"Could not find product {product_id}")
 
     product_list = Product.search_filter_and_sort(product_force_first=product_id, product_sort_method='alpha_a_z')
+    hidden_count = 0
+    if len(product_list) > 10:
+        hidden_count = len(product_list) - 10
+        product_list = product_list[0:10]
     stock_units_with_counts = StockUnit.all_of_product_with_count(product)
     all_time_snapshots = InventorySnapshot.all_of_product(product_id)
+
     # usage = product.get_usage_per_day()
+    # days_until_out = product.get_days_until_out(usage)
+
     dates: list[str] = [rs.timestamp.strftime('%Y-%m-%d') for rs in all_time_snapshots]
     prices: list[str] = [rs.get_average_price() for rs in all_time_snapshots]
     counts: list[str] = [rs.individual_inventory for rs in all_time_snapshots]
-    # days_until_out = product.get_days_until_out(usage)
+
+    categories = [
+        Category.ALL_PRODUCTS_PLACEHOLDER,
+        *Category.all_alphabetized()
+    ]
+
     return render_template(
         "inventory_history.html",
         product_list=product_list,
@@ -235,7 +247,10 @@ def get_product_page(product_id: int):
         lifetime_purchased=product.lifetime_purchased,
         dates=dates,
         prices=prices,
-        counts=counts
+        counts=counts,
+        category_list=categories,
+        table_mode='link',
+        hidden_count=hidden_count
     )
 
 ###
@@ -727,16 +742,33 @@ def post_product_update_purchased(product_id: int):
 @login_required
 def get_product_search_filter_mobile():
     product_name_fragment = request.args.get('product_name')
+    table_mode = request.args.get('table_mode')
+    count_limit = request.args.get('count_limit')
     product_sort_method = request.args.get('product_sort_method')
     product_category_id = 0
+    hidden_count = 0
     try:
         product_category_id = int(request.args.get('product_category_id'))
     except:
         pass
+    if count_limit is not None:
+        try:
+            count_limit = int(count_limit)
+        except:
+            count_limit = None
 
     products = Product.search_filter_and_sort(product_name_fragment, product_category_id, product_sort_method)
 
-    return render_template('mobile_table.html', product_list=products)
+    if count_limit is not None and len(products) > count_limit:
+        hidden_count = len(products) - count_limit
+        products = products[0:count_limit]
+
+    return render_template(
+        'mobile_table.html',
+        product_list=products,
+        table_mode=table_mode,
+        hidden_count=hidden_count
+    )
 
 #####
 #
