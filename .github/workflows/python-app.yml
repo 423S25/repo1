@@ -4,7 +4,7 @@ env:
   ADMIN_PASSWORD: password
   STAFF_PASSWORD: password
   VOLUNTEER_PASSWORD: password
-  CATEGORY_ICONS_PATH: ${{ runner.temp }}/data/category_icons
+  CATEGORY_ICONS_PATH: data/category_icons
 
 on:
   push:
