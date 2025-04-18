@@ -23,7 +23,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Create directories
-      run: mkdir -p /data/category_icons
+      run: sudo mkdir -p /data/category_icons
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
