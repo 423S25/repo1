@@ -4,6 +4,7 @@ env:
   ADMIN_PASSWORD: password
   STAFF_PASSWORD: password
   VOLUNTEER_PASSWORD: password
+  CATEGORY_ICONS_PATH: ${{ runner.temp }}/data/category_icons
 
 on:
   push:
@@ -22,8 +23,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.12"
-    - name: Create directories
-      run: sudo mkdir -p /data/category_icons
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
