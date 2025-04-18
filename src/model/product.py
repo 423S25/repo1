@@ -13,7 +13,7 @@ import os
 load_dotenv()
 
 db = SqliteDatabase(os.environ.get("INVENTORY_DB_PATH", "inventory.db"))
-CAT_ICONS_PATH = os.environ.get("CATEGORY_ICONS_PATH", "static/icons/category_icons/")
+CAT_ICONS_PATH = os.environ.get("CATEGORY_ICONS_PATH", "/data/category_icons/")
 os.makedirs(CAT_ICONS_PATH, exist_ok=True)
 
 class Category(Model):
