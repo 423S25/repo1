@@ -45,6 +45,9 @@ jobs:
     - name: Check Flask server
       run: curl -I http://localhost:5000 || exit 1
 
+    - name: Run Unit tests
+      run: pytest
+
     - name: Install Selenium-side-runner
       run: npm install -g selenium-side-runner
 
@@ -55,9 +58,6 @@ jobs:
         Xvfb :99 &
         fluxbox -display :99 &
         echo "DISPLAY=:99" >> "$GITHUB_ENV"
-    
-    - name: Run Unit tests
-      run: pytest
 
     #- name: Run Selenium tests
       #run: selenium-side-runner -c "browserName=chrome goog:chromeOptions.args=[\"--headless\"]" automated-testing/e2e/CRUD.side
