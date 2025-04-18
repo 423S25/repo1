@@ -5,6 +5,7 @@ env:
   STAFF_PASSWORD: password
   VOLUNTEER_PASSWORD: password
   CATEGORY_ICONS_PATH: data/category_icons
+  IMAGES_UPLOAD_PATH: data/images
 
 on:
   push:

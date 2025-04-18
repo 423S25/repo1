@@ -28,9 +28,8 @@ bcrypt = Bcrypt(app)
 
 app.config['SECRET_KEY'] = os.environ.get("APP_SECRET_KEY", "default")
 app.config["SESSION_PROTECTION"] = "strong"
-UPLOAD_FOLDER = os.path.join("static", "images")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True) #NOTE: maybe remove when presistent storage gets added
-app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
+IMAGES_UPLOAD_PATH = os.environ.get("IMAGES_UPLOAD_PATH", "/data/images/")
+os.makedirs(IMAGES_UPLOAD_PATH, exist_ok=True)
 
 def is_mobile():
     user_agent = parse(request.user_agent.string)
@@ -381,8 +380,9 @@ def post_product_upload_image(product_id: int):
         file.seek(0) # Reset file pointer after reading
 
         filename = file.filename
-        file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
-        product.set_img_path(filename)
+        path = os.path.join(IMAGES_UPLOAD_PATH, filename)
+        file.save(path)
+        product.set_img_path(path)
         return htmx_redirect("../" + str(product_id))
     except:
         return make_response('File is not an image', 400)
@@ -753,9 +753,9 @@ def export_csv():
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
     return response
 
-@app.route("/data/category_icons/<path:filename>")
+@app.route("/data/<path:filename>")
 def serve_persisted_files(filename):
-    return send_from_directory('/data/category_icons', filename)
+    return send_from_directory('/data/', filename)
 
 with app.app_context():
     if not User.get_by_username('admin'):
