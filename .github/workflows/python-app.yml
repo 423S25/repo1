@@ -24,7 +24,7 @@ jobs:
         python-version: "3.12"
     - name: Install dependencies
       run: |
-        sudo python -m pip install --upgrade pip
+        python -m pip install --upgrade pip
         sudo pip install flake8
         sudo pip install pytest
         sudo pip install --upgrade setuptools
