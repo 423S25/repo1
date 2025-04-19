@@ -297,10 +297,12 @@ def post_settings():
     return redirect("/settings")
 
 @app.get("/update_password/<username>")
+@admin_required
 def get_update_password(username: str):
     return render_template("modals/update_password.html", username=username)
 
 @app.post("/update_password/<username>")
+@admin_required
 def update_password(username: str):
     new_pass = request.form.get("new-password")
     confirmation = request.form.get("confirmation")
