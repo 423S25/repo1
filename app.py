@@ -12,7 +12,9 @@ from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
+    ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, \
+    ProductAddInventoryForm, parse_stock_units
 from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
@@ -282,7 +284,8 @@ def login():
 @app.get("/settings")
 @admin_required
 def get_settings():
-    return render_template("settings.html", user=current_user)
+    accounts = User.all()
+    return render_template("settings.html", user=current_user, accounts=accounts)
 
 # Add a new email to updates for admin only
 @app.post("/settings")
@@ -292,6 +295,21 @@ def post_settings():
     if email is not None and email != '' and '@' in email:
         User.get_by_username('admin').update_email(email)
     return redirect("/settings")
+
+@app.get("/update_password/<username>")
+def get_update_password(username: str):
+    return render_template("modals/update_password.html", username=username)
+
+@app.post("/update_password/<username>")
+def update_password(username: str):
+    new_pass = request.form.get("new-password")
+    confirmation = request.form.get("confirmation")
+    if new_pass != confirmation:
+        return abort(400, "passwords must match!")
+    user = User.get_by_username(username)
+    user.update_password(bcrypt.generate_password_hash(new_pass))
+    return htmx_redirect("/settings")
+    
 
 #####
 #
@@ -766,4 +784,4 @@ with app.app_context():
         User.add_user('volunteer', bcrypt.generate_password_hash(os.environ.get("VOLUNTEER_PASSWORD")))
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=False)
+    app.run(port=5000, debug=True)
