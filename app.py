@@ -433,19 +433,14 @@ def post_product_add():
     if CATEGORY_MESSAGE in form_errors:
         form_errors[form_errors.index(CATEGORY_MESSAGE)] = 'Please select a category'
 
-    stock_units = parse_stock_units(request.form, form_errors, True)
-
     if len(form_errors) == 0: #add to database
         Product.add_product(
             form.product_name.data,
-            stock_units,
             form.category_id.data,
-            form.ideal_stock.data,
-            form.donation.data,
-            None
+            form.ideal_stock.data
         )
         Product.fill_days_left()
-        EmailJob.process_emails(User.get_by_username('admin').email)
+        # EmailJob.process_emails(User.get_by_username('admin').email)
         return htmx_redirect('/')
     else:
         return htmx_errors(form_errors)

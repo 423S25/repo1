@@ -17,9 +17,7 @@ class ProductUpdateAllForm(FlaskForm):
     #also stock unit fields
 
 class ProductAddForm(ProductUpdateAllForm):
-    donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
-    #also stock unit fields
 
 # also for mobile
 class ProductUpdateInventoryForm(FlaskForm):

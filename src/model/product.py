@@ -283,17 +283,15 @@ class Product(Model):
         return list(query)
 
     @staticmethod
-    def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
-        individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
-        price = 0 if individual_count==0 else total_price / individual_count
+    def add_product(name: str, category: int, ideal_stock: int, days_left: float = None, image_path: str = None) -> 'Product':
         product, _created = Product.get_or_create(
             product_name=name,
             category=category,
-            price=price,
-            lifetime_donated=individual_count if donation else 0,
-            lifetime_purchased=individual_count if not donation else 0,
+            price=0,
+            lifetime_donated=0,
+            lifetime_purchased=0,
             defaults={
-                'inventory': individual_count,
+                'inventory': 0,
                 'inventory_breakdown': '[]',
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
@@ -302,18 +300,14 @@ class Product(Model):
         )
 
         product: Product = product
-        stock_units = StockUnit.commit_stock_unit_submissions(product.get_id(), stock)
-        InventorySnapshot.create_snapshot(
+        individual_unit = StockUnit.add_stock_unit(
             product.get_id(),
-            individual_count,
-            total_price,
-            added_donated=individual_count if donation else 0,
-            added_purchased=individual_count if not donation else 0,
+            "Individual",
+            0,
+            1
         )
 
-        inventory_breakdown = []
-        for unit, submission in zip(stock_units, stock):
-            inventory_breakdown.append([unit.get_id(), submission.count or 0])
+        inventory_breakdown = [[individual_unit.get_id(), 0]]
         product.inventory_breakdown = json.dumps(inventory_breakdown)
         product.save()
 
