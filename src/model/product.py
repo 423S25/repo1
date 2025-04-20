@@ -301,10 +301,10 @@ class Product(Model):
 
         product: Product = product
         individual_unit = StockUnit.add_stock_unit(
-            product.get_id(),
-            "Individual",
-            0,
-            1
+            product_id=product.get_id(),
+            name="Individual",
+            price=0,
+            multiplier=1
         )
 
         inventory_breakdown = [[individual_unit.get_id(), 0]]
