@@ -520,7 +520,9 @@ def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = FlaskForm()
         form_errors = parse_errors(form)
-        stock_units = parse_stock_units(request.form, form_errors, True)
+        stock_units = parse_stock_units(request.form, form_errors)
+
+        print([str(s) for s in stock_units])
 
         product = Product.get_product(product_id)
         if product is None:
@@ -559,7 +561,7 @@ def post_product_add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductAddInventoryForm()
         form_errors = parse_errors(form)
-        stock_unit_submissions = parse_stock_units(request.form, form_errors, True)
+        stock_unit_submissions = parse_stock_units(request.form, form_errors)
 
         product = Product.get_product(product_id)
         if product is None:
@@ -594,7 +596,7 @@ def post_product_update_inventory_mobile(product_id: int):
         form = FlaskForm()
         form_errors = parse_errors(form)
 
-        stock_unit_submissions = parse_stock_units(request.form, form_errors, True)
+        stock_unit_submissions = parse_stock_units(request.form, form_errors)
 
         product = Product.get_product(product_id)
         if product is None:
@@ -652,7 +654,7 @@ def post_product_update_all(product_id: int):
         if product.product_name != form.product_name.data and possible_conflicing_product is not None:
             form_errors.append(f'Product already exists with name "{form.product_name.data}"')
 
-        stock_units = parse_stock_units(request.form, form_errors, True)
+        stock_units = parse_stock_units(request.form, form_errors)
         print(stock_units, request.form)
         
         if len(form_errors) == 0:

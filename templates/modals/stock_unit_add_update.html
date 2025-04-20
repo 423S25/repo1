@@ -11,13 +11,6 @@
         const newId = parseInt(prevRow.getAttribute('data-index')) + 1;
         newRow.setAttribute('data-index', newId);
 
-        const newRadio = newRow.querySelector('input[type="radio"]');
-        if (newRadio != null) {
-            newRadio.setAttribute('value', newId);
-        }
-
-        const textFields = newRow.querySelectorAll('input[type="text"]');
-
         const nameInput = newRow.querySelector('input[data-field="name"]');
         nameInput.setAttribute('name', `stock_name_${newId}`);
         nameInput.removeAttribute('value');
@@ -34,13 +27,11 @@
         priceInput.value = '';
 
         const countInput = newRow.querySelector('input[data-field="count"]');
-        if (countInput != null) {
-            countInput.setAttribute('name', `stock_count_${newId}`);
-            countInput.setAttribute('value', '0');
-            countInput.value = '0';
-        }
+        countInput.setAttribute('name', `stock_count_${newId}`);
+        countInput.setAttribute('value', '0');
+        countInput.value = '0';
 
-        newRow.querySelector('input[type="hidden"]')?.remove();
+        newRow.querySelector('input[data-field="id"]')?.remove();
 
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
@@ -74,6 +65,9 @@
                     <input type="hidden" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
                     <input type="hidden" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/>
                     <input type="hidden" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
+                {% endif %}
+                {% if stock_unit.id is not none %}
+                    <input type="hidden" data-field="id" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
                 {% endif %}
             </td>
 

@@ -143,7 +143,7 @@ def htmx_errors(errors: list[str]) -> Response:
     return response
 
 # Parses the stock units in the form, appending any errors to the list and returning the successfully parsed units
-def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bool) -> list[StockUnitSubmission]:
+def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[StockUnitSubmission]:
     assert not isinstance(form, FlaskForm), 'form should be from `request.form`, not the form class itself'
     index = 1
     stock_units: list[StockUnitSubmission] = []
@@ -156,7 +156,7 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
         if name is None or name == '':
             mult_is_missing = mult_key not in form or form[mult_key] == ''
             price_is_missing = price_key not in form or form[price_key] == ''
-            count_is_missing = not include_count or count_key not in form or form[count_key] == ''
+            count_is_missing = count_key not in form or form[count_key] == ''
             if not (mult_is_missing and price_is_missing and count_is_missing):
                 errors.append(f'Missing name for stock unit {index}')
             index += 1
@@ -180,14 +180,10 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
             okay = False
 
         count = None
-        if count_key in form:
-            try:
-                count = int(form[count_key])
-            except:
-                errors.append(f'Count for stock unit "{name}" is not an integer')
-                okay = False
-        elif include_count:
-            errors.append(f'Count for stock unit "{name}" is missing')
+        try:
+            count = int(form[count_key])
+        except:
+            errors.append(f'Count for stock unit "{name}" is not an integer')
             okay = False
 
         id = None
