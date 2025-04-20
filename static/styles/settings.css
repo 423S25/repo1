@@ -25,6 +25,12 @@
     text-decoration: none;
 }
 
+.admin-back a:hover
+{
+    color: var(--hrdc-theme-green-yellow);
+    cursor: pointer;
+}
+
 .admin-label
 {
     color: var(--hrdc-theme-teal);
