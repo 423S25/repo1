@@ -1,10 +1,11 @@
-import os
+import os, secrets
+from src.common.functions import helper
 from user_agents import parse
 import io
 from PIL import Image
 from functools import wraps
 
-from flask import Flask, request, Response, render_template, redirect, abort, url_for, make_response
+from flask import Flask, request, Response, render_template, redirect, abort, send_from_directory, url_for, make_response
 from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user, AnonymousUserMixin
 from flask_bcrypt import Bcrypt
@@ -27,9 +28,8 @@ bcrypt = Bcrypt(app)
 
 app.config['SECRET_KEY'] = os.environ.get("APP_SECRET_KEY", "default")
 app.config["SESSION_PROTECTION"] = "strong"
-UPLOAD_FOLDER = os.path.join("static", "images")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True) #NOTE: maybe remove when presistent storage gets added
-app.config['UPLOADED_IMAGES'] = UPLOAD_FOLDER
+IMAGES_UPLOAD_PATH = os.environ.get("IMAGES_UPLOAD_PATH", "/data/images/")
+os.makedirs(IMAGES_UPLOAD_PATH, exist_ok=True)
 
 def is_mobile():
     user_agent = parse(request.user_agent.string)
@@ -79,7 +79,6 @@ def admin_required(func):
 def get_index():
     if is_mobile():
         return redirect('/mobile')
-    
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
     # Loads products in urgency order
@@ -104,12 +103,12 @@ def get_index():
 @app.post("/filter")
 @login_required
 def post_filter():
-    category_id = request.form.get('category_id')
-    price = request.form.get('price')
-    amount = request.form.get('amount')
+    category_id = request.args.get('category_id')
+    price = request.args.get('price')
+    amount = request.args.get('amount')
     # Fills the days left for each product with product.get_days_until_out
     Product.fill_days_left()
-    # Loads products in urgency order using where for category filter
+    # I do not think it does urgency ranking anymore. just loads the products that fit the filters
     products = Product.urgency_rank(category_id, price, amount)
     categories = Category.all()
     levels = Product.get_low_products()
@@ -122,6 +121,29 @@ def post_filter():
                            current_amount=amount,
                            levels=levels)
 
+# The filter function for the main table page. Re-serves index.html
+@app.get("/filter")
+@login_required
+def get_filter():
+    category_id = request.args.get('category_id', '0')
+    price = request.args.get('price', '0')
+    amount = request.args.get('amount', '0')
+    search_term = request.args.get('q', '')
+    ideal = request.args.get('ideal', '0')
+    # I do not think it does urgency ranking anymore. just loads the products that fit the filters
+    products = Product.urgency_rank(category_id, price, amount, search_term, ideal)
+    categories = Category.all()
+    levels = Product.get_low_products()
+    return render_template("table.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id,
+                           current_price=price,
+                           current_amount=amount,
+                           levels=levels,
+                           ideal=ideal)
+
 
 
 # The reports page for an overview of all products
@@ -130,7 +152,7 @@ def post_filter():
 def get_reports():
     Product.fill_days_left()
     products = Product.urgency_rank()
-    categories = [{"id": c.id, "name": c.name, "total_inventory": 0} for c in Category.all()]
+    categories = [{"id": c.id, "name": c.name, "total_inventory": 0, "color": c.color} for c in Category.all()]
 
     # Create a mapping from category ID to total inventory
     category_inventory = {c["id"]: 0 for c in categories}
@@ -141,9 +163,13 @@ def get_reports():
             category_inventory[product.category_id] += product.inventory
 
     # Update category objects with total inventory values
+    colors = []
     for category in categories:
         category["total_inventory"] = category_inventory[category["id"]]
-
+        colors.append(category["color"])
+    data1 = helper.price_over_amount_inventory(helper)
+    data2 = helper.convert_to_rgb(helper, colors)
+    data3 = helper.ideal_over_amount_inventory(helper)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -151,7 +177,10 @@ def get_reports():
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
         value=request.args.get('value'),
-        flag=True
+        data1=data1,
+        data2=data2,
+        data3=data3,
+        Flag = True
     )
 
 # The search function for the main table page. Re-serves index.html
@@ -164,7 +193,11 @@ def get_search():
     else:
         products = Product.all()
     categories = Category.all()
-    return render_template("table.html", product_list=products, user=current_user, categories=categories, current_category=category_id)
+    return render_template("table.html",
+                           product_list=products,
+                           user=current_user,
+                           categories=categories,
+                           current_category=category_id)
 
 # The individual page for each product
 @app.get("/<int:product_id>")
@@ -172,7 +205,6 @@ def get_search():
 def post_product_page(product_id: int):
     if is_mobile():
         return redirect("/mobile")
-    
     if product_id is None: # TODO: have actual error page
         return abort(404, description=f"Could not find product id")
 
@@ -348,8 +380,9 @@ def post_product_upload_image(product_id: int):
         file.seek(0) # Reset file pointer after reading
 
         filename = file.filename
-        file.save(os.path.join(app.config['UPLOADED_IMAGES'], filename))
-        product.set_img_path(filename)
+        path = os.path.join(IMAGES_UPLOAD_PATH, filename)
+        file.save(path)
+        product.set_img_path(path)
         return htmx_redirect("../" + str(product_id))
     except:
         return make_response('File is not an image', 400)
@@ -719,6 +752,10 @@ def export_csv():
     response = Response(csv_file, content_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=products.csv"
     return response
+
+@app.route("/data/<path:filename>")
+def serve_persisted_files(filename):
+    return send_from_directory('/data/', filename)
 
 with app.app_context():
     if not User.get_by_username('admin'):

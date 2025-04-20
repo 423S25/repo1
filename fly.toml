@@ -28,3 +28,5 @@ primary_region = 'sea'
 [env]
   INVENTORY_DB_PATH="/data/inventory.db"
   USERS_DB_PATH="/data/users.db"
+  CATEGORY_ICONS_PATH="/data/category_icons/"
+  IMAGES_UPLOAD_PATH="/data/images/"
