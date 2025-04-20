@@ -1,3 +1,4 @@
+{% if is_admin %}
 <script>
     function addNewStockUnit(ev, btn) {
         ev.preventDefault();
@@ -44,6 +45,7 @@
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
 </script>
+{% endif %}
 
 <style>
     .stock-unit-update-table input {
@@ -54,8 +56,10 @@
 <table style="grid-column: 1 / -1;" class="stock-unit-update-table"><tbody>
     <tr>
         <th>Unit Name</th>
-        <th>Items Per Unit</th>
-        <th>Price Per Unit</th>
+        {% if is_admin %}
+            <th>Items Per Unit</th>
+            <th>Price Per Unit</th>
+        {% endif %}
         {% if not stock_unit_count_hidden %}
             <th>Number of Units in Stock</th>
         {% endif %}
@@ -63,34 +67,39 @@
     {% for stock_unit in stock_unit_list %}
         <tr data-index="{{ loop.index }}">
             <td>
-                <input type="text" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
-                {% if stock_unit.id is not none %}
-                    <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
-                {% endif %}
-            </td>
-            <td><input type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
-            <td>
-                <input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
-                {% if stock_unit_count_hidden %}
-                    {% if stock_unit_count_list %}
-                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
-                    {% else %}
-                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
-                    {% endif %}
-                {% endif %}
-            </td>
-            {% if not stock_unit_count_hidden %}
-                {% if stock_unit_count_list %}
-                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                {% if is_admin %}
+                    <input type="text" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
                 {% else %}
-                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                    <span>{{ stock_unit.name }}:</span>
+                    <input type="hidden" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
+                    <input type="hidden" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/>
+                    <input type="hidden" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
                 {% endif %}
+            </td>
+
+            {% if is_admin %}
+                <td><input type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
+                <td><input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/></td>
             {% endif %}
+            
+            {% if stock_unit_count_hidden %}
+                <td style="display: none;">
+            {% else %}
+                <td>
+            {% endif %}
+                {% if stock_unit_count_list %}
+                    <input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/>
+                {% else %}
+                    <input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/>
+                {% endif %}
+            </td>
         </tr>
     {% endfor %}
-    <tr>
-        <td colspan="{{ 3 + (1 if stock_unit_count else 0) }}">
-            <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
-        </td>
-    </tr>
+    {% if is_admin %}
+        <tr>
+            <td colspan="{{ 1 + (2 if is_admin else 0) + (1 if not stock_unit_count_hidden else 0) }}">
+                <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+            </td>
+        </tr>
+    {% endif %}
 </tbody></table>

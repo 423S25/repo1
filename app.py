@@ -490,7 +490,7 @@ def post_product_upload_image(product_id: int):
 
 # Form to update stock only for a given product in product inventory_history.html
 @app.get("/product_update_inventory/<int:product_id>")
-@admin_required
+@login_required
 def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
@@ -509,12 +509,13 @@ def get_product_update_inventory(product_id: int):
         product=product,
         form=FlaskForm(),
         stock_unit_list=stock_units,
-        stock_unit_count_list=stock_unit_counts
+        stock_unit_count_list=stock_unit_counts,
+        is_admin=getattr(current_user, "username", None) == "admin"
     )
 
 # Update inventory only for desktop
 @app.post("/product_update_inventory/<int:product_id>")
-@admin_required
+@login_required
 def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = FlaskForm()
@@ -537,7 +538,7 @@ def post_product_update_inventory(product_id: int):
 
 # Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
 @app.get("/product_add_inventory/<int:product_id>")
-@admin_required
+@login_required
 def get_product_add_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
@@ -547,12 +548,13 @@ def get_product_add_inventory(product_id: int):
         "modals/product_add_stock.html",
         product=product,
         form=FlaskForm(),
-        stock_unit_list=stock_units
+        stock_unit_list=stock_units,
+        is_admin=getattr(current_user, "username", None) == "admin"
     )
 
 # Add inventory only for desktop
 @app.post("/product_add_inventory/<int:product_id>")
-@admin_required
+@login_required
 def post_product_add_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = ProductAddInventoryForm()
@@ -631,7 +633,8 @@ def get_product_update_all(product_id: int):
         form=ProductUpdateAllForm(),
         stock_unit_list=stock_units,
         stock_unit_count_list=stock_unit_counts,
-        stock_unit_count_hidden=True
+        stock_unit_count_hidden=True,
+        is_admin=True #because of @admin_required
     )
 
 @app.post("/product_update_all/<int:product_id>")
