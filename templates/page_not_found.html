@@ -1,4 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 stye="color: orchid;">Page not Found</h1>
+<link rel="stylesheet" href="/styles/error-page.css"/>
+<div class="not-found-main"></div>
+<div class="message-cont center-all">
+    <div>
+        <h1>404</h1>
+        <h2>Page Not Found</h2>
+        <a href="/" class="home-link">Back to Home Page</a>
+    </div>
+</div>
 {% endblock %}

@@ -60,11 +60,23 @@ def _db_close(exc):
     if not db.is_closed():
         db.close()
 
+MODAL_GET_REQUESTS = [
+    "/product_add",
+    "/product_update_inventory",
+    "/product_add_inventory",
+    "/product_update_inventory_mobile",
+    "/product_update_all",
+    "/product_update_donated",
+    "/product_update_purchased",
+    "/category_add",
+    "/category_update",
+]
+
 def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not current_user.is_authenticated or getattr(current_user, "username", None) != "admin":
-            if request.method == 'GET':
+            if request.method == 'GET' and request.path not in MODAL_GET_REQUESTS:
                 return render_template("not_authorized.html"), 401
             else:
                 return abort(401, description="Only admins can access this resource")
@@ -727,6 +739,7 @@ def export_csv():
 
 @app.errorhandler(404)
 def page_not_found(_):
+    print('FROM', request.referrer)
     if request.method == "POST":
         return make_response('Resource not found', 404)
     else:
