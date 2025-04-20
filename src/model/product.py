@@ -10,9 +10,11 @@ import re
 from dotenv import load_dotenv
 import os
 
+load_dotenv()
 
 db = SqliteDatabase(os.environ.get("INVENTORY_DB_PATH", "inventory.db"))
-
+CAT_ICONS_PATH = os.environ.get("CATEGORY_ICONS_PATH", "/data/category_icons/")
+os.makedirs(CAT_ICONS_PATH, exist_ok=True)
 
 class Category(Model):
     ALL_PRODUCTS_PLACEHOLDER = {"name": "All Products", "color": "black", "image_path": None, "id": 0}
@@ -72,8 +74,10 @@ class Category(Model):
 
     @staticmethod
     def change_svg_color(input_svg: str, new_color: str, name : str):
-
-        tree = ET.parse("static/" + input_svg)
+        try:
+            tree = ET.parse("static/" + input_svg)
+        except FileNotFoundError:
+            tree = ET.parse(input_svg)
         root = tree.getroot()
 
         namespace = {'svg': 'http://www.w3.org/2000/svg'}
@@ -84,9 +88,9 @@ class Category(Model):
                 new_style_text = re.sub(r'#([0-9a-fA-F]{3,6})', new_color, style.text, flags=re.IGNORECASE)
                 style.text = new_style_text
 
-        output_path = "icons/category_icons/" + name + ".svg"
-        tree.write("static/" + output_path)
-
+        output_path = CAT_ICONS_PATH + name + ".svg"
+        #tree.write("static/" + output_path)
+        tree.write(output_path)
         return output_path
 
 
@@ -111,6 +115,7 @@ class Product(Model):
     inventory = IntegerField(default=0)
     inventory_breakdown = TextField(null=False) # [[stock_unit.id, count]]
     ideal_stock = IntegerField()
+    price = FloatField(default=0)
     image_path = CharField(null=True)
     last_updated = DateTimeField(default=datetime.datetime.now)
     days_left = DecimalField(decimal_places=2, auto_round=True, null=True)
@@ -179,20 +184,19 @@ class Product(Model):
 
     @staticmethod
     # overloaded with category id for filter
-    def urgency_rank(category_id: str = None, price: str = None, amount: str = None) -> list['Product']:
+    def urgency_rank(category_id: str = None, price: str = None, amount: str = None, text: str = None, ideal: str = None,) -> list['Product']:
         query = Product.select(Product)
         if category_id == '0' or category_id is None:
             pass
         else:
             query = query.where(Product.category_id == category_id)
-
         if price is None or price == '0':
             pass
         else:
             if price == '1':
                 query = query.where(Product.price <= 5)
             elif price == '2':
-                query = query.where(Product.price <= 10)
+                query = query.where(10 >= Product.price > 5)
             elif price == '3':
                 query = query.where(Product.price > 10)
         if amount is None or amount == '0':
@@ -219,7 +223,35 @@ class Product(Model):
                     if ratio > 0.5:
                         filtered_ids.append(product.id)
                 query = Product.select().where(Product.id.in_(filtered_ids))
-
+        if ideal is None or ideal == '0':
+            pass
+        else:
+            if ideal == '1':
+                filtered_ids = []
+                for p in query:
+                    if p.ideal_stock <= 50:
+                        filtered_ids.append(p.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+            elif ideal == '2':
+                filtered_ids = []
+                for p in query:
+                    if 50 < p.ideal_stock <= 100:
+                        filtered_ids.append(p.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+            elif ideal == '3':
+                filtered_ids = []
+                for p in query:
+                    if p.ideal_stock > 100:
+                        filtered_ids.append(p.id)
+                query = Product.select().where(Product.id.in_(filtered_ids))
+        if text is None or text == '':
+            pass
+        else:
+            hold = []
+            for p in query:
+                if text in p.product_name:
+                    hold.append(p.id)
+            query = Product.select().where(Product.id.in_(hold))
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
         return list(query)
 
@@ -240,10 +272,11 @@ class Product(Model):
     @staticmethod
     def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
         individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
-
+        price = total_price / individual_count
         product, created = Product.get_or_create(
             product_name=name,
             category=category,
+            price=price,
             lifetime_donated=individual_count if donation else 0,
             lifetime_purchased=individual_count if not donation else 0,
             defaults={

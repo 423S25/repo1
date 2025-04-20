@@ -25,9 +25,75 @@
                 e.detail.shouldSwap = true;
                 e.detail.isError = false;
             } else if (e.detail.xhr.status == 401) {
-                alert('You cannot access this resource');
+                alert('You are not authorized to access this resource');
             }
         });
+        htmx.on("htmx:afterSwap", loadInfoButtons);
+        window.addEventListener('load', loadInfoButtons);
+
+        function loadInfoButtons() {
+            for (const btn of document.querySelectorAll('button.info-button[data-message]:not([data-loaded])')) {
+                btn.innerHTML = '<img src="icons/info.svg" alt="Information Icon"/>';
+                btn.setAttribute('data-loaded', 'true');
+                btn.onmouseenter = showInfoBlurb;
+            }
+        }
+
+        function showInfoBlurb(ev) {
+            const btn = ev.target;
+            let direction = btn.getAttribute("data-direction");
+            const rect = btn.getBoundingClientRect();
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            if (direction == null) {
+                const centerX = rect.x + rect.width / 2;
+                const centerY = rect.y + rect.height / 2;
+                if (centerX > width * 0.6) {
+                    direction = 'left';
+                } else if (centerX < width * 0.4) {
+                    direction = 'right';
+                } else if (centerY < height * 0.2) {
+                    direction = 'bottom';
+                } else {
+                    direction = 'top';
+                }
+            }
+
+            let sharedBlurb = document.getElementById('info-blurb');
+            if (!sharedBlurb) {
+                sharedBlurb = document.createElement('div');
+                const inner = document.createElement('div');
+                inner.classList.add('box-shadow-small');
+                sharedBlurb.appendChild(inner);
+                sharedBlurb.id = 'info-blurb';
+                sharedBlurb.onmouseleave = () => {
+                    sharedBlurb.style.display = 'none';
+                }
+                document.body.appendChild(sharedBlurb);
+            }
+            sharedBlurb.style.display = 'block';
+            sharedBlurb.style.removeProperty('left');
+            sharedBlurb.style.removeProperty('right');
+            sharedBlurb.style.removeProperty('top');
+            sharedBlurb.style.removeProperty('bottom');
+            
+            sharedBlurb.children[0].textContent = btn.getAttribute('data-message');
+            sharedBlurb.className = direction;
+
+            if (direction == 'left') {
+                sharedBlurb.style.top = rect.top + 'px';
+                sharedBlurb.style.right = (width - rect.right) + 'px';
+            } else if (direction == 'right') {
+                sharedBlurb.style.top = rect.top + 'px';
+                sharedBlurb.style.left = rect.left + 'px';
+            } else if (direction == 'bottom') {
+                sharedBlurb.style.top = rect.top + 'px';
+                sharedBlurb.style.left = (rect.left + rect.width / 2 - sharedBlurb.offsetWidth / 2) + 'px';
+            } else if (direction == 'top') {
+                sharedBlurb.style.bottom = (height - rect.bottom) + 'px';
+                sharedBlurb.style.left = (rect.left + rect.width / 2 - sharedBlurb.offsetWidth / 2) + 'px';
+            }
+        }
     </script>
 </head>
 

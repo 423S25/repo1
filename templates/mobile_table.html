@@ -13,7 +13,7 @@
         {% if not product.image_path %}
             <img class="mobile-product-row-image" src="icons/image-camera.svg" alt="{{ product.product_name }} Icon"/>
         {% else %}
-            <img class="mobile-product-row-image" src="images/{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
+            <img class="mobile-product-row-image" src="{{ product.image_path }}" alt="{{ product.product_name }} Icon"/>
         {% endif %}
         {% if product.been_over_one_week_since_updated() %}
             <span class="mobile-product-row-name short">{{ product.product_name }}</span><br>
