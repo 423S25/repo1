@@ -54,10 +54,10 @@
 <table style="grid-column: 1 / -1;" class="stock-unit-update-table"><tbody>
     <tr>
         <th>Unit Name</th>
-        <th>Count/Unit</th>
-        <th>Price/Unit</th>
+        <th>Items Per Unit</th>
+        <th>Price Per Unit</th>
         {% if not stock_unit_count_hidden %}
-            <th>Count in Units</th>
+            <th>Number of Units in Stock</th>
         {% endif %}
     </tr>
     {% for stock_unit in stock_unit_list %}

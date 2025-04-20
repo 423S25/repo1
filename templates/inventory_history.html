@@ -260,7 +260,7 @@
                     {% if not product.category.image_path %}
                         <img alt="Category Icon" src="icons/map.svg" class="category-icon">
                     {% else %}
-                        <img alt="Category Icon" src="{{ product.category.image_path.removeprefix('static/') }}" class="category-icon">
+                        <img alt="Category Icon" src="{{ product.category.image_path }}" class="category-icon">
                     {% endif %}
                     <p class="category-name">{{ product.category.name }}</p>
                 </div>
