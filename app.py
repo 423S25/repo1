@@ -185,7 +185,7 @@ def get_reports():
         data2=data2,
         data3=data3,
         chart_data=chart_data,
-        Flag = True
+        flag = True
     )
 
 # The search function for the main table page. Re-serves index.html
