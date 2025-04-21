@@ -69,7 +69,7 @@ body {
     margin-right: auto;
 }
 
-.header a{
+.header a {
     position: absolute;
     bottom: 10px;
     right: 10px;
@@ -81,8 +81,8 @@ body {
 
 .box-shadow-small {
     box-shadow: 0 3px 6px hsla(0, 0%, 20%, 0.3),
-    -3px 0 6px hsla(0, 0%, 20%, 0.3),
-    3px 0 6px hsla(0, 0%, 20%, 0.3);
+        -3px 0 6px hsla(0, 0%, 20%, 0.3),
+        3px 0 6px hsla(0, 0%, 20%, 0.3);
 }
 
 .center-all {
@@ -129,24 +129,58 @@ body {
     color: var(--hrdc-theme-dark-teal);
 }
 
-.logout
-{
+.logout {
     margin-left: auto;
 }
 
-.logout-icon
-{
+.logout-icon {
     width: 1.1em;
     margin-right: 0.5em;
     vertical-align: bottom;
 }
 
-.logout:hover .logout-icon
-{
+.logout:hover .logout-icon {
     filter: brightness(0) invert(1);
 }
 
-.logout:active .logout-icon
-{
+.logout:active .logout-icon {
     filter: brightness(1) invert(0);
 }
+
+.info-button {
+    padding: 3px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    border: 2px solid var(--hrdc-theme-dark-teal);
+    background: none;
+}
+.info-button > img {
+    height: 20px;
+}
+#info-blurb {
+    position: absolute;
+    z-index: 200;
+    height: 30px;
+}
+#info-blurb.left {
+    padding-right: 35px;
+}
+#info-blurb.right {
+    padding-left: 35px;
+}
+#info-blurb.bottom {
+    padding-top: 35px;
+}
+#info-blurb.top {
+    padding-bottom: 35px;
+}
+#info-blurb > div {
+    background-color: white;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 8px;
+    font-family: 'Gotham Book', sans-serif;
+}
+
+

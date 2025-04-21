@@ -15,7 +15,7 @@
                         {% if not filepath %}
                         <img src="icons/image-camera.svg" class="upload-trigger" />
                         {% else %}
-                        <img src="images/{{ filepath }}" />
+                        <img src="{{ filepath }}" />
                         {% endif %}
                     </label>
                 </div>
@@ -87,7 +87,7 @@
 
             <form action="/product_upload_image/{{ product.get_id() }}"
                 hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
-                hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder"
+                hx-target="#image-message-placeholder"
                 hx-swap="innerHTML">
                 <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
             </form>
