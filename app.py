@@ -91,12 +91,13 @@ def get_index():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    cat = str(category_id)
     return render_template(
         "index.html",
         product_list=products,
         user=current_user,
         categories=categories,
-        current_category=category_id,
+        current_category=cat,
         levels=levels,
         flag=False
     )
