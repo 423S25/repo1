@@ -12,7 +12,9 @@ from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
+    ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, \
+    ProductAddInventoryForm, parse_stock_units
 from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
@@ -89,12 +91,13 @@ def get_index():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    cat = str(category_id)
     return render_template(
         "index.html",
         product_list=products,
         user=current_user,
         categories=categories,
-        current_category=category_id,
+        current_category=cat,
         levels=levels,
         flag=False
     )
@@ -282,7 +285,8 @@ def login():
 @app.get("/settings")
 @admin_required
 def get_settings():
-    return render_template("settings.html", user=current_user)
+    accounts = User.all()
+    return render_template("settings.html", user=current_user, accounts=accounts)
 
 # Add a new email to updates for admin only
 @app.post("/settings")
@@ -292,6 +296,23 @@ def post_settings():
     if email is not None and email != '' and '@' in email:
         User.get_by_username('admin').update_email(email)
     return redirect("/settings")
+
+@app.get("/update_password/<username>")
+@admin_required
+def get_update_password(username: str):
+    return render_template("modals/update_password.html", username=username)
+
+@app.post("/update_password/<username>")
+@admin_required
+def update_password(username: str):
+    new_pass = request.form.get("new-password")
+    confirmation = request.form.get("confirmation")
+    if new_pass != confirmation:
+        return abort(400, "passwords must match!")
+    user = User.get_by_username(username)
+    user.update_password(bcrypt.generate_password_hash(new_pass))
+    return htmx_redirect("/settings")
+    
 
 #####
 #

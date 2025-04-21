@@ -1,30 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-    <link rel="stylesheet" href="styles/base.css">
-<link rel="stylesheet" href="styles/settings.css">
 
-<head>
-    <!-- HTMX CDN -->
-    <script src="https://unpkg.com/htmx.org@2.0.4"
-        integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-        crossorigin="anonymous"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HRDC Inventory Management System</title>
-    <link rel="stylesheet" href="styles/index.css">
-</head>
+<link rel="stylesheet" href="styles/settings.css">
+{% extends "base.html" %}
+{% block content %}
+
+
 <header>
     <div class="admin-back"><img alt="Go Back" src="icons/arrow_left.svg"><a href="/">BACK</a></div>
 </header>
 <body>
-    <div class="settings-form">
-        <h1 class="admin-label">Admin Settings</h1><br>
-        <h2 class="email-label">Admin Email:</h2>
+    <div style="margin-left: 10px">
+        <h1 class="admin-label">Admin Settings</h1>
+        <h2 class="email-label">Admin Email</h2>
         <form method="post" action="/settings" hx-confirm="Update the admin email?">
-            <input class="email-input" name="email" type="text", placeholder={{ user.email }}>
+            <input class="email-input" name="email" type="text" , placeholder={{ user.email }}>
             <button class="admin-button" type="submit">UPDATE</button>
         </form>
+        <br>
+        <h2>Accounts</h2>
+        {% for account in accounts %}
+        <form hx-get="/update_password/{{ account.username }}"
+            hx-target="body" hx-swap="beforeend"
+            style="display: flex; align-items: center; gap: 10px;">
+            <h3>{{ account.username }}</h3>
+            <button type="submit">UPDATE PASSWORD</button>
+        </form>
+        {% endfor %}
     </div>
 </body>
-
-</html>
+{% endblock %}
