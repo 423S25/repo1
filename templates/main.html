@@ -142,12 +142,14 @@
                hx-target=".container"
                hx-swap="innerHTML"
                hx-include=".scaffolding">
-        <button class="product-button" hx-get="/product_add" hx-target="body" hx-swap="beforeend">
-            NEW PRODUCT
-        </button>
-        <button class="product-button" hx-get="/category_add" hx-target="body" hx-swap="beforeend">
-            NEW CATEGORY
-        </button>
+        {% if is_admin %}
+            <button class="product-button" hx-get="/product_add" hx-target="body" hx-swap="beforeend">
+                NEW PRODUCT
+            </button>
+            <button class="product-button" hx-get="/category_add" hx-target="body" hx-swap="beforeend">
+                NEW CATEGORY
+            </button>
+        {% endif %}
         {% block add %}
         {% endblock %}
     </div>

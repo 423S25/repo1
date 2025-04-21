@@ -98,7 +98,8 @@ def get_index():
         categories=categories,
         current_category=category_id,
         levels=levels,
-        flag=False
+        flag=False,
+        is_admin=getattr(current_user, "username", None) == "admin"
     )
 
 # The filter function for the main table page. Re-serves index.html
@@ -251,7 +252,8 @@ def get_product_page(product_id: int):
         counts=counts,
         category_list=categories,
         table_mode='link',
-        hidden_count=hidden_count
+        hidden_count=hidden_count,
+        is_admin=getattr(current_user, "username", None) == "admin"
     )
 
 ###

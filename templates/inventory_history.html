@@ -238,21 +238,25 @@
                     hx-target="body"
                     hx-swap="beforeend"
                 >Add Inventory</button>
-                <div>
-                    <button class="product-action-more">
-                        <img src="icons/three_dot.svg">
-                    </button>
-                    <div class="dropdown-content">
-                        <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">
-                            Update Info
-                        </a>
-                        <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body"
-                            hx-swap="outerHTML"
-                            hx-confirm="Are you sure you want to delete {{  product.product_name }}?">
-                            Delete Item
-                        </a>
+                {% if is_admin %}
+                    <div>
+                        <button class="product-action-more">
+                            <img src="icons/three_dot.svg">
+                        </button>
+                        <div class="dropdown-content">
+                            <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+                                Update Info
+                            </a>
+                            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body"
+                                hx-swap="outerHTML"
+                                hx-confirm="Are you sure you want to delete {{  product.product_name }}?">
+                                Delete Item
+                            </a>
+                        </div>
                     </div>
-                </div>
+                {% else %}
+                    <div></div>
+                {% endif %}
             </div>
 
             <div>
