@@ -42,6 +42,10 @@ class User(UserMixin, user_db.Model):
         self.email = email
         self.save()
 
+    def update_password(self, hashed_password: str):
+        self.password = hashed_password
+        self.save()
+
 
     class Meta:
         database = user_db
