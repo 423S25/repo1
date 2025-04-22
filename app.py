@@ -12,7 +12,9 @@ from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db
-from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, ProductAddInventoryForm, parse_stock_units
+from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
+    ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, \
+    ProductAddInventoryForm, parse_stock_units
 from src.common.email_job import EmailJob
 
 from dotenv import load_dotenv
@@ -104,12 +106,13 @@ def get_index():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    cat = str(category_id)
     return render_template(
         "index.html",
         product_list=products,
         user=current_user,
         categories=categories,
-        current_category=category_id,
+        current_category=cat,
         levels=levels,
         flag=False
     )
@@ -171,31 +174,36 @@ def get_reports():
 
     # Create a mapping from category ID to total inventory
     category_inventory = {c["id"]: 0 for c in categories}
-
+    category_price = {c["id"]: 0 for c in categories}
     # Sum up inventory for each product's category
     for product in products:
         if product.category_id in category_inventory:
             category_inventory[product.category_id] += product.inventory
+            category_price[product.category_id] += product.price
 
     # Update category objects with total inventory values
     colors = []
     for category in categories:
         category["total_inventory"] = category_inventory[category["id"]]
+        category["price"] = category_price[category["id"]]
         colors.append(category["color"])
     data1 = helper.price_over_amount_inventory(helper)
     data2 = helper.convert_to_rgb(helper, colors)
     data3 = helper.ideal_over_amount_inventory(helper)
+    chart_data = helper.get_inventory_chart_data(helper, data2)
     return render_template(
         "reports_index.html",
         product_list=products,
         user=current_user,
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
+        price=[c["price"] for c in categories],
         value=request.args.get('value'),
         data1=data1,
         data2=data2,
         data3=data3,
-        Flag = True
+        chart_data=chart_data,
+        flag = True
     )
 
 # The search function for the main table page. Re-serves index.html
@@ -209,10 +217,11 @@ def get_search():
         products = Product.all()
     categories = Category.all()
     return render_template("table.html",
-                           product_list=products,
-                           user=current_user,
-                           categories=categories,
-                           current_category=category_id)
+        product_list=products,
+        user=current_user,
+        categories=categories,
+        current_category=category_id
+    )
 
 # The individual page for each product
 @app.get("/<int:product_id>")
@@ -297,7 +306,8 @@ def login():
 @app.get("/settings")
 @admin_required
 def get_settings():
-    return render_template("settings.html", user=current_user)
+    accounts = User.all()
+    return render_template("settings.html", user=current_user, accounts=accounts)
 
 # Add a new email to updates for admin only
 @app.post("/settings")
@@ -307,6 +317,23 @@ def post_settings():
     if email is not None and email != '' and '@' in email:
         User.get_by_username('admin').update_email(email)
     return redirect("/settings")
+
+@app.get("/update_password/<username>")
+@admin_required
+def get_update_password(username: str):
+    return render_template("modals/update_password.html", username=username)
+
+@app.post("/update_password/<username>")
+@admin_required
+def update_password(username: str):
+    new_pass = request.form.get("new-password")
+    confirmation = request.form.get("confirmation")
+    if new_pass != confirmation:
+        return abort(400, "passwords must match!")
+    user = User.get_by_username(username)
+    user.update_password(bcrypt.generate_password_hash(new_pass))
+    return htmx_redirect("/settings")
+    
 
 #####
 #

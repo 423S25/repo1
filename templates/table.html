@@ -1,7 +1,16 @@
 <link rel="stylesheet" href="styles/inventory.css">
 
 {% from "macros.html" import inventory_item_bar %}
-
+<br>
+{% if current_category != '0' and current_category != None %}
+    <button class="filter-edit-button" hx-get="/category_update/{{ current_category }}" hx-target="body"
+            hx-swap="beforeend">Edit
+        Current Category
+    </button>
+{% endif %}
+{% block edit_category %}
+{% endblock %}
+<br>
 <div id="inventory-table" class="inventory-table">
     {% for product in product_list %}
         <div class="inventory-table-row box-shadow-small">

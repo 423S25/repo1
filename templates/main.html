@@ -36,7 +36,6 @@
 </div>
 <div class="scaffolding">
     <div class="filter-parent">
-        {% set current_category = current_category | int %}
         <p>Filters:</p>
         <p>Categories:</p>
         <select class="filter-input" id="category_id" name="category_id"
@@ -61,15 +60,6 @@
                 </option>
             {% endfor %}
         </select>
-        <br>
-        {% if current_category != 0 %}
-            <button class="filter-edit-button" hx-get="/category_update/{{ current_category }}" hx-target="body"
-                    hx-swap="beforeend">Edit
-                Current Category
-            </button>
-        {% endif %}
-        {% block edit_category %}
-        {% endblock %}
         <p>Price:</p>
         <select class="filter-input" id="price" name="price"
                 hx-trigger="change"
