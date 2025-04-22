@@ -36,6 +36,12 @@ const inventoryChart = new Chart(ctx, {
             x: {
                 title: { display: true, text: 'Month' }
             }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Category by Current Stock'
+            }
         }
     }
 });
