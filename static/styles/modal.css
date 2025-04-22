@@ -84,7 +84,7 @@
     text-align: center;
 }
 
-label, td {
+label, th.modal-label {
     color: var(--hrdc-theme-teal);
     font-size: 12px;
     font-family: 'Gotham Book';
@@ -135,7 +135,7 @@ input#donation:hover {
     padding: 1em 3.3em;
 }
 
-button#add-product-label, button#new-unit {
+button#add-product-label, button#new_unit {
     background-color: var(--hrdc-theme-teal);
     border: none;
     color: white;
@@ -160,7 +160,7 @@ button.btn-danger {
     filter: brightness(0) invert(1);
 }
 
-button#add-product-label:hover, button#new-unit:hover {
+button#add-product-label:hover, button#new_unit:hover {
     background-color: var(--hrdc-theme-green-yellow);
     border: none;
     color: white;
