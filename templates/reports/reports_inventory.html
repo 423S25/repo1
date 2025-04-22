@@ -19,11 +19,12 @@
 <canvas id="inventoryChart"></canvas>
 <script>
 const ctx = document.getElementById('inventoryChart').getContext('2d');
+var backgroundColors = {{ data2 | tojson }};
 const inventoryChart = new Chart(ctx, {
     type: 'line',
     data: {
         labels: {{ chart_data.labels | tojson }},
-        datasets: {{ chart_data.datasets | tojson }}
+        datasets: {{ chart_data.datasets | tojson }},
     },
     options: {
         responsive: true,
@@ -34,6 +35,12 @@ const inventoryChart = new Chart(ctx, {
             },
             x: {
                 title: { display: true, text: 'Month' }
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Category by Current Stock'
             }
         }
     }

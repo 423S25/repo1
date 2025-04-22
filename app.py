@@ -91,12 +91,13 @@ def get_index():
         products = Product.urgency_rank(category_id)
     categories = Category.all()
     levels = Product.get_low_products()
+    cat = str(category_id)
     return render_template(
         "index.html",
         product_list=products,
         user=current_user,
         categories=categories,
-        current_category=category_id,
+        current_category=cat,
         levels=levels,
         flag=False,
         is_admin=getattr(current_user, "username", None) == "admin"
@@ -173,7 +174,7 @@ def get_reports():
     data1 = helper.price_over_amount_inventory(helper)
     data2 = helper.convert_to_rgb(helper, colors)
     data3 = helper.ideal_over_amount_inventory(helper)
-    chart_data = helper.get_inventory_chart_data(helper)
+    chart_data = helper.get_inventory_chart_data(helper, data2)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -186,7 +187,7 @@ def get_reports():
         data2=data2,
         data3=data3,
         chart_data=chart_data,
-        Flag = True
+        flag = True
     )
 
 # The search function for the main table page. Re-serves index.html

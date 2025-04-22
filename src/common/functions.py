@@ -39,7 +39,7 @@ class helper():
             data.append(values)
         return data
 
-    def get_inventory_chart_data(self):
+    def get_inventory_chart_data(self, colors):
         now = datetime.now()
         one_year_ago = now - timedelta(days=365)
         snapshots = (InventorySnapshot
@@ -60,15 +60,13 @@ class helper():
             category_totals[category_name][month_key] += snap.individual_inventory
         labels = [datetime.strptime(k, "%Y-%m").strftime("%b %Y") for k in all_month_keys]
         datasets = []
-        color_palette = [
-            "#ff6384", "#36a2eb", "#4bc0c0", "#9966ff", "#ff9f40", "#c9cbcf"
-        ]
         for i, (category_name, data_by_month) in enumerate(category_totals.items()):
             data = [data_by_month.get(month_key, None) for month_key in all_month_keys]
             datasets.append({
                 "label": category_name,
                 "data": data,
-                "borderColor": color_palette[i % len(color_palette)],
+                "backgroundColor": colors[i],
+                "borderColor": colors[i],
                 "fill": False
             })
         return {
