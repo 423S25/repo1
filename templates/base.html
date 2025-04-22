@@ -12,12 +12,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HRDC Inventory Management System</title>
-    <link rel="stylesheet" href="styles/base.css">
-    <link rel="stylesheet" href="styles/index.css">
-    <link rel="stylesheet" href="styles/login.css">
-    <link rel="stylesheet" href="styles/modal.css">
-    <link rel="stylesheet" href="styles/reports.css">
-    <link rel="stylesheet" href="styles/category.css">
+    <link rel="stylesheet" href="/styles/base.css">
+    <link rel="stylesheet" href="/styles/index.css">
+    <link rel="stylesheet" href="/styles/login.css">
+    <link rel="stylesheet" href="/styles/modal.css">
+    <link rel="stylesheet" href="/styles/reports.css">
+    <link rel="stylesheet" href="/styles/category.css">
     <script>
         htmx.on("htmx:beforeSwap", e => {
             // Allow 422 and 400 responses to swap
@@ -101,7 +101,7 @@
 <body hx-ext="debug">
 
 <div class="header">
-    <img class="logo" src="icons/logo_white.png">
+    <img class="logo" src="/icons/logo_white.png">
     {% if current_user and current_user.username == "admin" %}
         <a href="/settings" class="account">ADMIN SETTINGS</a>
     {% endif %}
