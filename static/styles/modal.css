@@ -84,7 +84,11 @@
     text-align: center;
 }
 
+<<<<<<< HEAD
 label, th.modal-label {
+=======
+label {
+>>>>>>> main
     color: var(--hrdc-theme-teal);
     font-size: 12px;
     font-family: 'Gotham Book';
@@ -94,12 +98,18 @@ label, th.modal-label {
 
 input#product_name,
 input#inventory,
+<<<<<<< HEAD
 input#ideal_stock,
 input[data-field="name"],
 input[data-field="multiplier"],
 input[data-field="price"],
 input[data-field="count"]
 {
+=======
+input#price,
+input#unit_type,
+input#ideal_stock {
+>>>>>>> main
     color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
@@ -135,7 +145,11 @@ input#donation:hover {
     padding: 1em 3.3em;
 }
 
+<<<<<<< HEAD
 button#add-product-label, button#new_unit {
+=======
+button#add-product-label {
+>>>>>>> main
     background-color: var(--hrdc-theme-teal);
     border: none;
     color: white;
@@ -160,7 +174,11 @@ button.btn-danger {
     filter: brightness(0) invert(1);
 }
 
+<<<<<<< HEAD
 button#add-product-label:hover, button#new_unit:hover {
+=======
+button#add-product-label:hover {
+>>>>>>> main
     background-color: var(--hrdc-theme-green-yellow);
     border: none;
     color: white;

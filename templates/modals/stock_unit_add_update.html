@@ -1,4 +1,5 @@
 {% if is_admin %}
+{% if is_admin %}
 <script>
     function addNewStockUnit(ev, btn) {
         ev.preventDefault();
@@ -36,6 +37,7 @@
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
 </script>
+{% endif %}
 {% endif %}
 
 <style>
