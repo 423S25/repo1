@@ -117,13 +117,14 @@ def post_filter():
     categories = Category.all()
     levels = Product.get_low_products()
     return render_template("index.html",
-                           product_list=products,
-                           user=current_user,
-                           categories=categories,
-                           current_category=category_id,
-                           current_price=price,
-                           current_amount=amount,
-                           levels=levels)
+        product_list=products,
+        user=current_user,
+        categories=categories,
+        current_category=category_id,
+        current_price=price,
+        current_amount=amount,
+        levels=levels
+    )
 
 # The filter function for the main table page. Re-serves index.html
 @app.get("/filter")
