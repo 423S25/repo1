@@ -10,6 +10,20 @@
     left: 15px;
 }
 
+.mobile-sign-out-form {
+    display: block;
+}
+.mobile-sign-out-form > input {
+    margin: 20px;
+    margin-bottom: 0;
+    color: var(--hrdc-theme-red);
+    border: 2px solid currentColor;
+    background: none;
+    text-transform: uppercase;
+    width: calc(100% - 40px);
+    padding: 5px;
+}
+
 .mobile-form-control {
     padding: 15px;
     padding-left: 40px;

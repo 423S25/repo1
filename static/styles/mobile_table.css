@@ -2,8 +2,12 @@
     margin: 20px;
     width: calc(100% - 40px);
     height: 90px;
-    background-color: var(--hrdc-theme-really-light-grey);
+    background-color: white;
     position: relative;
+}
+.mobile-product-row:hover {
+    cursor: pointer;
+    background-color: var(--hrdc-theme-light-grey);
 }
 .mobile-product-row > * {
     position: absolute;
@@ -42,14 +46,14 @@
     text-transform: uppercase;
     font-size: 0.7em;
     left: 70px;
-    top: 41px;
+    top: 36px;
 }
 .mobile-inventory-row-cont {
     width: calc(100% - 20px);
     bottom: 10px;
     left: 10px;
 }
-.none-in-category, .result-count {
+.none-in-category, .result-count, .hiddent-count {
     margin: 0 20px;
     margin-top: 0;
     font-family: 'Gotham Book', sans-serif;
@@ -60,7 +64,7 @@
 .none-in-category {
     color: var(--hrdc-theme-alert);
 }
-.result-count {
+.result-count, .hidden-count {
     color: var(--hrdc-theme-medium-grey);
     font-size: 0.8em;
 }

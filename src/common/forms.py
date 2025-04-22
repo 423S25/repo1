@@ -1,6 +1,8 @@
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, BooleanField, validators, ColorField, DateField
 from flask_wtf import FlaskForm
 from flask import Response, make_response
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from ..model.product import StockUnitSubmission
 
 class LoginForm(FlaskForm):
@@ -15,9 +17,7 @@ class ProductUpdateAllForm(FlaskForm):
     #also stock unit fields
 
 class ProductAddForm(ProductUpdateAllForm):
-    donation = BooleanField('Donation', default=False)
     category_id = IntegerField('Category Id', validators=[validators.NumberRange(min=1)])
-    #also stock unit fields
 
 # also for mobile
 class ProductUpdateInventoryForm(FlaskForm):
@@ -45,6 +45,22 @@ class CategoryAddForm(FlaskForm):
 class CategoryUpdateAllForm(FlaskForm):
     category_name = StringField('Category Name', validators=[validators.input_required()])
     category_color = ColorField('Category Color', validators=[validators.input_required()])
+
+class TimeFrameForm(FlaskForm):
+    timeframe = StringField(
+        'Time Frame',
+        validators=[validators.AnyOf([
+            "lifetime",
+            "last_year",
+            "year_to_date",
+            "last_month",
+            "last_week",
+            "last_24_hours",
+            "custom"
+        ])]
+    )
+    startdate = DateField('Start Date', validators=[validators.Optional()])
+    enddate = DateField('End Date', validators=[validators.Optional()])
 
 
 
@@ -88,6 +104,33 @@ def parse_errors(form: FlaskForm) -> list[str]:
 
     return errors_list
 
+def parse_timeframe_form_errors(form: TimeFrameForm) -> tuple[list[str], datetime | None, datetime | None]:
+    base_errors = parse_errors(form)
+    timeframe = form.timeframe.data
+    now = datetime.now()
+    if timeframe == 'lifetime':
+        return base_errors, datetime(year=1970, month=1, day=1), now
+    elif timeframe == 'last_year':
+        return base_errors, now - relativedelta(years=1), now
+    elif timeframe == 'last_month':
+        return base_errors, now - relativedelta(months=1), now
+    elif timeframe == 'last_week':
+        return base_errors, now - relativedelta(weeks=1), now
+    elif timeframe == 'last_24_hours':
+        return base_errors, now - relativedelta(days=1), now
+    elif timeframe == 'year_to_date':
+        return base_errors, datetime(year=now.year, month=1, day=1), now
+    elif timeframe == 'custom':
+        if form.startdate.data is None:
+            base_errors.append('Missing start date for custom range')
+        if form.enddate.data is None:
+            base_errors.append('Missing end date for custom range')
+        if form.startdate.data is not None and form.enddate.data is not None and form.startdate.data > form.enddate.data:
+            base_errors.append('Start date cannot be after end date')
+        return base_errors, form.startdate.data, form.enddate.data
+    else:
+        return base_errors, None, None
+
 def htmx_redirect(url: str) -> Response:
     response = make_response(url, 200)
     response.headers['HX-Redirect'] = url
@@ -100,7 +143,7 @@ def htmx_errors(errors: list[str]) -> Response:
     return response
 
 # Parses the stock units in the form, appending any errors to the list and returning the successfully parsed units
-def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bool) -> list[StockUnitSubmission]:
+def parse_stock_units(form: dict[str, str], errors: list[str]) -> list[StockUnitSubmission]:
     assert not isinstance(form, FlaskForm), 'form should be from `request.form`, not the form class itself'
     index = 1
     stock_units: list[StockUnitSubmission] = []
@@ -113,7 +156,7 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
         if name is None or name == '':
             mult_is_missing = mult_key not in form or form[mult_key] == ''
             price_is_missing = price_key not in form or form[price_key] == ''
-            count_is_missing = not include_count or count_key not in form or form[count_key] == ''
+            count_is_missing = count_key not in form or form[count_key] == ''
             if not (mult_is_missing and price_is_missing and count_is_missing):
                 errors.append(f'Missing name for stock unit {index}')
             index += 1
@@ -137,14 +180,10 @@ def parse_stock_units(form: dict[str, str], errors: list[str], include_count: bo
             okay = False
 
         count = None
-        if count_key in form:
-            try:
-                count = int(form[count_key])
-            except:
-                errors.append(f'Count for stock unit "{name}" is not an integer')
-                okay = False
-        elif include_count:
-            errors.append(f'Count for stock unit "{name}" is missing')
+        try:
+            count = int(form[count_key])
+        except:
+            errors.append(f'Count for stock unit "{name}" is not an integer')
             okay = False
 
         id = None

@@ -1,22 +1,35 @@
 import pytest
 from app import app
-from src.model.product import Product, Category, StockUnitSubmission
+from src.model.product import Product, Category, StockUnitSubmission, StockUnit
 
 @pytest.fixture(autouse=True)
 def setup_inventory():
     cleaning_supplies = Category.add_category("cleaning supplies", "test-color", "/icons/cat_icons/Cleaning.svg")
     bedding = Category.add_category("bedding", "test-color-2", "/icons/cat_icons/Hygiene.svg")
-    individual1 = [StockUnitSubmission(None, "individual", 1, 1, 1)]
-    individual2 = [StockUnitSubmission(None, "individual", 1, 1, 10)]
-    Product.add_product("clorox wipes", individual1, cleaning_supplies.get_id(), 10, False, None)
-    Product.add_product("lysol", individual1, cleaning_supplies.get_id(), 30, False, None)
-    Product.add_product("dish soap", individual2, cleaning_supplies.get_id(), 10, False, None)
-    Product.add_product("sleeping bags", individual2, bedding.get_id(), 10, False, None)
-    Product.add_product("sheets", individual2, bedding.get_id(), 40, False, None)    
+    products: list[Product] = [
+        Product.add_product("clorox wipes", cleaning_supplies.get_id(), 10),
+        Product.add_product("lysol", cleaning_supplies.get_id(), 30),
+        Product.add_product("dish soap", cleaning_supplies.get_id(), 10),
+        Product.add_product("sleeping bags", bedding.get_id(), 10),
+        Product.add_product("sheets", bedding.get_id(), 40)
+    ]
+
+    # Update the price and count to match the old test
+    for index, product in enumerate(products):
+        stock_unit_id = StockUnit.all_of_product(product_id=product.get_id())[0].get_id()
+        submission = StockUnitSubmission(
+            id=stock_unit_id,
+            name="individual",
+            multiplier=1,
+            price=1,
+            count=1 if index==0 or index==1 else 10
+        )
+        product.update_stock([submission])
+
     categories = []
     categories.append(cleaning_supplies)
     categories.append(bedding)
-    yield 
+    yield
     new_cat_list = Category.all() #because we will update/delete new categories
     for cat in new_cat_list:
         Category.delete_category(cat.get_id())
