@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="/styles/error-page.css"/>
+<div class="not-found-main"></div>
+<div class="message-cont center-all">
+    <div>
+        <h1>401</h1>
+        <h2>Not Authorized</h2>
+        <a href="/" class="home-link">Back to Home Page</a>
+        <form action="/logout" method="POST">
+            <button class="home-link" type="submit">Sign out and back in</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

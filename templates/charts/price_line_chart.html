@@ -1,0 +1,7 @@
+{% if dates | length == 0 or prices | length == 0 %}
+No Data
+{% elif dates | length != prices | length %}
+Mismatched dimensions
+{% else %}
+<canvas id="price-history-chart" data-dates='{{ dates | tojson }}' data-prices='{{ prices | tojson }}'></canvas>
+{% endif %}
