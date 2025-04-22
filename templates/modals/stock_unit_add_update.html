@@ -1,5 +1,6 @@
 <link rel="stylesheet" href="styles/product.css">
 
+{% if is_admin %}
 <script>
     function addNewStockUnit(ev, btn) {
         ev.preventDefault();
@@ -11,13 +12,6 @@
         const newRow = prevRow.cloneNode(true);
         const newId = parseInt(prevRow.getAttribute('data-index')) + 1;
         newRow.setAttribute('data-index', newId);
-
-        const newRadio = newRow.querySelector('input[type="radio"]');
-        if (newRadio != null) {
-            newRadio.setAttribute('value', newId);
-        }
-
-        const textFields = newRow.querySelectorAll('input[type="text"]');
 
         const nameInput = newRow.querySelector('input[data-field="name"]');
         nameInput.setAttribute('name', `stock_name_${newId}`);
@@ -35,17 +29,16 @@
         priceInput.value = '';
 
         const countInput = newRow.querySelector('input[data-field="count"]');
-        if (countInput != null) {
-            countInput.setAttribute('name', `stock_count_${newId}`);
-            countInput.setAttribute('value', '0');
-            countInput.value = '0';
-        }
+        countInput.setAttribute('name', `stock_count_${newId}`);
+        countInput.setAttribute('value', '0');
+        countInput.value = '0';
 
-        newRow.querySelector('input[type="hidden"]')?.remove();
+        newRow.querySelector('input[data-field="id"]')?.remove();
 
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
 </script>
+{% endif %}
 
 <style>
     .stock-unit-update-table input {
@@ -54,49 +47,49 @@
 </style>
 
 <div class="modal-form-content">
-    <table style="grid-column: 1 / -1;" class="stock-unit-update-table"><tbody>
-        <tr>
-            <th id="unit_name-label">Unit Name</th>
-            <th id="count_unit-label">Count/Unit</th>
-            <th id="price_unit-label">Price/Unit</th>
-            {% if not stock_unit_count_hidden %}
-                <th id="count_in_unit-label">Count in Units</th>
-            {% endif %}
-        </tr>
-        {% for stock_unit in stock_unit_list %}
-            <tr data-index="{{ loop.index }}">
-                <td>
-                    <input id="unit_name" type="text" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
-                    {% if stock_unit.id is not none %}
-                        <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
-                    {% endif %}
-                </td>
-                <td><input id="count_unit" type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
-                <td>
-                    <input id="price_unit" type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
-                    {% if stock_unit_count_hidden %}
-                        {% if stock_unit_count_list %}
-                            <td><input id="count_in_unit" type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
-                        {% else %}
-                            <td><input id="count_in_unit" type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
-                        {% endif %}
-                    {% endif %}
-                </td>
-                {% if not stock_unit_count_hidden %}
+<table style="grid-column: 1 / -1;" class="stock-unit-update-table"><tbody>
+    <tr>
+        <th id="unit_name-label">Unit Name</th>
+        <th id="count_unit-label">Count/Unit</th>
+        <th id="price_unit-label">Price/Unit</th>
+        {% if not stock_unit_count_hidden %}
+            <th id="count_in_unit-label">Count in Units</th>
+        {% endif %}
+    </tr>
+    {% for stock_unit in stock_unit_list %}
+        <tr data-index="{{ loop.index }}">
+            <td>
+                <input type="text" data-field="name" name="stock_name_{{ loop.index }}" value="{{ stock_unit.name }}"/>
+                {% if stock_unit.id is not none %}
+                    <input type="hidden" name="stock_id_{{ loop.index }}" value="{{ stock_unit.id }}"/>
+                {% endif %}
+            </td>
+            <td><input type="number" data-field="multiplier" name="stock_multiplier_{{ loop.index }}" value="{{ stock_unit.multiplier }}"/></td>
+            <td>
+                <input type="text" data-field="price" name="stock_price_{{ loop.index }}" value="{{ '' if stock_unit.price is none else stock_unit.price }}"/>
+                {% if stock_unit_count_hidden %}
                     {% if stock_unit_count_list %}
-                        <td><input id="count_in_unit" type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
                     {% else %}
-                        <td><input id="count_in_unit" type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                        <td><input type="hidden" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
                     {% endif %}
                 {% endif %}
-            </tr>
-        {% endfor %}
-        <tr>
-            <div class="modal-buttons">
-                <td colspan="{{ 3 + (1 if stock_unit_count else 0) }}">
-                    <button id="new_unit" onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
-                </td>
-            </div>
+            </td>
+            {% if not stock_unit_count_hidden %}
+                {% if stock_unit_count_list %}
+                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="{{ stock_unit_count_list[loop.index0] }}"/></td>
+                {% else %}
+                    <td><input type="number" data-field="count" min="0" name="stock_count_{{ loop.index }}" value="0"/></td>
+                {% endif %}
+            {% endif %}
         </tr>
-    </tbody></table>
+    {% endfor %}
+    <tr>
+        <td colspan="{{ 1 + (2 if is_admin else 0) + (1 if not stock_unit_count_hidden else 0) }}">
+            <div class="modal-buttons">
+                <button id="new_unit" onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+            </div>
+        </td>
+    </tr>
+</tbody></table>
 </div>

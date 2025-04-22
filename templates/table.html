@@ -2,7 +2,7 @@
 
 {% from "macros.html" import inventory_item_bar %}
 <br>
-{% if current_category != '0' and current_category != None %}
+{% if current_category != '0' and current_category != 0 and current_category != None %}
     <button class="filter-edit-button" hx-get="/category_update/{{ current_category }}" hx-target="body"
             hx-swap="beforeend">Edit
         Current Category

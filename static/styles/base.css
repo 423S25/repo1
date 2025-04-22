@@ -8,6 +8,7 @@
     --hrdc-theme-yellow: hsl(39, 87%, 61%);
     --hrdc-theme-green: hsl(100, 70%, 40%);
     --hrdc-theme-light-grey: hsl(0, 0%, 85%);
+    --hrdc-theme-medium-grey: hsl(0, 0%, 75%);
 
     --hrdc-theme-alert: var(--hrdc-theme-red);
     --hrdc-theme-warning: var(--hrdc-theme-yellow);

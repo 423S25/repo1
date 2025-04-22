@@ -4,7 +4,7 @@
 		<button class="product-danger-button" _="on click trigger closeModal">
 			<img alt="Close" src="icons/close.svg" class="close-icon" />
 		</button>
-		<p class="add-label">SET STOCK</p>
+		<p class="add-label">SET INVENTORY</p>
 		<form hx-post="product_update_inventory/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
 			{{ form.csrf_token }}
 			<input type="hidden" name="_method" value="PATCH">

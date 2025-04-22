@@ -22,6 +22,7 @@ class Category(Model):
     name = CharField(unique=True)
     color = CharField(unique=True)
     image_path = CharField(null=True)
+    price = DecimalField(null=True)
 
     @staticmethod
     def all() -> list['Category']:
@@ -153,8 +154,12 @@ class Product(Model):
         return list(Product.select().where(Product.product_name.ilike(f'%{product}%')))
 
     @staticmethod
-    def search_filter_and_sort(product_name_fragment: str = '', product_category_id: int = 0,
-                               product_sort_method: str = None) -> list['Product']:
+    def search_filter_and_sort(
+        product_name_fragment: str = '',
+        product_category_id: int = 0,
+        product_sort_method: str = None,
+        product_force_first: int = None
+    ) -> list['Product']:
         query = Product.select()
 
         if len(product_name_fragment) > 0:
@@ -162,25 +167,33 @@ class Product(Model):
         if product_category_id != 0:
             query = query.where(Product.category_id == product_category_id)
 
-        products = list(query)
+        products: list['Product'] = list(query)
 
-        if product_sort_method == 'alpha_a_z' or (
-                product_sort_method == 'best_match' and len(product_name_fragment) == 0):
-            return list(sorted(products, key=lambda p: p.product_name.lower()))
+        if product_sort_method == 'alpha_a_z' or (product_sort_method == 'best_match' and len(product_name_fragment) == 0):
+            products = list(sorted(products, key=lambda p: p.product_name.lower()))
         elif product_sort_method == 'alpha_z_a':
-            return list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
+            products = list(reversed(sorted(products, key=lambda p: p.product_name.lower())))
         elif product_sort_method == 'best_match':
-            return list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
+            products = list(sorted(products, key=lambda p: p.product_name.lower().find(product_name_fragment.lower())))
         elif product_sort_method == 'lowest_stock':
-            return list(
-                sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
+            products = list(sorted(products, key=lambda p: float('inf') if p.ideal_stock == 0 else p.inventory / p.ideal_stock))
         elif product_sort_method == 'highest_stock':
-            return list(
-                reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
+            products = list(reversed(sorted(products, key=lambda p: 0 if p.ideal_stock == 0 else p.inventory / p.ideal_stock)))
         elif product_sort_method == 'most_recent':
-            return list(reversed(sorted(products, key=lambda p: p.last_updated)))
+            products = list(reversed(sorted(products, key=lambda p: p.last_updated)))
         else:  # default to least recent
-            return list(sorted(products, key=lambda p: p.last_updated))
+            products = list(sorted(products, key=lambda p: p.last_updated))
+
+        if product_force_first is not None and product_force_first > 0:
+            try:
+                index = list(map(lambda x: x.get_id(), products)).index(product_force_first)
+                first_product = products[index]
+                del products[index]
+                products.insert(0, first_product)
+            except: #not in list
+                pass
+
+        return products
 
     @staticmethod
     # overloaded with category id for filter
@@ -270,17 +283,15 @@ class Product(Model):
         return list(query)
 
     @staticmethod
-    def add_product(name: str, stock: list[StockUnitSubmission], category: int, ideal_stock: int, donation: bool, days_left: None, image_path: str = None) -> 'Product':
-        individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock)
-        price = total_price / individual_count
-        product, created = Product.get_or_create(
+    def add_product(name: str, category: int, ideal_stock: int, days_left: float = None, image_path: str = None) -> 'Product':
+        product, _created = Product.get_or_create(
             product_name=name,
             category=category,
-            price=price,
-            lifetime_donated=individual_count if donation else 0,
-            lifetime_purchased=individual_count if not donation else 0,
+            price=0,
+            lifetime_donated=0,
+            lifetime_purchased=0,
             defaults={
-                'inventory': individual_count,
+                'inventory': 0,
                 'inventory_breakdown': '[]',
                 'ideal_stock': ideal_stock,
                 'image_path': image_path,
@@ -289,12 +300,14 @@ class Product(Model):
         )
 
         product: Product = product
-        stock_units = StockUnit.commit_stock_unit_submissions(product.get_id(), stock)
-        InventorySnapshot.create_snapshot(product.get_id(), individual_count, total_price)
+        individual_unit = StockUnit.add_stock_unit(
+            product_id=product.get_id(),
+            name="Individual",
+            price=0,
+            multiplier=1
+        )
 
-        inventory_breakdown = []
-        for unit, submission in zip(stock_units, stock):
-            inventory_breakdown.append([unit.get_id(), submission.count or 0])
+        inventory_breakdown = [[individual_unit.get_id(), 0]]
         product.inventory_breakdown = json.dumps(inventory_breakdown)
         product.save()
 
@@ -404,8 +417,6 @@ class Product(Model):
         for index in range(len(snapshots) - 1):
             curr = snapshots[index]
             prev = snapshots[index + 1]  # Previous in time, not in list
-            if curr.ignored or prev.ignored:
-                continue
 
             if prev.individual_inventory > curr.individual_inventory: # There must be a decrease in stock; otherwise, it was a restock
                 inventory_delta = prev.individual_inventory - curr.individual_inventory
@@ -440,9 +451,10 @@ class Product(Model):
         self.save()
 
     def update_product(self, product_name: str, stock_unit_submissions: list[StockUnitSubmission], ideal_stock: int):
-        individual_count, _ = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
+        individual_count, total_price = StockUnit.tally_stock_unit_submissions(stock_unit_submissions)
         stock_units = StockUnit.commit_stock_unit_submissions(self.get_id(), stock_unit_submissions)
         
+        self.price = 0 if individual_count==0 else total_price / individual_count
         self.inventory = individual_count
         self.product_name = product_name
         self.ideal_stock = ideal_stock
@@ -495,10 +507,17 @@ class Product(Model):
             self.lifetime_purchased += added_individual_inventory
 
         self.inventory = total_individual_inventory
+        self.price = 0 if total_individual_inventory==0 else total_price / total_individual_inventory
         self.inventory_breakdown = json.dumps([[k, v] for k, v in stock_count_map.items()])
         self.save()
         
-        InventorySnapshot.create_snapshot(self.get_id(), total_individual_inventory, total_price)
+        InventorySnapshot.create_snapshot(
+            self.get_id(),
+            total_individual_inventory,
+            total_price,
+            added_donated=added_individual_inventory if donation else 0,
+            added_purchased=added_individual_inventory if not donation else 0
+        )
 
     # Sets the current available stock of a product to match the stock units
     def update_stock(self, stock_unit_submissions: list[StockUnitSubmission]):
@@ -509,9 +528,10 @@ class Product(Model):
             inventory_breakdown.append([unit.get_id(), submission.count or 0])
         self.inventory_breakdown = json.dumps(inventory_breakdown)
         self.inventory = individual_inventory
+        self.price = 0 if individual_inventory==0 else total_value / individual_inventory
         self.last_updated = datetime.datetime.now()
         self.save()
-        InventorySnapshot.create_snapshot(self.get_id(), individual_inventory, total_value)
+        InventorySnapshot.create_snapshot(self.get_id(), individual_inventory, total_value, added_donated=0, added_purchased=0)
 
     # marks product as notified (after email is sent)
     def increment_notified(self):
@@ -623,11 +643,12 @@ class StockUnit(Model):
 
 
 class InventorySnapshot(Model):
-    product_id = IntegerField(null=False)
+    product = ForeignKeyField(Product, backref='snapshots', on_delete='CASCADE')
     individual_inventory = IntegerField(null=False)
     value_at_time = DecimalField(decimal_places=2, auto_round=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
-    ignored = BooleanField(default=False)  # To be used if a value was added in error
+    added_donated = IntegerField(null=False, default=0)
+    added_purchased = IntegerField(null=False, default=0)
 
     @staticmethod
     def all() -> list['InventorySnapshot']:
@@ -635,45 +656,39 @@ class InventorySnapshot(Model):
 
     @staticmethod
     def all_of_product(product_id: int) -> list['InventorySnapshot']:
-        snapshots: list['InventorySnapshot'] = list(reversed(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id
+        return list(reversed(InventorySnapshot.select().where(
+            InventorySnapshot.product == product_id
         )))
-        MIN_ALLOWED_DIFFERENCE = datetime.timedelta(seconds=45)
 
-        for i in range(
-                len(snapshots) - 1):  # if a value as immediately overwritten, it was probably in error and should be ignored
-            curr = snapshots[i]
-            prev = snapshots[i + 1]
-            delta = curr.timestamp - prev.timestamp
-            if delta < MIN_ALLOWED_DIFFERENCE:
-                prev.ignore()
-
-        return snapshots
+    @staticmethod
+    def all_of_product_in_time_period(product_id: int, start_date: datetime.datetime, end_date: datetime.datetime) -> list['InventorySnapshot']:
+        return list(InventorySnapshot.select().where(
+            InventorySnapshot.product == product_id & InventorySnapshot.timestamp.between(start_date, end_date)
+        ))
 
     @staticmethod
     def product_snapshots_chronological(product_id: int) -> list['InventorySnapshot']:
-        snapshots: list['InventorySnapshot'] = list(InventorySnapshot.select().where(
-            InventorySnapshot.product_id == product_id
+        return list(InventorySnapshot.select().where(
+            InventorySnapshot.product == product_id
         ))
-        return snapshots
 
     @staticmethod
-    def create_snapshot(product_id: int, inventory: int, price: float) -> 'InventorySnapshot':
-        snapshot = InventorySnapshot.create(
-            product_id=product_id,
+    def create_snapshot(product_id: int, inventory: int, price: float, added_donated: int, added_purchased: int) -> 'InventorySnapshot':
+        return InventorySnapshot.create(
+            product=product_id,
             individual_inventory=inventory,
-            value_at_time=price
+            value_at_time=price,
+            added_donated=added_donated,
+            added_purchased=added_purchased
         )
-        return snapshot
 
     @staticmethod
     def delete_snapshots_for_product(product_id: int):
-        InventorySnapshot.delete().where(InventorySnapshot.product_id == product_id).execute()
+        InventorySnapshot.delete().where(InventorySnapshot.product == product_id).execute()
 
-    # Sets this snapshot to be ignored. For use if the entry was likely in error
-    def ignore(self):
-        self.ignored = True
-        self.save()
+    def get_average_price(self) -> float:
+        return 0 if self.individual_inventory==0 else self.value_at_time / self.individual_inventory
 
     class Meta:
         database = db
+
