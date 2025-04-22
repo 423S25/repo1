@@ -5,25 +5,40 @@ from src.model.product import Product, Category, StockUnit, StockUnitSubmission
 @pytest.fixture(autouse=True)
 def setup_inventory():
     cat = Category.add_category("cleaning supplies", "test-color", "/icons/cat_icons/Cleaning.svg")
-    individual1 = [StockUnitSubmission(None, "individual", 1, 1, 1)]
-    individual2 = [StockUnitSubmission(None, "individual", 1, 1, 10)]
-    Product.add_product("clorox wipes", individual1, cat.get_id(), 10, False, None)
-    Product.add_product("lysol", individual2, cat.get_id(), 30, False, None)
-    Product.add_product("dish soap", individual2, cat.get_id(), 10, False, None)
+    
+    products: list[Product] = [
+        Product.add_product("clorox wipes", cat.get_id(), 10),
+        Product.add_product("lysol", cat.get_id(), 30),
+        Product.add_product("dish soap", cat.get_id(), 10)
+    ]
+
+    # Update the price and count to match the old test
+    for index, product in enumerate(products):
+        stock_unit_id = StockUnit.all_of_product(product_id=product.get_id())[0].get_id()
+        submission = StockUnitSubmission(
+            id=stock_unit_id,
+            name="individual",
+            multiplier=1,
+            price=1,
+            count=1 if index==0 else 10
+        )
+        product.update_stock([submission])
+
     yield cat
     Category.delete_category(cat.get_id())
+
 #TODO: add more tests surrounding new unit type logic
 def test_list_products(setup_inventory: Category):
     products = Product.all()
     assert len(products) == 3
 
 def test_add_product(setup_inventory: Category):
-    individual = [StockUnitSubmission(None, "individual", 1, 1, 1)]
-    product = Product.add_product("test1", individual, setup_inventory.get_id(), 1, True, None)
+    product: Product = Product.add_product("test1", setup_inventory.get_id(), 1)
+
     assert product.product_name == "test1"
-    assert product.inventory == 1
+    assert product.inventory == 0
     assert product.ideal_stock == 1
-    assert product.lifetime_donated == 1
+    assert product.lifetime_donated == 0
 
 def test_update_product_stock(setup_inventory: Category):
     lysol = Product.get_product("lysol")
@@ -80,7 +95,7 @@ def test_add_stock(setup_inventory: Category):
     assert p.lifetime_donated == 1
     p.add_stock(individual, False)
     assert p.inventory == 12
-    assert p.lifetime_purchased == 11 #product was marked purchased when it was created
+    assert p.lifetime_purchased == 1
     
 
     

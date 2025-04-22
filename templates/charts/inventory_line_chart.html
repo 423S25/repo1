@@ -1,0 +1,7 @@
+{% if dates | length == 0 or counts | length == 0 %}
+No Data
+{% elif dates | length != counts | length %}
+Mismatched dimensions
+{% else %}
+<canvas id="inventory-history-chart" data-dates='{{ dates | tojson }}' data-counts='{{ counts | tojson }}'></canvas>
+{% endif %}
