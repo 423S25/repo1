@@ -64,12 +64,6 @@
             {% endfor %}
         </select>
         <br>
-        {% if current_category != 0 %}
-            <button class="filter-edit-button" hx-get="/category_update/{{ current_category }}" hx-target="body"
-                    hx-swap="beforeend">Edit
-                Current Category
-            </button>
-        {% endif %}
         {% block edit_category %}
         {% endblock %}
         <p id="filter">Price:</p>
