@@ -1,4 +1,5 @@
 {% if is_admin %}
+{% if is_admin %}
 <script>
     function addNewStockUnit(ev, btn) {
         ev.preventDefault();
@@ -37,6 +38,7 @@
     }
 </script>
 {% endif %}
+{% endif %}
 
 <style>
     .stock-unit-update-table input {
@@ -46,13 +48,13 @@
 
 <table style="grid-column: 1 / -1;" class="stock-unit-update-table"><tbody>
     <tr>
-        <th>Unit Name</th>
+        <th class="modal-label">Unit Name</th>
         {% if is_admin %}
-            <th>Items Per Unit</th>
-            <th>Price Per Unit</th>
+            <th class="modal-label">Items Per Unit</th>
+            <th class="modal-label">Price Per Unit</th>
         {% endif %}
         {% if not stock_unit_count_hidden %}
-            <th>Number of Units in Stock</th>
+            <th class="modal-label">Number of Units in Stock</th>
         {% endif %}
     </tr>
     {% for stock_unit in stock_unit_list %}
@@ -92,7 +94,9 @@
     {% if is_admin %}
         <tr>
             <td colspan="{{ 1 + (2 if is_admin else 0) + (1 if not stock_unit_count_hidden else 0) }}">
-                <button onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+                <div class="modal-buttons">
+                    <button id="new_unit" onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+                </div>
             </td>
         </tr>
     {% endif %}

@@ -10,3 +10,10 @@
     height: 30%;
     margin: auto;
 }
+
+p#report-label
+{
+    color: var(--hrdc-theme-teal);
+    font-family: 'Gotham Bold';
+    margin-right: 1%;
+}

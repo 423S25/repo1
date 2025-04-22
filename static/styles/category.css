@@ -1,3 +1,5 @@
+/* Add Category Styling */
+
 .add-category-form
 {
     display: grid;
@@ -135,4 +137,34 @@ button.category-danger-button:hover
     gap: 10px; /* Adjust spacing between icons */
     justify-content: left; /* Center the icons horizontally */
     flex-wrap: wrap; /* Allow wrapping if needed */
+}
+
+/* Edit Category Styling */
+
+.edit-category-submit-button
+{
+    background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 1em 1em;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin: auto;
+}
+
+.edit-category-submit-button:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 1em 1em;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+    margin: auto;
 }

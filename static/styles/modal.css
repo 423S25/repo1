@@ -84,7 +84,7 @@
     text-align: center;
 }
 
-label {
+label, th.modal-label {
     color: var(--hrdc-theme-teal);
     font-size: 12px;
     font-family: 'Gotham Book';
@@ -94,9 +94,12 @@ label {
 
 input#product_name,
 input#inventory,
-input#price,
-input#unit_type,
-input#ideal_stock {
+input#ideal_stock,
+input[data-field="name"],
+input[data-field="multiplier"],
+input[data-field="price"],
+input[data-field="count"]
+{
     color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
@@ -132,7 +135,7 @@ input#donation:hover {
     padding: 1em 3.3em;
 }
 
-button#add-product-label {
+button#add-product-label, button#new_unit {
     background-color: var(--hrdc-theme-teal);
     border: none;
     color: white;
@@ -157,7 +160,7 @@ button.btn-danger {
     filter: brightness(0) invert(1);
 }
 
-button#add-product-label:hover {
+button#add-product-label:hover, button#new_unit:hover {
     background-color: var(--hrdc-theme-green-yellow);
     border: none;
     color: white;

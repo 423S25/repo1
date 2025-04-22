@@ -7,6 +7,7 @@
             <div class="red_rectangle"></div>
             <div class="banner">
                 <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[0] }}</p>
+                <button id="low-stock">Low Stock Products</button>
                 <p>Low Stock Products</p>
             </div>
         </div>
@@ -17,6 +18,7 @@
             <div class="orange_rectangle"></div>
             <div class="banner">
                 <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[1] }}</p>
+                <button id="med-stock">Medium Stock Products</button>
                 <p>Medium Stock Products</p>
             </div>
         </div>
@@ -28,6 +30,7 @@
                 <div class="green_rectangle"></div>
                 <div class="banner">
                     <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[2] }}</p>
+                    <button id="hi-stock">Well Stocked Products</button>
                     <p>Well Stocked Products</p>
                 </div>
             </div>
@@ -36,8 +39,8 @@
 </div>
 <div class="scaffolding">
     <div class="filter-parent">
-        <p>Filters:</p>
-        <p>Categories:</p>
+        <p id="filter-label">Filters:</p>
+        <p id="filter">Categories:</p>
         <select class="filter-input" id="category_id" name="category_id"
                 hx-trigger="change"
                 hx-get="/filter"
@@ -60,7 +63,10 @@
                 </option>
             {% endfor %}
         </select>
-        <p>Price:</p>
+        <br>
+        {% block edit_category %}
+        {% endblock %}
+        <p id="filter">Price:</p>
         <select class="filter-input" id="price" name="price"
                 hx-trigger="change"
                 hx-get="/filter"
@@ -92,7 +98,8 @@
                 Over $10
             </option>
         </select>
-        <p>Ideal Stock:</p>
+        <br>
+        <p id="filter">Amount:</p>
         <select class="filter-input" id="ideal" name="ideal"
                 hx-trigger="change"
                 hx-get="/filter"

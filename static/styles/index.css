@@ -13,6 +13,25 @@ select:hover
     cursor: pointer;
 }
 
+p, .account
+{
+    font-family: 'Gotham Book';
+}
+
+p#filter
+{
+    font-family: 'Gotham Book';
+    color: var(--hrdc-theme-teal);
+}
+
+p#filter-label
+{
+    font-family: 'Gotham Bold';
+    color: var(--hrdc-theme-teal);
+    text-align: center;
+    font-size: 24px;
+}
+
 .form-control
 {
     padding: 15px 22%;
@@ -90,8 +109,6 @@ select:hover
 .current {
     border-bottom: 3px solid var(--hrdc-theme-teal);
 }
-
-
 
 
 .logout {
@@ -172,6 +189,32 @@ select:hover
     font-family: 'Gotham Book';
 }
 
+button#low-stock, button#med-stock, button#hi-stock
+{
+    background-color: var(--hrdc-theme-teal);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+    padding: 5px;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
+button#low-stock:hover, button#med-stock:hover, button#hi-stock:hover
+{
+    background-color: var(--hrdc-theme-green-yellow);
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+    padding: 5px;
+    font-weight: bold;
+    font-family: 'Gotham Book';
+}
+
 .urgency-banners {
     height: 60px;
     padding: var(--main-padding);
@@ -200,7 +243,7 @@ select:hover
     display: grid;
 }
 
-.filter-edit-button
+.filter-edit-button, .filter-clear-button
 {
     background-color: var(--hrdc-theme-teal);
     border: none;
@@ -214,7 +257,7 @@ select:hover
     display: grid;
 }
 
-.filter-edit-button:hover
+.filter-edit-button:hover, .filter-clear-button:hover
 {
     background-color: var(--hrdc-theme-green-yellow);
     border: none;

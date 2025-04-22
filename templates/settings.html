@@ -1,15 +1,19 @@
+
+<link rel="stylesheet" href="styles/settings.css">
 {% extends "base.html" %}
 {% block content %}
+
+
 <header>
-    <a href="/">Home</a>
+    <div class="admin-back"><img alt="Go Back" src="icons/arrow_left.svg"><a href="/">BACK</a></div>
 </header>
 <body>
     <div style="margin-left: 10px">
-        <h1>Admin Settings</h1>
-        <h2>Admin Email</h2>
+        <h1 class="admin-label">Admin Settings</h1>
+        <h2 class="email-label">Admin Email</h2>
         <form method="post" action="/settings" hx-confirm="Update the admin email?">
-            <input name="email" type="text" , placeholder={{ user.email }}>
-            <button type="submit">UPDATE</button>
+            <input class="email-input" name="email" type="text" , placeholder={{ user.email }}>
+            <button class="admin-button" type="submit">UPDATE</button>
         </form>
         <br>
         <h2>Accounts</h2>
