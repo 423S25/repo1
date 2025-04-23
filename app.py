@@ -138,7 +138,8 @@ def post_filter():
         current_category=category_id,
         current_price=price,
         current_amount=amount,
-        levels=levels
+        levels=levels,
+        is_admin=getattr(current_user, "username", None) == "admin"
     )
 
 # The filter function for the main table page. Re-serves index.html
