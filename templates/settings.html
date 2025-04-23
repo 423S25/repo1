@@ -22,5 +22,22 @@
         </form>
         {% endfor %}
     </div>
+    <div class="email-list">
+        <h1>Email List</h1>
+        {% for email in emails %}
+
+            <h4>{{ email }}</h4>
+            <form hx-post="/setting/delemail" hx-target="body" hx-swap="beforeend">
+                <input type="hidden" name="email" value="{{ email }}">
+                <button type="submit">Delete</button>
+            </form>
+
+            <form hx-get="/setting/editmail" hx-target="body" hx-swap="beforeend">
+                <input type="hidden" name="email" value="{{ email }}">
+                <button type="submit">Edit</button>
+            </form>
+
+        {% endfor %}
+    </div>
 </body>
 {% endblock %}

@@ -25,7 +25,7 @@
                 <div class="product_content">
                     <h1 id="product_name">{{ product.product_name }}</h1>
                     <div style="display: flex; flex-direction: row">
-                        <img alt="Category Icon" src="icons/map.svg" class="category_icon">
+                        <img alt="Category Icon" src="{{ product.category.image_path }}" class="category_icon" style="width: 10%; height: 10%;">
                         <p style="align-content: center; font-size: 1.25rem; color: #146F76FF; font-weight: bold">{{ product.category.name }}</p>
                     </div>
 

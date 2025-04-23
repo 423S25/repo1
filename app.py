@@ -11,7 +11,7 @@ from flask_login import LoginManager, login_required, login_user, current_user, 
 from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
-from src.model.user import User, user_db
+from src.model.user import User, user_db, Email
 from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
     ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, \
     ProductAddInventoryForm, parse_stock_units
@@ -41,7 +41,7 @@ with db:
     db.create_tables([Category, Product, InventorySnapshot, StockUnit])
 
 with user_db:
-    user_db.create_tables([User])
+    user_db.create_tables([User, Email])
 
 #used by flask-login
 @login_manager.user_loader
@@ -286,7 +286,8 @@ def login():
 @admin_required
 def get_settings():
     accounts = User.all()
-    return render_template("settings.html", user=current_user, accounts=accounts)
+    emails = Email.get_all_emails()
+    return render_template("settings.html", user=current_user, accounts=accounts, emails = emails)
 
 # Add a new email to updates for admin only
 @app.post("/settings")
@@ -294,7 +295,7 @@ def get_settings():
 def post_settings():
     email = request.form.get("email")
     if email is not None and email != '' and '@' in email:
-        User.get_by_username('admin').update_email(email)
+        Email.add_email('admin', email)
     return redirect("/settings")
 
 @app.get("/update_password/<username>")
