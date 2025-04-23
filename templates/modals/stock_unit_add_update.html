@@ -5,6 +5,7 @@
         const btnRow = btn?.parentElement?.parentElement?.parentElement;
         const prevRow = btnRow?.previousElementSibling;
         if (prevRow == null) {
+            console.error('Could not add new row for stock unit');
             return;
         }
         const newRow = prevRow.cloneNode(true);
