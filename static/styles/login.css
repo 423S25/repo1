@@ -73,6 +73,7 @@ input#submit:hover
     font-family: 'Gotham Book';
     justify-content: center;
     margin-bottom: 10%;
+    cursor: pointer;
 }
 
 li

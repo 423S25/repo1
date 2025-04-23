@@ -7,7 +7,7 @@
             <div class="red_rectangle"></div>
             <div class="banner">
                 <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[0] }}</p>
-                <p>Low Stock Products</p>
+                <p id="stock-label">Low Stock Products</p>
             </div>
         </div>
     </form>
@@ -17,7 +17,7 @@
             <div class="orange_rectangle"></div>
             <div class="banner">
                 <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[1] }}</p>
-                <p>Medium Stock Products</p>
+                <p id="stock-label">Medium Stock Products</p>
             </div>
         </div>
     </form>
@@ -28,7 +28,7 @@
                 <div class="green_rectangle"></div>
                 <div class="banner">
                     <p style="font-size: 1.5rem; font-weight: bold;">{{ levels[2] }}</p>
-                    <p>Well Stocked Products</p>
+                    <p id="stock-label">Well Stocked Products</p>
                 </div>
             </div>
         </form>
@@ -36,8 +36,8 @@
 </div>
 <div class="scaffolding">
     <div class="filter-parent">
-        <p>Filters:</p>
-        <p>Categories:</p>
+        <p id="filter-label">Filters:</p>
+        <p id="filter">Categories:</p>
         <select class="filter-input" id="category_id" name="category_id"
                 hx-trigger="change"
                 hx-get="/filter"
@@ -60,7 +60,10 @@
                 </option>
             {% endfor %}
         </select>
-        <p>Price:</p>
+        <br>
+        {% block edit_category %}
+        {% endblock %}
+        <p id="filter">Price:</p>
         <select class="filter-input" id="price" name="price"
                 hx-trigger="change"
                 hx-get="/filter"
@@ -92,7 +95,8 @@
                 Over $10
             </option>
         </select>
-        <p>Ideal Stock:</p>
+        <br>
+        <p id="filter">Amount:</p>
         <select class="filter-input" id="ideal" name="ideal"
                 hx-trigger="change"
                 hx-get="/filter"
@@ -124,6 +128,7 @@
                 Over 100 Units
             </option>
         </select>
+        <br><br>
         <button
                 class="filter-clear-button"
                 hx-post="/filter"
@@ -141,12 +146,14 @@
                hx-target=".container"
                hx-swap="innerHTML"
                hx-include=".scaffolding">
-        <button class="product-button" hx-get="/product_add" hx-target="body" hx-swap="beforeend">
-            NEW PRODUCT
-        </button>
-        <button class="product-button" hx-get="/category_add" hx-target="body" hx-swap="beforeend">
-            NEW CATEGORY
-        </button>
+        {% if is_admin %}
+            <button class="product-button" hx-get="/product_add" hx-target="body" hx-swap="beforeend">
+                NEW PRODUCT
+            </button>
+            <button class="product-button" hx-get="/category_add" hx-target="body" hx-swap="beforeend">
+                NEW CATEGORY
+            </button>
+        {% endif %}
         {% block add %}
         {% endblock %}
     </div>

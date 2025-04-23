@@ -12,32 +12,16 @@
             <button type="submit">UPDATE</button>
         </form>
         <br>
-        <h2>Accounts</h2>
-        {% for account in accounts %}
-        <form hx-get="/update_password/{{ account.username }}"
-            hx-target="body" hx-swap="beforeend"
-            style="display: flex; align-items: center; gap: 10px;">
-            <h3>{{ account.username }}</h3>
-            <button type="submit">UPDATE PASSWORD</button>
-        </form>
-        {% endfor %}
-    </div>
-    <div class="email-list">
-        <h1>Email List</h1>
-        {% for email in emails %}
-
-            <h4>{{ email }}</h4>
-            <form hx-post="/setting/delemail" hx-target="body" hx-swap="beforeend">
-                <input type="hidden" name="email" value="{{ email }}">
-                <button type="submit">Delete</button>
+        <div class="accounts-content">
+            <h2 class="accounts-label">Accounts</h2>
+            {% for account in accounts %}
+            <form hx-get="/update_password/{{ account.username }}"
+                hx-target="body" hx-swap="beforeend" style="text-align: center;">
+                <h3 class="username-label">{{ account.username }}</h3>
+                <button class="accounts-button" type="submit">UPDATE PASSWORD</button>
             </form>
-
-            <form hx-get="/setting/editmail" hx-target="body" hx-swap="beforeend">
-                <input type="hidden" name="email" value="{{ email }}">
-                <button type="submit">Edit</button>
-            </form>
-
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
 </body>
 {% endblock %}

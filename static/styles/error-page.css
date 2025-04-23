@@ -1,0 +1,96 @@
+.not-found-main {
+    height: calc(100vh - 2rem - 70px);
+    width: 100%;
+    background-image: url('/icons/404.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: left;
+}
+.message-cont {
+    height: calc(100vh - 2rem - 70px);
+    width: calc(100% - (100vh - 2rem - 70px));
+    position: fixed;
+    bottom: 0;
+    right: 0;
+}
+.message-cont > div {
+    width: 80%;
+    max-width: 600px;
+}
+
+h1, h2, .home-link {
+    font-family: 'Gotham Book', sans-serif;
+    margin: 0;
+}
+h1 {
+    font-size: 160px;
+    text-align: left;
+}
+h2 {
+    font-size: 48px;
+    margin: 0;
+}
+a.home-link {
+    margin: 20px 0;
+    display: inline-block;
+}
+.home-link {
+    background-color: var(--hrdc-theme-teal);
+    color: white;
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: 5px 15px;
+    font-size: 24px;
+    border: none;
+}
+.home-link:hover {
+    background-color: var(--hrdc-theme-dark-teal);
+}
+
+@media (max-aspect-ratio: 14/9) {
+    h1 {
+        font-size: 120px;
+    }
+    h2 {
+        font-size: 36px;
+    }
+    .home-link {
+        font-size: 16px;
+    }
+}
+@media (max-aspect-ratio: 4/3) {
+    .not-found-main {
+        background-size: cover;
+        background-position: top right;
+    }
+    .message-cont {
+        width: 100%;
+    }
+    .message-cont > div {
+        display: inline-block;
+        width: auto;
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #fffc;
+        box-shadow: 0 3px 6px hsla(0, 0%, 20%, 0.3),
+            -3px 0 6px hsla(0, 0%, 20%, 0.3),
+            3px 0 6px hsla(0, 0%, 20%, 0.3);
+    }
+    .message-cont * {
+        text-align: center;
+    }
+}
+@media (max-aspect-ratio: 2/3) {
+    h1 {
+        font-size: 100px;
+    }
+    h2 {
+        font-size: 24px;
+    }
+    a.home-link {
+        margin: 15px 0;
+    }
+    .home-link {
+        font-size: 12px;
+    }
+}

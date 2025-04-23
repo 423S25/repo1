@@ -1,181 +1,354 @@
 {% extends "base.html" %}
-{% from "macros.html" import inventory_item_bar %}
+{% from "macros.html" import inventory_item_bar, timeframe_form %}
+
 {% block content %}
+<link rel="stylesheet" href="styles/mobile_table.css" />
+<link rel="stylesheet" href="styles/mobile_form.css"/>
+<link rel="stylesheet" href="styles/product_page.css" />
+<script>
+    const HRDC_THEME_GREEN = '#4ead1f';
+    const HRDC_THEME_TEAL = '#146f76';
 
-{% include 'nav.html' %}
-<div class="back"><img alt="Go Back" src="icons/arrow_left.svg"><a href=".">BACK</a></div>
+    let lifetimeChart = null;
+    let priceHistoryChart = null;
+    let inventoryHistoryChart = null;
 
-<div class="content_container">
-    <div class="top_container">
-        <div class="column">
+    function loadLifetimeChart() {
+        requestAnimationFrame(() => {
+            if (lifetimeChart != null) {
+                lifetimeChart.destroy();
+            }
 
-            <div class="row1">
-                <div class="image-box">
-                    <label for="fileInput">
-                        {% if not filepath %}
-                        <img src="icons/image-camera.svg" class="upload-trigger" />
-                        {% else %}
-                        <img src="{{ filepath }}" />
-                        {% endif %}
-                    </label>
-                </div>
-            </div>
+            const canvas = document.getElementById('lifetime-breakdown-chart');
+            if (canvas == null) { return; }
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            const lifetimeDonated = parseFloat(canvas.getAttribute('data-lifetime-donated'));
+            const lifetimePurchased = parseFloat(canvas.getAttribute('data-lifetime-purchased'));
+            const ctx = canvas.getContext('2d');
 
-            <div class="row2">
-                <div class="product_content">
-                    <h1 id="product_name">{{ product.product_name }}</h1>
-                    <div style="display: flex; flex-direction: row">
-                        <img alt="Category Icon" src="{{ product.category.image_path }}" class="category_icon" style="width: 10%; height: 10%;">
-                        <p style="align-content: center; font-size: 1.25rem; color: #146F76FF; font-weight: bold">{{ product.category.name }}</p>
-                    </div>
-
-                </div>
-
-                <div class="inventory_content">
-                    <h1 id="inventory_stock">{{ product.inventory }} / {{ product.ideal_stock }}</h1>
-                    <span id="inventory_bar">{{ inventory_item_bar(product.inventory, product.ideal_stock) }}</span>
-                </div>
-            </div>
-
-            <div class="row3">
-                <div class="adjust_content">
-                    <button class="product-button" hx-get="/product_update_inventory/{{ product.id }}"
-                        hx-target="body" hx-swap="beforeend">
-                        SET INVENTORY
-                    </button>
-                    <button class="product-button" hx-get="/product_add_inventory/{{ product.id }}"
-                        hx-target="body" hx-swap="beforeend">
-                        ADD INVENTORY
-                    </button>
-
-                    <div class="dropdown">
-                        <button class="dropdown-btn">
-                            <img src="icons/three_dot.svg" width="40" height="30">
-                        </button>
-
-
-                        <div class="dropdown-content">
-                            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body"
-                                hx-swap="outerHTML"
-                                hx-confirm="Are you sure you want to delete {{  product.product_name }}?">Delete
-                                Item</a>
-                            <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">Update
-                                Info</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info_container">
-                    <table id="info_table">
-                        <tr>
-                            <td class="title-column">Price per Unit</td>
-                            <td class="dash-column">
-                                <hr class="line">
-                            </td>
-                            <td class="value-column">${{product.price }}</td>
-                        </tr>
-                        <tr>
-                            <td class="title-column">Preferred Quantity</td>
-                            <td class="dash-column">
-                                <hr class="line">
-                            </td>
-                            <td class="value-column">{{product.ideal_stock }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-
-            <form action="/product_upload_image/{{ product.get_id() }}"
-                hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
-                hx-target="#image-message-placeholder"
-                hx-swap="innerHTML">
-                <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
-            </form>
-            <div id="image-message-placeholder"></div>
-            <script>
-                document.getElementById('fileInput').addEventListener('change', function (ev) {
-                    ev.preventDefault();
-                    htmx.trigger(this.form, 'submit');
-                });
-            </script>
-        </div>
-
-        <table>
-            <tbody>
-                <tr>
-                    <th>Unit Name</th>
-                    <th>Count per Unit</th>
-                    <th>Unit Price</th>
-                    <th>Individual Price</th>
-                    <th>Count in Units</th>
-                </tr>
-                {% for unit, count in stock_units_with_counts %}
-                <tr>
-                    <td>{{ unit.name }}</td>
-                    <td>{{ unit.multiplier }}</td>
-                    <td>${{ "%.2f" | format(unit.price) }}</td>
-                    <td>${{ "%.2f" | format(unit.price / unit.multiplier) }}</td>
-                    <td>{{ count }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-    </div>
-    <div>
-        <canvas id="donatedPurchasedChart"></canvas>
-    </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const ctx = document.getElementById("donatedPurchasedChart").getContext("2d");
-
-            new Chart(ctx, {
-                type: 'bar',
+            lifetimeChart = new Chart(ctx, {
+                type: 'doughnut',
                 data: {
-                    labels: ['{{ product.product_name }}'],
-                    datasets: [
-                        {
-                            label: 'Purchased',
-                            data: [{{ product.lifetime_purchased }}],
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
-                        },
-                        {
-                            label: 'Donated',
-                            data: [{{ product.lifetime_donated }}],
-                            backgroundColor: 'rgba(255, 205, 86, 0.7)'
-                        }
-                    ]
+                    labels: ['Donated', 'Purchased'],
+                    datasets: [{
+                        data: [lifetimeDonated, lifetimePurchased],
+                        backgroundColor: [HRDC_THEME_GREEN, HRDC_THEME_TEAL],
+                    }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Purchased vs Donated For Lifetime of Product'
+                            text: 'Product Intake'
                         }
-                    },
+                    }
+                }
+            });
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+    }
+    
+    function loadPriceChart() {
+        requestAnimationFrame(() => {
+            if (priceHistoryChart != null) {
+                priceHistoryChart.destroy();
+            }
+
+            const canvas = document.getElementById('price-history-chart');
+            if (canvas == null) { return; }
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            const dates = JSON.parse(canvas.getAttribute('data-dates'));
+            const prices = JSON.parse(canvas.getAttribute('data-prices'));
+            const data = dates.map((e,i) => ({x: e, y: prices[i]}));
+            const ctx = canvas.getContext('2d');
+
+            priceHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Average Price',
+                        data,
+                        borderColor: HRDC_THEME_GREEN,
+                        tension: 0.3
+                    }]
+                },
+                options: {
                     scales: {
                         x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'MMM dd'
+                            },
                             title: {
                                 display: true,
-                                text: 'Products'
+                                text: 'Date'
                             }
                         },
                         y: {
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Individual Units'
+                                text: 'Value'
                             }
                         }
                     }
                 }
             });
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
         });
-    </script>
-</div>
+    }
+    
+    function loadInventoryChart() {
+        requestAnimationFrame(() => {
+            if (inventoryHistoryChart != null) {
+                inventoryHistoryChart.destroy();
+            }
+
+            const canvas = document.getElementById('inventory-history-chart');
+            if (canvas == null) { return; }
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            const dates = JSON.parse(canvas.getAttribute('data-dates'));
+            const counts = JSON.parse(canvas.getAttribute('data-counts'));
+            const data = dates.map((e,i) => ({x: e, y: counts[i]}));
+            const ctx = canvas.getContext('2d');
+
+            inventoryHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Individual Inventory',
+                        data,
+                        borderColor: HRDC_THEME_TEAL,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'MMM dd'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            }
+                        }
+                    }
+                }
+            });
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+    }
+    
+    window.addEventListener('load', () => {
+        loadLifetimeChart();
+        loadPriceChart();
+        loadInventoryChart();
+    });
+    document.body.addEventListener('htmx:afterSwap', e => {
+        if (e.target.querySelector && e.target.querySelector(':scope > #lifetime-breakdown-chart')) {
+            loadLifetimeChart();
+        } else if (e.target.querySelector && e.target.querySelector(':scope > #price-history-chart')) {
+            loadPriceChart();
+        } else if (e.target.querySelector && e.target.querySelector(':scope > #inventory-history-chart')) {
+            loadInventoryChart();
+        }
+    });
+</script>
+
+
+
+<div class="main-grid">
+    <div class="left-nav">
+        <a href="." class="back-link center-all">
+            <img src="icons/arrow_left.svg" alt="Left Arrow"/>
+            Back to Home
+        </a>
+        <form hx-get="/product_search_filter_mobile" hx-trigger="change, input from:input delay:300ms" hx-target="#product-list" hx-swap="innerHTML">   
+            <div class="mobile-form-container">
+                <img src="icons/search_icon.svg" alt="Search Icon"/>
+                <input name="product_name" class="mobile-form-control" placeholder="Search"/>
+            </div>
+
+            <input type="hidden" value="link" name="table_mode"/>
+            <input type="hidden" value="10" name="count_limit"/>
+            
+            <select name="product_category_id" class="mobile-select box-shadow-small">
+                {% for category in category_list %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <select name="product_sort_method" class="mobile-select box-shadow-small">
+                <option value="least_recent">Least Recently Updated</option>
+                <option value="most_recent">Most Recently Updated</option>
+                <option value="lowest_stock">Lowest Stock Percentage</option>
+                <option value="highest_stock">Highest Stock Percentage</option>
+                <option value="alpha_a_z">Alphabetical (A-Z)</option>
+                <option value="alpha_z_a">Alphabetical (Z-A)</option>
+                <option value="best_match">Best Match</option>
+            </select>
+        </form>
+
+        <div id="product-list">
+            {% include "mobile_table.html" %}
+        </div>
+    </div>
+
+    <div class="column box-shadow-small">
+
+        <div class="image-box">
+            <label for="fileInput">
+                {% if not filepath %}
+                    <img src="icons/image-camera.svg" class="upload-trigger" />
+                {% else %}
+                    <img src="{{ filepath }}" />
+                {% endif %}
+            </label>
+        </div>
+
+        <div class="top-right-grid">
+            <div class="product-action-name">{{ product.product_name }}</div>
+            <div class="product-action-row">
+                <button class="product-action-inventory"
+                    hx-get="/product_update_inventory/{{ product.id }}"
+                    hx-target="body"
+                    hx-swap="beforeend"
+                >Set Inventory</button>
+                <button class="product-action-inventory"
+                    hx-get="/product_add_inventory/{{ product.id }}"
+                    hx-target="body"
+                    hx-swap="beforeend"
+                >Add Inventory</button>
+                {% if is_admin %}
+                    <div>
+                        <button class="product-action-more">
+                            <img src="icons/three_dot.svg">
+                        </button>
+                        <div class="dropdown-content">
+                            <a hx-get="/product_update_all/{{ product.id }}" hx-target="body" hx-swap="beforeend">
+                                Update Info
+                            </a>
+                            <a href="#" hx-delete="/product_delete/{{ product.id }}" hx-target="body"
+                                hx-swap="outerHTML"
+                                hx-confirm="Are you sure you want to delete {{  product.product_name }}?">
+                                Delete Item
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div></div>
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="category-row">
+                    {% if not product.category.image_path %}
+                        <img alt="Category Icon" src="icons/map.svg" class="category-icon">
+                    {% else %}
+                        <img alt="Category Icon" src="{{ product.category.image_path }}" class="category-icon">
+                    {% endif %}
+                    <p class="category-name">{{ product.category.name }}</p>
+                </div>
+                <div class="inventory-content">
+                    <span id="inventory-stock">{{ product.inventory }} / {{ product.ideal_stock }}</span>
+                    <span id="inventory-bar">{{ inventory_item_bar(product.inventory, product.ideal_stock) }}</span>
+                </div>
+            </div>
+            <div>
+                <div class="info-row">
+                    <span>Avg Price Per Unit</span>
+                    <div></div>
+                    <span>${{ "%.2f" | format(product.price) }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Preferred Quantity</span>
+                    <div></div>
+                    <span>{{ product.ideal_stock }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Current Inventory Value</span>
+                    <div></div>
+                    <span>${{ "%.2f" | format(product.price * product.inventory) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <form style="display: none;" action="/product_upload_image/{{ product.get_id() }}"
+            hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
+            hx-target="#image-message-placeholder"
+            hx-swap="innerHTML">
+            <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
+        </form>
+        <div id="image-message-placeholder"></div>
+        <script>
+            document.getElementById('fileInput').addEventListener('change', function (ev) {
+                ev.preventDefault();
+                htmx.trigger(this.form, 'submit');
+            });
+        </script>
+
+    </div>
+
+    <div class="box-shadow-small chart-parent" style="grid-column: 2;">
+        {{ timeframe_form('/product_lifetime/' ~ product.get_id(), '#lifetime-chart-cont') }}
+        <div style="height: 300px; width: 100%;" class="center-all" id="lifetime-chart-cont">
+            {% include "charts/lifetime_split.html" %}
+        </div>
+    </div>
+    <div class="box-shadow-small" style="grid-column: 3;">
+        <table><tbody>
+            <tr>
+                <th>Unit Name</th>
+                <th>Individual/Unit</th>
+                <th>Price/Unit</th>
+                <th>Count in Units</th>
+            </tr>
+            {% for stock_unit, count in stock_units_with_counts %}
+                <tr>
+                    <td style="text-align: center;">{{ stock_unit.name }}</td>
+                    <td style="text-align: center;">{{ stock_unit.multiplier }}</td>
+                    <td style="text-align: center;">{{ stock_unit.price }}</td>
+                    <td style="text-align: center;">{{ count }}</td>
+                </tr>
+            {% endfor %}
+        </tbody></table>
+    </div>
+
+    <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
+        {{ timeframe_form('/product_price_history/' ~ product.get_id(), '#price-chart-cont') }}
+        <div style="height: 300px; width: 100%;" class="center-all" id="price-chart-cont">
+            {% include "charts/price_line_chart.html" %}
+        </div>
+    </div>
+    <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
+        {{ timeframe_form('/product_inventory_history/' ~ product.get_id(), '#inventory-chart-cont') }}
+        <div style="height: 300px; width: 100%;" class="center-all" id="inventory-chart-cont">
+            {% include "charts/inventory_line_chart.html" %}
+        </div>
+    </div>
 </div>
 
-</div>
-</body>
+
 {% endblock %}

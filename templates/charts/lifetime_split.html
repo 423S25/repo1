@@ -1,0 +1,5 @@
+{% if lifetime_donated + lifetime_purchased == 0 %}
+No Data
+{% else %}
+<canvas id="lifetime-breakdown-chart" data-lifetime-donated="{{ lifetime_donated }}" data-lifetime-purchased="{{ lifetime_purchased }}"></canvas>
+{% endif %}

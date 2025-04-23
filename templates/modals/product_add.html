@@ -4,7 +4,7 @@
         <button class="btn-danger" _="on click trigger closeModal">
             <img alt="Close" src="icons/close.svg" class="close-icon" />
         </button>
-        <p class="add-label">ADD PRODUCT</p>
+        <p class="add-label">NEW PRODUCT</p>
         <form hx-post="/product_add" hx-target="#modal-errors" hx-swap="innerHTML">
             <div class="modal-form-content"> 
                 {{ form.csrf_token }}
@@ -28,15 +28,8 @@
                         {% endfor %}
                     </select>
                 </div>
-
-                <div style="display: flex; flex-direction: row">
-                    <label id="add-donation-label" for="donation">Donation: </label>
-                    <input type="checkbox" id="donation" name="donation">
-                </div>
             </div>
-
-            {%include "modals/stock_unit_add_update.html" %}
-
+            <br>
             <div class="modal-buttons">
                 <button id="add-product-label" type="submit">Submit</button>
             </div>

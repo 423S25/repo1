@@ -1,0 +1,211 @@
+* {
+    font-family: 'Gotham Book', sans-serif;
+}
+
+.main-grid {
+    padding: 20px;
+    gap: 20px;
+    display: grid;
+    grid-template-columns: 1fr 3fr 2fr;
+}
+.chart-parent {
+    padding: 5px;
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+}
+canvas {
+    height: 100%;
+    width: 100%;
+}
+.left-nav {
+    grid-row: 1 / span 4;
+    grid-column: 1;
+}
+.mobile-product-row {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+}
+.result-count {
+    display: none;
+}
+.mobile-form-control, .mobile-form-container, .mobile-select {
+    margin: 0;
+    width: 100%;
+}
+.mobile-select {
+    margin-top: 10px;
+}
+
+.column {
+    box-sizing: border-box;
+    display: grid;
+    height: 250px;
+    grid-template-columns: 250px 1fr;
+    grid-column: 2 / -1;
+}
+.back-link {
+    text-decoration: none;
+    color: var(--hrdc-theme-dark-teal);
+    margin-bottom: 10px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+}
+.back-link:hover {
+    background-color: var(--hrdc-theme-light-grey);
+}
+
+.image-box {
+    width: 249px;
+    height: 249px;
+    background-color: #F5F5F5;
+}
+.image-box img {
+    width: 70%;
+    height: 70%;
+    padding: 15%;
+}
+.upload-trigger:hover {
+    cursor: pointer;
+}
+
+.top-right-grid {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    grid-template-rows: 40px auto;
+    grid-template-columns: 2fr 3fr;
+}
+.product-action-name {
+    font-size: 1.7em;
+    line-height: 40px;
+    text-transform: uppercase;
+    font-weight: bold;
+    width: 100%;
+    color: var(--hrdc-theme-dark-teal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.product-action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 40px;
+    gap: 10px;
+}
+.product-action-row > div:last-child {
+    width: 40px;
+    position: relative;
+}
+.product-action-row button {
+    border: none;
+}
+.product-action-inventory {
+    background-color: var(--hrdc-theme-teal);
+    color: white;
+    padding: 0 15px;
+    text-transform: uppercase;
+}
+.product-action-inventory:hover {
+    background-color: var(--hrdc-theme-dark-teal);
+}
+
+.product-action-more {
+    aspect-ratio: 1 / 1;
+    background-color: var(--hrdc-theme-light-grey);
+    display: flex;
+    justify-content: center;
+    border: none;
+}
+.product-action-more:hover {
+    background-color: var(--hrdc-theme-medium-grey);
+}
+.product-action-more > img {
+    width: 100%;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    right: 0;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+.product-action-row > div:last-child:hover > .dropdown-content {
+    display: block;
+}
+.dropdown-content > a {
+    display: block;
+    white-space: nowrap;
+    padding: 5px 20px;
+    color: black;
+    text-decoration: none;
+    background-color: var(--hrdc-theme-light-grey);
+    text-transform: uppercase;
+}
+.dropdown-content > a:not(:first-child) {
+    border-top: 1px solid var(--hrdc-theme-medium-grey);
+}
+.dropdown-content > a:hover {
+    background-color: var(--hrdc-theme-medium-grey);
+    cursor: pointer;
+}
+
+.inventory-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+#inventory-stock {
+    display: inline-block;
+    flex-shrink: 0;
+}
+#inventory-bar {
+    width: 100%;
+    margin-left: 10px;
+}
+.category-row {
+    display: flex;
+    margin-bottom: 10px;
+}
+.category-icon {
+    height: 30px;
+    margin-right: 5px;
+}
+.category-name {
+    align-content: center;
+    font-size: 1.25rem;
+    color: var(--hrdc-theme-dark-teal);
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    margin: 11px 0;
+}
+.info-row > span {
+    flex-shrink: 0;
+}
+.info-row > div {
+    height: 0;
+    width: 100%;
+    border-top: 2px dotted var(--hrdc-theme-medium-grey);
+    margin: 0 8px;
+}
+
+.timeframe-form > *:not(label) {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 5px 0;
+    border: 2px solid var(--hrdc-theme-teal);
+    padding: 3px 5px;
+    background-color: white;
+    border-radius: 3px;
+}
+.timeframe-form > *:hover {
+    background-color: var(--hrdc-theme-light-grey);
+}
+.timeframe-form > :first-child {
+    margin-top: 0;
+}
