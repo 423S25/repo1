@@ -383,6 +383,8 @@ def logout():
 # Login a user
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if is_mobile():
+        return redirect('/mobile/login')
     form = LoginForm()
     next = request.args.get('next')
     errors = [] #used to display errors on the login page
@@ -401,6 +403,30 @@ def login():
             return render_template('security/login.html', form=form, errors=errors)
         return redirect(next or url_for("get_index"))
     return render_template('security/login.html', form=form, errors=errors)
+
+# Login a user
+@app.route("/mobile/login", methods=["GET", "POST"])
+def mobile_login():
+    if not is_mobile():
+        return redirect('/login')
+    form = LoginForm()
+    next = request.args.get('next')
+    errors = [] #used to display errors on the login page
+    if form.validate_on_submit(): #makes sure form is complete
+        user = User.get_by_username(form.username.data.lower())
+        if user is None:
+            errors.append("User not found")
+            return render_template('security/mobile_login.html', form=form, errors=errors)
+        correct_password = bcrypt.check_password_hash(user.password, form.password.data)
+        if not correct_password:
+            errors.append("Incorrect password")
+            return render_template('security/mobile_login.html', form=form, errors=errors)
+        login_success = login_user(user)
+        if not login_success:
+            errors.append("Login failed")
+            return render_template('security/mobile_login.html', form=form, errors=errors)
+        return redirect(next or url_for("get_mobile_index"))
+    return render_template('security/mobile_login.html', form=form, errors=errors)
 
 # Admin settings page
 @app.get("/settings")

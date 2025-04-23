@@ -2,14 +2,14 @@
 {% block content %}
 
 <head>
-    <link rel="stylesheet" href="/styles/login.css">
+    <link rel="stylesheet" href="/styles/mobile_login.css">
 </head>
 
 <body>
-    <div class="login">
-        <form action="{{ url_for('login', next=request.args.get('next', '')) }}" method="post">
+    <div class="mobile-login">
+        <form action="{{ url_for('mobile_login', next=request.args.get('next', '')) }}" method="post">
             {{ form.csrf_token }}
-            <div class="form-region">
+            <div class="mobile-form-region">
                 <h1>WELCOME</h1>
                 <span class="username-label">{{ form.username.label }}</span> <br>
                 {{ form.username }} <br><br>
