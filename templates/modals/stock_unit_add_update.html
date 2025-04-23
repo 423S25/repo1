@@ -1,11 +1,11 @@
 {% if is_admin %}
-{% if is_admin %}
 <script>
     function addNewStockUnit(ev, btn) {
         ev.preventDefault();
-        const btnRow = btn?.parentElement?.parentElement;
+        const btnRow = btn?.parentElement?.parentElement?.parentElement;
         const prevRow = btnRow?.previousElementSibling;
         if (prevRow == null) {
+            console.error('Could not add new row for stock unit');
             return;
         }
         const newRow = prevRow.cloneNode(true);
@@ -37,7 +37,6 @@
         btnRow.parentElement.insertBefore(newRow, btnRow);
     }
 </script>
-{% endif %}
 {% endif %}
 
 <style>
@@ -95,7 +94,7 @@
         <tr>
             <td colspan="{{ 1 + (2 if is_admin else 0) + (1 if not stock_unit_count_hidden else 0) }}">
                 <div class="modal-buttons">
-                    <button id="new_unit" onclick="addNewStockUnit(event, this)">Add New Stock Unit</button>
+                    <button id="new_unit" onclick="console.log('a'); addNewStockUnit(event, this)">Add New Stock Unit</button>
                 </div>
             </td>
         </tr>
