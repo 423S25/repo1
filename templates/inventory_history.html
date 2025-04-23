@@ -294,7 +294,7 @@
 
         <form style="display: none;" action="/product_upload_image/{{ product.get_id() }}"
             hx-post="/product_upload_image/{{ product.get_id() }}" method="POST" enctype="multipart/form-data"
-            hx-on::after-request="alert(event.detail.xhr.responseText)" hx-target="#image-message-placeholder"
+            hx-target="#image-message-placeholder"
             hx-swap="innerHTML">
             <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
         </form>
