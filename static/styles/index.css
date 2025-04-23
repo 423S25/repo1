@@ -189,28 +189,24 @@ p#filter-label
     font-family: 'Gotham Book';
 }
 
-button#low-stock, button#med-stock, button#hi-stock
+p#stock-label
 {
-    background-color: var(--hrdc-theme-teal);
     border: none;
-    color: white;
+    color: var(--hrdc-theme-dark-teal);
     text-align: center;
     text-decoration: none;
-    font-size: 12px;
-    padding: 5px;
+    font-size: 14px;
     font-weight: bold;
     font-family: 'Gotham Book';
 }
 
-button#low-stock:hover, button#med-stock:hover, button#hi-stock:hover
+.banner:hover p#stock-label
 {
-    background-color: var(--hrdc-theme-green-yellow);
     border: none;
     color: white;
     text-align: center;
     text-decoration: none;
-    font-size: 12px;
-    padding: 5px;
+    font-size: 14px;
     font-weight: bold;
     font-family: 'Gotham Book';
 }
@@ -280,6 +276,7 @@ button#low-stock:hover, button#med-stock:hover, button#hi-stock:hover
 
 .banner:hover {
     background-color: #146F76FF;
+    cursor: pointer;
 }
 
 .red_rectangle {
