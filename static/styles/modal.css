@@ -125,7 +125,7 @@ input#donation:hover {
 }
 
 .add-category-id {
-    color: #ffffff;
+    background-color: #ffffff;
     border-color: var(--hrdc-theme-teal);
     border-radius: 5px;
     font-family: 'Gotham Book';
@@ -147,7 +147,7 @@ button#add-product-label, button#new_unit {
     padding: 1rem 1rem;
 }
 
-button.btn-danger {
+button.btn-danger, button.product-danger-button {
     background-color: #ffffff;
     border-style: none;
 }
