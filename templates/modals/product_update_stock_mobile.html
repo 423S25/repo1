@@ -1,4 +1,4 @@
-<div id="mobile-modal" class="center-all" _="on click trigger closeMobileModal on closeMobileModal add .closing then wait for animationend then remove me">
+<div id="mobile-modal" class="center-all" _="on closeMobileModal add .closing then wait for animationend then remove me">
     <div class="box-shadow-small">
         <span class="mobile-modal-header">Update stock for <span>{{ product.product_name }}</span></span>
         <form hx-post="/product_update_inventory_mobile/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
