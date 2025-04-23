@@ -32,6 +32,7 @@ canvas {
 .mobile-form-control, .mobile-form-container, .mobile-select {
     margin: 0;
     width: 100%;
+    color: var(--hrdc-theme-teal);
 }
 .mobile-select {
     margin-top: 10px;
@@ -46,13 +47,13 @@ canvas {
 }
 .back-link {
     text-decoration: none;
-    color: var(--hrdc-theme-dark-teal);
+    color: var(--hrdc-theme-teal);
     margin-bottom: 10px;
-    border: 1px solid currentColor;
-    border-radius: 3px;
+    border: none;
 }
 .back-link:hover {
-    background-color: var(--hrdc-theme-light-grey);
+    background-color: var(--hrdc-theme-green-yellow);
+    color: white;
 }
 
 .image-box {
@@ -106,7 +107,7 @@ canvas {
     text-transform: uppercase;
 }
 .product-action-inventory:hover {
-    background-color: var(--hrdc-theme-dark-teal);
+    background-color: var(--hrdc-theme-green-yellow);
 }
 
 .product-action-more {
@@ -183,6 +184,7 @@ canvas {
     display: flex;
     align-items: center;
     margin: 11px 0;
+    color: var(--hrdc-theme-dark-teal);
 }
 .info-row > span {
     flex-shrink: 0;
@@ -192,6 +194,12 @@ canvas {
     width: 100%;
     border-top: 2px dotted var(--hrdc-theme-medium-grey);
     margin: 0 8px;
+}
+
+tr#info-col
+{
+    color: var(--hrdc-theme-dark-teal);
+    text-indent: 10px;
 }
 
 .timeframe-form > *:not(label) {
