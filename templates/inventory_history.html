@@ -20,6 +20,7 @@
             }
 
             const canvas = document.getElementById('lifetime-breakdown-chart');
+            if (canvas == null) { return; }
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
             const lifetimeDonated = parseFloat(canvas.getAttribute('data-lifetime-donated'));
@@ -59,6 +60,7 @@
             }
 
             const canvas = document.getElementById('price-history-chart');
+            if (canvas == null) { return; }
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
             const dates = JSON.parse(canvas.getAttribute('data-dates'));
@@ -112,6 +114,7 @@
             }
 
             const canvas = document.getElementById('inventory-history-chart');
+            if (canvas == null) { return; }
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
             const dates = JSON.parse(canvas.getAttribute('data-dates'));
