@@ -13,13 +13,14 @@ h1
 
 .form-region
 {
-    width: 30%;
+    width: 35%;
     height: 45%;
     margin: auto;
     padding-top: 5%;
     background-color: #ffffff;
     box-shadow: 0px 3.5px 13px 9px rgba(0, 0, 0, 0.1);
     text-align: center;
+    min-width: 400px;
 }
 
 .username-label, .password-label
@@ -85,4 +86,15 @@ li
     text-align: center;
     list-style-type: none;
     text-indent: -2em;
+}
+
+@media (max-width: 550px) {
+    .form-region {
+        width: 85%;
+        box-sizing: border-box;
+        min-width: auto;
+    }
+    input#username, input#password {
+        width: 80%;
+    }
 }
