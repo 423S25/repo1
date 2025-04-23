@@ -410,6 +410,15 @@ def get_settings():
     emails = Email.get_all_emails()
     return render_template("settings.html", user=current_user, accounts=accounts, emails = emails)
 
+@app.delete("/delete_email/<email>")
+@admin_required
+def del_email(email: str):
+    Email.delete_email(email)
+    return htmx_redirect("/settings")
+
+
+
+
 # Add a new email to updates for admin only
 @app.post("/settings")
 @admin_required
@@ -572,7 +581,7 @@ def post_product_update_inventory(product_id: int):
         if len(form_errors) == 0:
             product.update_stock(stock_units)
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)
@@ -611,7 +620,7 @@ def post_product_add_inventory(product_id: int):
         if len(form_errors) == 0:
             product.add_stock(stock_unit_submissions, form.donation.data)
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)
@@ -646,7 +655,7 @@ def post_product_update_inventory_mobile(product_id: int):
         if len(form_errors) == 0:
             product.update_stock(stock_unit_submissions)
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/mobile")
         else:
             return htmx_errors(form_errors)
@@ -705,7 +714,7 @@ def post_product_update_all(product_id: int):
             product.update_product(product_name, stock_units, ideal_stock)
             Product.fill_days_left()
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)

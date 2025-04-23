@@ -1,4 +1,6 @@
 import os
+from contextlib import nullcontext
+
 from dotenv import load_dotenv
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -45,17 +47,21 @@ class EmailJob():
             print(e)
 
     @staticmethod
-    def process_emails(admin_email: str):
-        if admin_email and len(admin_email) > 0:
-            warnings = Product.products_leq_half()
-            if len(warnings) > 0:
-                EmailJob.send_warning(warnings, admin_email)
-                for product in warnings:
-                    product.increment_notified()
-            urgents = Product.products_leq_quarter()
-            if len(urgents) > 0:
-                EmailJob.send_urgent(urgents, admin_email)
-                for product in urgents:
-                    product.increment_notified()
+    def process_emails(admin_emails: list[str]):
+        print(admin_emails)
+        warnings = Product.products_leq_half()
+        urgents = Product.products_leq_quarter()
+        for admin_email in admin_emails:
+            print(type(admin_email))
+            if admin_email and len(admin_email) > 0:
+                if len(warnings) > 0:
+                    EmailJob.send_warning(warnings, admin_email)
+                    for product in warnings:
+                        product.increment_notified()
+                if len(urgents) > 0:
+                    EmailJob.send_urgent(urgents, admin_email)
+                    for product in urgents:
+                        product.increment_notified()
+
 
 

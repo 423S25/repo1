@@ -132,3 +132,34 @@
     font-weight: bold;
     font-family: 'Gotham Book';
 }
+
+.email-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.email-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    transition: background-color 0.2s;
+}
+
+.delete-form {
+    margin: 0;
+}
+
+.delete-button {
+    visibility: hidden; /* Takes up space but is invisible */
+    background: none;
+    border: none;
+    color: red;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.email-item:hover .delete-button {
+    visibility: visible;
+}

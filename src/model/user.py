@@ -62,3 +62,10 @@ class Email(user_db.Model):
     @staticmethod
     def get_all_emails() -> list[str]:
         return [e.email for e in Email.select()]
+    @staticmethod
+    def get_email(email: str):
+        return Email.get(Email.email == email)
+    @staticmethod
+    def delete_email(email: str):
+        email = Email.get_email(email)
+        email.delete_instance()
