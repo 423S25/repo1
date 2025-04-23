@@ -9,22 +9,26 @@
 </header>
 <body>
     <div style="margin-left: 10px">
-        <h1 class="admin-label">Admin Settings</h1>
-        <h2 class="email-label">Admin Email</h2>
-        <form method="post" action="/settings" hx-confirm="Update the admin email?">
-            <input class="email-input" name="email" type="text" , placeholder={{ user.email }}>
-            <button class="admin-button" type="submit">UPDATE</button>
-        </form>
+        <div class="admin-content">
+            <h1 class="admin-label">Admin Settings</h1>
+            <h2 class="email-label">Admin Email</h2>
+            <form method="post" action="/settings" hx-confirm="Update the admin email?">
+                <input class="email-input" name="email" type="text" , placeholder={{ user.email }}>
+                <button class="admin-button" type="submit">UPDATE</button>
+            </form>
+        </div>
         <br>
-        <h2>Accounts</h2>
-        {% for account in accounts %}
-        <form hx-get="/update_password/{{ account.username }}"
-            hx-target="body" hx-swap="beforeend"
-            style="display: flex; align-items: center; gap: 10px;">
-            <h3>{{ account.username }}</h3>
-            <button type="submit">UPDATE PASSWORD</button>
-        </form>
-        {% endfor %}
+        <div class="accounts-content">
+            <h2 class="accounts-label">Accounts</h2>
+            {% for account in accounts %}
+            <form hx-get="/update_password/{{ account.username }}"
+                hx-target="body" hx-swap="beforeend" style="text-align: center;">
+                <h3 class="username-label">{{ account.username }}</h3>
+                <button class="accounts-button" type="submit">UPDATE PASSWORD</button>
+            </form>
+            {% endfor %}
+        </div>
     </div>
+    <br>
 </body>
 {% endblock %}
