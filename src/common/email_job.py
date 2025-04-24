@@ -1,5 +1,4 @@
 import os
-from contextlib import nullcontext
 
 from dotenv import load_dotenv
 from sendgrid import SendGridAPIClient
