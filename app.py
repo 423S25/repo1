@@ -11,7 +11,7 @@ from flask_login import LoginManager, login_required, login_user, current_user, 
 from flask_bcrypt import Bcrypt
 
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
-from src.model.user import User, user_db
+from src.model.user import User, user_db, Email
 from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
     ProductUpdateDonatedForm, parse_errors, htmx_errors, htmx_redirect, CategoryUpdateAllForm, CategoryAddForm, \
     ProductAddInventoryForm, parse_stock_units, TimeFrameForm, parse_timeframe_form_errors
@@ -41,7 +41,7 @@ with db:
     db.create_tables([Category, Product, InventorySnapshot, StockUnit])
 
 with user_db:
-    user_db.create_tables([User])
+    user_db.create_tables([User, Email])
 
 #used by flask-login
 @login_manager.user_loader
@@ -407,7 +407,17 @@ def login():
 @admin_required
 def get_settings():
     accounts = User.all()
-    return render_template("settings.html", user=current_user, accounts=accounts)
+    emails = Email.get_all_emails()
+    return render_template("settings.html", user=current_user, accounts=accounts, emails = emails)
+
+@app.delete("/delete_email/<email>")
+@admin_required
+def del_email(email: str):
+    Email.delete_email(email)
+    return htmx_redirect("/settings")
+
+
+
 
 # Add a new email to updates for admin only
 @app.post("/settings")
@@ -415,7 +425,7 @@ def get_settings():
 def post_settings():
     email = request.form.get("email")
     if email is not None and email != '' and '@' in email:
-        User.get_by_username('admin').update_email(email)
+        Email.add_email('admin', email)
     return redirect("/settings")
 
 @app.get("/update_password/<username>")
@@ -571,7 +581,7 @@ def post_product_update_inventory(product_id: int):
         if len(form_errors) == 0:
             product.update_stock(stock_units)
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)
@@ -610,7 +620,7 @@ def post_product_add_inventory(product_id: int):
         if len(form_errors) == 0:
             product.add_stock(stock_unit_submissions, form.donation.data)
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)
@@ -645,7 +655,7 @@ def post_product_update_inventory_mobile(product_id: int):
         if len(form_errors) == 0:
             product.update_stock(stock_unit_submissions)
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/mobile")
         else:
             return htmx_errors(form_errors)
@@ -704,7 +714,7 @@ def post_product_update_all(product_id: int):
             product.update_product(product_name, stock_units, ideal_stock)
             Product.fill_days_left()
             product.mark_not_notified()
-            EmailJob.process_emails(User.get_by_username('admin').email)
+            EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)

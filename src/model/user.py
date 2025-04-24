@@ -49,3 +49,23 @@ class User(UserMixin, user_db.Model):
 
     class Meta:
         database = user_db
+
+class Email(user_db.Model):
+    id =AutoField()
+    user = ForeignKeyField(User, backref='emails', on_delete='CASCADE')
+    email = TextField()
+
+    @staticmethod
+    def add_email(user: User, email: str):
+        return Email.create(user=user, email=email)
+
+    @staticmethod
+    def get_all_emails() -> list[str]:
+        return [e.email for e in Email.select()]
+    @staticmethod
+    def get_email(email: str):
+        return Email.get(Email.email == email)
+    @staticmethod
+    def delete_email(email: str):
+        email = Email.get_email(email)
+        email.delete_instance()

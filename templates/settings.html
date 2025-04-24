@@ -1,9 +1,6 @@
-
 <link rel="stylesheet" href="styles/settings.css">
 {% extends "base.html" %}
 {% block content %}
-
-
 <header>
     <div class="admin-back">
         <a style="position: relative;" href="/">
@@ -14,11 +11,25 @@
     <div style="margin-left: 10px">
         <div class="admin-content">
             <h1 class="admin-label">Admin Settings</h1>
-            <h2 class="email-label">Admin Email</h2>
-            <form method="post" action="/settings" hx-confirm="Update the admin email?">
-                <input class="email-input" name="email" type="text" , placeholder={{ user.email }}>
-                <button class="admin-button" type="submit">UPDATE</button>
+            <h2 class="email-label">Email</h2>
+            <form method="post" action="/settings">
+                <input class="email-input" name="email" type="text" , placeholder="email">
+                <button class="admin-button" type="submit">ADD</button>
             </form>
+            <div>
+            <h1>Email List</h1>
+            <ul class="email-list">
+            {% for email in emails %}
+                <li class="email-item"><span>{{ email }}</span>
+                <form hx-delete="/delete_email/{{ email }}"
+                      hx-target="body" hx-swap="beforeend"
+                    style="display: flex; align-items: center; gap: 10px;">
+                    <button type="submit" class="delete-button">x</button>
+                </form>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
         </div>
         <br>
         <div class="accounts-content">
@@ -32,6 +43,6 @@
             {% endfor %}
         </div>
     </div>
-    <br>
+<br>
 </body>
 {% endblock %}
