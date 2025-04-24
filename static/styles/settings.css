@@ -36,7 +36,8 @@
 
 .admin-back a:hover
 {
-    color: var(--hrdc-theme-green-yellow);
+    color: white;
+    background-color: var(--hrdc-theme-green-yellow);
     cursor: pointer;
 }
 

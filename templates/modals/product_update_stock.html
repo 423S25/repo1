@@ -8,7 +8,7 @@
 		<form hx-post="product_update_inventory/{{ product.get_id() }}" hx-target="#modal-errors" hx-swap="innerHTML">
 			{{ form.csrf_token }}
 			<input type="hidden" name="_method" value="PATCH">
-
+			
 			{% include "modals/stock_unit_add_update.html" %}
 			<br>
 			<br>
