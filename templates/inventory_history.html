@@ -257,8 +257,6 @@
                             </a>
                         </div>
                     </div>
-                {% else %}
-                    <div></div>
                 {% endif %}
             </div>
 
@@ -312,7 +310,10 @@
     </div>
 
     <div class="box-shadow-small chart-parent" style="grid-column: 2;">
-        {{ timeframe_form('/product_lifetime/' ~ product.get_id(), '#lifetime-chart-cont') }}
+        <div>
+            <h2 class="chart-title">Product Intake</h2>
+            {{ timeframe_form('/product_lifetime/' ~ product.get_id(), '#lifetime-chart-cont') }}
+        </div>
         <div style="height: 300px; width: 100%;" class="center-all" id="lifetime-chart-cont">
             {% include "charts/lifetime_split.html" %}
         </div>
@@ -337,13 +338,19 @@
     </div>
 
     <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
-        {{ timeframe_form('/product_price_history/' ~ product.get_id(), '#price-chart-cont') }}
+        <div>
+            <h2 class="chart-title">Average Price</h2>
+            {{ timeframe_form('/product_price_history/' ~ product.get_id(), '#price-chart-cont') }}
+        </div>
         <div style="height: 300px; width: 100%;" class="center-all" id="price-chart-cont">
             {% include "charts/price_line_chart.html" %}
         </div>
     </div>
     <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
-        {{ timeframe_form('/product_inventory_history/' ~ product.get_id(), '#inventory-chart-cont') }}
+        <div>
+            <h2 class="chart-title">Individual Inventory</h2>
+            {{ timeframe_form('/product_inventory_history/' ~ product.get_id(), '#inventory-chart-cont') }}
+        </div>
         <div style="height: 300px; width: 100%;" class="center-all" id="inventory-chart-cont">
             {% include "charts/inventory_line_chart.html" %}
         </div>

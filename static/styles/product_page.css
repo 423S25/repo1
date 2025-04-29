@@ -11,7 +11,7 @@
 .chart-parent {
     padding: 5px;
     display: grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 200px 1fr;
 }
 canvas {
     height: 100%;
@@ -75,7 +75,7 @@ canvas {
     gap: 10px;
     padding: 10px;
     grid-template-rows: 40px auto;
-    grid-template-columns: 2fr 3fr;
+    grid-template-columns: 250px 1fr;
 }
 .product-action-name {
     font-size: 1.7em;
@@ -89,9 +89,10 @@ canvas {
     white-space: nowrap;
 }
 .product-action-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 40px;
-    gap: 10px;
+    display: flex;
+}
+.product-action-row *:not(:last-child) {
+    margin-right: 10px;
 }
 .product-action-row > div:last-child {
     width: 40px;
@@ -105,6 +106,7 @@ canvas {
     color: white;
     padding: 0 15px;
     text-transform: uppercase;
+    width: 100%;
 }
 .product-action-inventory:hover {
     background-color: var(--hrdc-theme-green-yellow);
@@ -112,6 +114,7 @@ canvas {
 
 .product-action-more {
     aspect-ratio: 1 / 1;
+    flex-shrink: 0;
     background-color: var(--hrdc-theme-light-grey);
     display: flex;
     justify-content: center;
@@ -216,4 +219,13 @@ tr#info-col
 }
 .timeframe-form > :first-child {
     margin-top: 0;
+}
+
+.chart-title {
+    margin: 0;
+    margin-bottom: 0.5em;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    color: var(--hrdc-theme-dark-teal);
 }
