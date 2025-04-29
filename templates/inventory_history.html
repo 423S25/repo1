@@ -95,7 +95,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Value'
+                                text: 'Price ($)'
                             }
                         }
                     }
@@ -149,7 +149,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Value'
+                                text: 'Individual Inventory'
                             }
                         }
                     }
@@ -236,12 +236,12 @@
                     hx-target="body"
                     hx-swap="beforeend"
                 >Set Inventory</button>
-                <button class="product-action-inventory"
-                    hx-get="/product_add_inventory/{{ product.id }}"
-                    hx-target="body"
-                    hx-swap="beforeend"
-                >Add Inventory</button>
                 {% if is_admin %}
+                    <button class="product-action-inventory"
+                        hx-get="/product_add_inventory/{{ product.id }}"
+                        hx-target="body"
+                        hx-swap="beforeend"
+                    >Add Inventory</button>
                     <div>
                         <button class="product-action-more">
                             <img src="icons/three_dot.svg">

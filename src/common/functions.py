@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from calendar import monthrange
 
-class helper():
+class Helper():
 
     def price_over_amount_inventory(self):
         products = Product.all()
@@ -43,10 +43,11 @@ class helper():
         now = datetime.now()
         one_year_ago = now - timedelta(days=365)
         snapshots = (InventorySnapshot
-                     .select(InventorySnapshot, Product, Category)
-                     .join(Product)
-                     .join(Category)
-                     .where(InventorySnapshot.timestamp >= one_year_ago))
+            .select(InventorySnapshot, Product, Category)
+            .join(Product)
+            .join(Category)
+            .where(InventorySnapshot.timestamp >= one_year_ago)
+        )
         category_totals = defaultdict(lambda: defaultdict(int))
         all_month_keys = []
         for i in range(12):

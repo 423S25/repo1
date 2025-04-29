@@ -1,5 +1,4 @@
 import os
-from src.common.functions import helper
 from user_agents import parse
 import io
 from PIL import Image
@@ -10,6 +9,7 @@ from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
+from src.common.functions import Helper
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db, Email
 from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
@@ -114,7 +114,7 @@ def get_index():
         categories=categories,
         current_category=cat,
         levels=levels,
-        flag=False,
+        current_page="inventory",
         is_admin=getattr(current_user, "username", None) == "admin"
     )
 
@@ -156,14 +156,15 @@ def get_filter():
     categories = Category.all()
     levels = Product.get_low_products()
     return render_template("table.html",
-                           product_list=products,
-                           user=current_user,
-                           categories=categories,
-                           current_category=category_id,
-                           current_price=price,
-                           current_amount=amount,
-                           levels=levels,
-                           ideal=ideal)
+        product_list=products,
+        user=current_user,
+        categories=categories,
+        current_category=category_id,
+        current_price=price,
+        current_amount=amount,
+        levels=levels,
+        ideal=ideal
+    )
 
 # The reports page for an overview of all products
 @app.get("/reports")
@@ -188,10 +189,10 @@ def get_reports():
         category["total_inventory"] = category_inventory[category["id"]]
         category["price"] = category_price[category["id"]]
         colors.append(category["color"])
-    data1 = helper.price_over_amount_inventory(helper)
-    data2 = helper.convert_to_rgb(helper, colors)
-    data3 = helper.ideal_over_amount_inventory(helper)
-    chart_data = helper.get_inventory_chart_data(helper, data2)
+    data1 = Helper.price_over_amount_inventory(Helper)
+    data2 = Helper.convert_to_rgb(Helper, colors)
+    data3 = Helper.ideal_over_amount_inventory(Helper)
+    chart_data = Helper.get_inventory_chart_data(Helper, data2)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -204,7 +205,7 @@ def get_reports():
         data2=data2,
         data3=data3,
         chart_data=chart_data,
-        flag = True
+        current_page="reports"
     )
 
 # The search function for the main table page. Re-serves index.html
@@ -408,7 +409,13 @@ def login():
 def get_settings():
     accounts = User.all()
     emails = Email.get_all_emails()
-    return render_template("settings.html", user=current_user, accounts=accounts, emails = emails)
+    return render_template(
+        "settings.html",
+        user=current_user,
+        accounts=accounts,
+        emails=emails,
+        current_page='settings'
+    )
 
 @app.delete("/delete_email/<email>")
 @admin_required
