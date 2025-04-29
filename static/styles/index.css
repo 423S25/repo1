@@ -177,7 +177,7 @@ p#stock-label
     border-radius: 5px;
     box-shadow: 2px 4px 4px 2px rgba(0, 0, 0, 0.2);
     padding: 15px 12%;
-    display: grid;
+    width: 100%;
 }
 
 .filter-edit-button, .filter-clear-button
@@ -192,6 +192,10 @@ p#stock-label
     font-weight: bold;
     font-family: 'Gotham Book';
     display: grid;
+}
+
+.filter-clear-button {
+    margin: auto;
 }
 
 .filter-edit-button:hover, .filter-clear-button:hover
