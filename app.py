@@ -547,7 +547,7 @@ def post_product_upload_image(product_id: int):
 
 # Form to update stock only for a given product in product inventory_history.html
 @app.get("/product_update_inventory/<int:product_id>")
-@login_required
+@admin_required
 def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
@@ -572,7 +572,7 @@ def get_product_update_inventory(product_id: int):
 
 # Update inventory only for desktop
 @app.post("/product_update_inventory/<int:product_id>")
-@login_required
+@admin_required
 def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = FlaskForm()
