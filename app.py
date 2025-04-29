@@ -201,7 +201,6 @@ def get_reports():
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
         price=[c["price"] for c in categories],
-        value=request.args.get('value'),
         data1=data1,
         data2=data2,
         data3=data3,

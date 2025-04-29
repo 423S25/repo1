@@ -1,19 +1,29 @@
-#chart-container {
-    width: 300px;
-    height: 300px;
+.report-grid-parent {
+    margin: 0 20px;
+    gap: 20px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto auto repeat(3, 350px);
+    width: calc(100% - 40px);
+    min-height: 40px;
+}
+h2 {
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+    font-family: 'Gotham Book', sans-serif;
+    color: var(--hrdc-theme-dark-teal);
+}
+canvas {
+    height: 100%;
+    width: 100%;
     margin: auto;
 }
-
-
-#scatter-chart-container {
-    width: 60%;
-    height: 30%;
-    margin: auto;
+.csv-form {
+    grid-column: 1 / span 2;
+    width: 100%;
 }
-
-p#report-label
-{
-    color: var(--hrdc-theme-teal);
-    font-family: 'Gotham Bold';
-    margin-right: 1%;
+.csv-form > button {
+    display: block;
+    margin: auto;
 }
