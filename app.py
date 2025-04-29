@@ -3,6 +3,7 @@ from user_agents import parse
 import io
 from PIL import Image
 from functools import wraps
+from datetime import datetime
 
 from flask import Flask, request, Response, render_template, redirect, abort, send_from_directory, url_for, make_response
 from flask_wtf import FlaskForm
@@ -926,7 +927,20 @@ def category_delete(category_id: int):
 def export_csv():
     csv_file = Product.get_csv()
     response = Response(csv_file, content_type="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=products.csv"
+    now = datetime.now().strftime("%Y-%m-%d")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"products-{now}.csv\""
+    return response
+
+@app.get("/product_export_csv/<int:product_id>")
+@admin_required
+def export_csv_product(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f"Could not find product with id")
+    csv_file = product.get_snapshot_csv()
+    response = Response(csv_file, content_type="text/csv")
+    now = datetime.now().strftime("%Y-%m-%d")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"{product.get_clean_name()}-{now}.csv\""
     return response
 
 @app.route("/data/<path:filename>")

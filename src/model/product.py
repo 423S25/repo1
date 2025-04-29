@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv
 import os
+import re
 
 load_dotenv()
 
@@ -376,15 +377,48 @@ class Product(Model):
         ])
         for product in cls.select():
             product: Product = product
-            writer.writerow([product.product_name, product.category.name, product.inventory, \
-                             product.ideal_stock, product.days_left,
-                             product.lifetime_donated, product.lifetime_purchased])
+            writer.writerow([
+                product.product_name,
+                product.category.name,
+                product.inventory,
+                product.ideal_stock,
+                product.days_left,
+                product.lifetime_donated,
+                product.lifetime_purchased
+            ])
         output.seek(0)
         return output.getvalue()
 
     ########################################
     ########### INSTANCE METHODS ###########
     ########################################
+
+    def get_snapshot_csv(self):
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            'Inventory',
+            'Total Value',
+            'Timestamp',
+            'Added (Donated)',
+            'Added (Purchased)'
+        ])
+        snapshots = InventorySnapshot.all_of_product(self.get_id())
+        for snapshot in snapshots:
+            writer.writerow([
+                snapshot.individual_inventory,
+                snapshot.value_at_time,
+                snapshot.timestamp,
+                snapshot.added_donated,
+                snapshot.added_purchased
+            ])
+        output.seek(0)
+        return output.getvalue()
+
+    def get_clean_name(self) -> str:
+        # Characters invalid in Windows and macOS filenames
+        INVALID_CHARS = r'[<>:;"/\\|?*\x00-\x1F:]'
+        return re.sub(INVALID_CHARS, '', self.product_name).strip()
 
     def time_since_last_updated(self) -> relativedelta:
         return relativedelta(datetime.datetime.now(), self.last_updated)

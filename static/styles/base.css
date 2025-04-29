@@ -116,7 +116,7 @@ body {
     background-color: #ffffff;
 }
 
-.navigation button:hover, .navigation a:hover {
+.navigation button:not(.current):hover, .navigation a:not(.current):hover {
     border-bottom-color: var(--hrdc-theme-yellow);
     color: var(--hrdc-theme-yellow);
 }

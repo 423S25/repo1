@@ -242,7 +242,10 @@
                         hx-target="body"
                         hx-swap="beforeend"
                     >Add Inventory</button>
-                    <div>
+                    <form action="/product_export_csv/{{ product.id }}" method="get">
+                        <button class="product-action-inventory" type="submit">EXPORT CSV</button>
+                    </form>
+                    <div style="flex-shrink: 0; width: 30px;">
                         <button class="product-action-more">
                             <img src="icons/three_dot.svg">
                         </button>
