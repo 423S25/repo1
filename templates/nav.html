@@ -1,7 +1,7 @@
 <div class="navigation">
     <a href="/" class="{{ 'current' if current_page=='inventory' else '' }}">INVENTORY</a>
-    <a href="/reports" class="{{ 'current' if current_page=='reports' else '' }}">REPORTS</a>
     {% if current_user and current_user.username == "admin" %}
+        <a href="/reports" class="{{ 'current' if current_page=='reports' else '' }}">REPORTS</a>
         <a href="/settings"  class="{{ 'current' if current_page=='settings' else '' }}">ADMIN SETTINGS</a>
     {% endif %}
     <form class="logout" action="/logout" method="post">
