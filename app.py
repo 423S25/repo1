@@ -547,7 +547,7 @@ def post_product_upload_image(product_id: int):
 
 # Form to update stock only for a given product in product inventory_history.html
 @app.get("/product_update_inventory/<int:product_id>")
-@admin_required
+@login_required
 def get_product_update_inventory(product_id: int):
     product = Product.get_product(product_id)
     if product is None:
@@ -572,7 +572,7 @@ def get_product_update_inventory(product_id: int):
 
 # Update inventory only for desktop
 @app.post("/product_update_inventory/<int:product_id>")
-@admin_required
+@login_required
 def post_product_update_inventory(product_id: int):
     if request.form.get('_method') == 'PATCH':
         form = FlaskForm()
@@ -587,45 +587,6 @@ def post_product_update_inventory(product_id: int):
         
         if len(form_errors) == 0:
             product.update_stock(stock_units)
-            product.mark_not_notified()
-            EmailJob.process_emails(Email.get_all_emails())
-            return htmx_redirect("/" + str(product_id))
-        else:
-            return htmx_errors(form_errors)
-    else:
-        return abort(405, description="Method Not Allowed")
-
-# Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
-@app.get("/product_add_inventory/<int:product_id>")
-@login_required
-def get_product_add_inventory(product_id: int):
-    product = Product.get_product(product_id)
-    if product is None:
-        return abort(404, description=f'No product found with id {product_id}')
-    stock_units = StockUnit.all_of_product(product_id)
-    return render_template(
-        "modals/product_add_stock.html",
-        product=product,
-        form=FlaskForm(),
-        stock_unit_list=stock_units,
-        is_admin=getattr(current_user, "username", None) == "admin"
-    )
-
-# Add inventory only for desktop
-@app.post("/product_add_inventory/<int:product_id>")
-@login_required
-def post_product_add_inventory(product_id: int):
-    if request.form.get('_method') == 'PATCH':
-        form = ProductAddInventoryForm()
-        form_errors = parse_errors(form)
-        stock_unit_submissions = parse_stock_units(request.form, form_errors)
-
-        product = Product.get_product(product_id)
-        if product is None:
-            form_errors.append(f"Could not find product {product_id}")
-        
-        if len(form_errors) == 0:
-            product.add_stock(stock_unit_submissions, form.donation.data)
             product.mark_not_notified()
             EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/" + str(product_id))
@@ -664,6 +625,45 @@ def post_product_update_inventory_mobile(product_id: int):
             product.mark_not_notified()
             EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/mobile")
+        else:
+            return htmx_errors(form_errors)
+    else:
+        return abort(405, description="Method Not Allowed")
+
+# Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
+@app.get("/product_add_inventory/<int:product_id>")
+@admin_required
+def get_product_add_inventory(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f'No product found with id {product_id}')
+    stock_units = StockUnit.all_of_product(product_id)
+    return render_template(
+        "modals/product_add_stock.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=stock_units,
+        is_admin=getattr(current_user, "username", None) == "admin"
+    )
+
+# Add inventory only for desktop
+@app.post("/product_add_inventory/<int:product_id>")
+@admin_required
+def post_product_add_inventory(product_id: int):
+    if request.form.get('_method') == 'PATCH':
+        form = ProductAddInventoryForm()
+        form_errors = parse_errors(form)
+        stock_unit_submissions = parse_stock_units(request.form, form_errors)
+
+        product = Product.get_product(product_id)
+        if product is None:
+            form_errors.append(f"Could not find product {product_id}")
+        
+        if len(form_errors) == 0:
+            product.add_stock(stock_unit_submissions, form.donation.data)
+            product.mark_not_notified()
+            EmailJob.process_emails(Email.get_all_emails())
+            return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)
     else:
