@@ -199,7 +199,7 @@ class Product(Model):
     @staticmethod
     # overloaded with category id for filter
     def urgency_rank(category_id: str = None, price: str = None, amount: str = None, text: str = None, ideal: str = None,) -> list['Product']:
-        query = Product.all()
+        query = Product.select(Product)
         if category_id == '0' or category_id is None:
             pass
         else:
