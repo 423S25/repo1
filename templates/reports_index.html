@@ -1,5 +1,228 @@
 {% extends "base.html" %}
 {% block content %}
 {% include "nav.html" %}
-{% include "/reports/report_nav.html" %}
+
+<div class="report-grid-parent">
+    <form action="/export_csv" method="get" class="csv-form">
+        <button type="submit" class="product-button">EXPORT CSV</button>
+    </form>
+    <h2>By Product</h2>
+    <h2>By Category</h2>
+    <div class="box-shadow-small">
+        <canvas id="inventoryChart"></canvas>
+    </div>
+    <div class="box-shadow-small">
+        <canvas id="DonutChart"></canvas>
+    </div>
+    <div class="box-shadow-small">
+        <canvas id="inventoryScatterChart"></canvas>
+    </div>
+    <div class="box-shadow-small">
+        <canvas id="DonutChart2"></canvas>
+    </div>
+    <div class="box-shadow-small">
+        <canvas id="amountIdealChartContainer"></canvas>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var categories = {{ categories | tojson }};
+        var quant = {{ quant | tojson }};
+        var labels = categories.map(c => c.name);
+        var backgroundColors = {{ data2 | tojson }};
+        var ctx = document.getElementById('DonutChart').getContext('2d');
+        var myDonutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: quant,
+                    backgroundColor: backgroundColors,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Category by Current Stock'
+                    }
+                }
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var categories = {{ categories | tojson }};
+        var quant = {{ price | tojson }};
+        var labels = categories.map(c => c.name);
+        var backgroundColors = {{ data2 | tojson }};
+        var ctx = document.getElementById('DonutChart2').getContext('2d');
+        var myDonutChart2 = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: quant,
+                    backgroundColor: backgroundColors,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Category by Price'
+                    }
+                }
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('inventoryChart').getContext('2d');
+        var backgroundColors = {{ data2 | tojson }};
+        const inventoryChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_data.labels | tojson }},
+                datasets: {{ chart_data.datasets | tojson }},
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Inventory Count' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Month' }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Category by Current Stock'
+                    }
+                }
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById("inventoryScatterChart").getContext("2d");
+
+        const data = {
+            datasets: [{
+                label: "Inventory vs Price",
+                data: [
+                    {% for d in data1 %}
+                        {
+                            x: {{ d[0] }},
+                            y: {{ d[1] }},
+                            label: "{{ d[2] }}",
+                        }
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgb(20, 111, 118)'
+            }]
+        };
+
+        new Chart(ctx, {
+            type: "scatter",
+            data: data,
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Price ($)"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Inventory Count"
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItem) {
+                                return tooltipItem[0].raw.label; // Show name in tooltip
+                            },
+                            label: function(tooltipItem) {
+                                return `Price: ${tooltipItem.raw.x}, Inventory: ${tooltipItem.raw.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx2 = document.getElementById("amountIdealChartContainer").getContext("2d");
+
+        const data2 = {
+            datasets: [{
+                label: "Ideal Amount vs Current Stock",
+                data: [
+                    {% for d in data3 %}
+                        {
+                            x: {{ d[0] }},
+                            y: {{ d[1] }},
+                            label: "{{ d[2] }}",
+                        }
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgb(20, 111, 118)'
+            }]
+        };
+
+        new Chart(ctx2, {
+            type: "scatter",
+            data: data2,
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Current Stock"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Ideal Amount"
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItem) {
+                                return tooltipItem[0].raw.label; // Show name in tooltip
+                            },
+                            label: function(tooltipItem) {
+                                return `Price: ${tooltipItem.raw.x}, Inventory: ${tooltipItem.raw.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
 {% endblock %}

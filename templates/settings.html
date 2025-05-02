@@ -1,12 +1,7 @@
 <link rel="stylesheet" href="styles/settings.css">
 {% extends "base.html" %}
 {% block content %}
-<header>
-    <div class="admin-back">
-        <a style="position: relative;" href="/">
-            <img style="position: relative; top: 6px;" src="icons/arrow_left.svg" alt="Left Arrow"/>Back to Home
-        </a></div>
-</header>
+{% include "nav.html" %}
 <body>
     <div style="margin-left: 10px">
         <div class="admin-content">

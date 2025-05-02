@@ -1,15 +1,16 @@
 import os
-from src.common.functions import helper
 from user_agents import parse
 import io
 from PIL import Image
 from functools import wraps
+from datetime import datetime
 
 from flask import Flask, request, Response, render_template, redirect, abort, send_from_directory, url_for, make_response
 from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from flask_bcrypt import Bcrypt
 
+from src.common.functions import Helper
 from src.model.product import Product, InventorySnapshot, Category, StockUnit, db
 from src.model.user import User, user_db, Email
 from src.common.forms import LoginForm, ProductAddForm, ProductUpdateAllForm, ProductUpdatePurchasedForm, \
@@ -114,7 +115,7 @@ def get_index():
         categories=categories,
         current_category=cat,
         levels=levels,
-        flag=False,
+        current_page="inventory",
         is_admin=getattr(current_user, "username", None) == "admin"
     )
 
@@ -156,14 +157,15 @@ def get_filter():
     categories = Category.all()
     levels = Product.get_low_products()
     return render_template("table.html",
-                           product_list=products,
-                           user=current_user,
-                           categories=categories,
-                           current_category=category_id,
-                           current_price=price,
-                           current_amount=amount,
-                           levels=levels,
-                           ideal=ideal)
+        product_list=products,
+        user=current_user,
+        categories=categories,
+        current_category=category_id,
+        current_price=price,
+        current_amount=amount,
+        levels=levels,
+        ideal=ideal
+    )
 
 # The reports page for an overview of all products
 @app.get("/reports")
@@ -188,10 +190,10 @@ def get_reports():
         category["total_inventory"] = category_inventory[category["id"]]
         category["price"] = category_price[category["id"]]
         colors.append(category["color"])
-    data1 = helper.price_over_amount_inventory(helper)
-    data2 = helper.convert_to_rgb(helper, colors)
-    data3 = helper.ideal_over_amount_inventory(helper)
-    chart_data = helper.get_inventory_chart_data(helper, data2)
+    data1 = Helper.price_over_amount_inventory(Helper)
+    data2 = Helper.convert_to_rgb(Helper, colors)
+    data3 = Helper.ideal_over_amount_inventory(Helper)
+    chart_data = Helper.get_inventory_chart_data(Helper, data2)
     return render_template(
         "reports_index.html",
         product_list=products,
@@ -199,12 +201,11 @@ def get_reports():
         categories=categories,
         quant=[c["total_inventory"] for c in categories],
         price=[c["price"] for c in categories],
-        value=request.args.get('value'),
         data1=data1,
         data2=data2,
         data3=data3,
         chart_data=chart_data,
-        flag = True
+        current_page="reports"
     )
 
 # The search function for the main table page. Re-serves index.html
@@ -408,7 +409,13 @@ def login():
 def get_settings():
     accounts = User.all()
     emails = Email.get_all_emails()
-    return render_template("settings.html", user=current_user, accounts=accounts, emails = emails)
+    return render_template(
+        "settings.html",
+        user=current_user,
+        accounts=accounts,
+        emails=emails,
+        current_page='settings'
+    )
 
 @app.delete("/delete_email/<email>")
 @admin_required
@@ -588,45 +595,6 @@ def post_product_update_inventory(product_id: int):
     else:
         return abort(405, description="Method Not Allowed")
 
-# Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
-@app.get("/product_add_inventory/<int:product_id>")
-@login_required
-def get_product_add_inventory(product_id: int):
-    product = Product.get_product(product_id)
-    if product is None:
-        return abort(404, description=f'No product found with id {product_id}')
-    stock_units = StockUnit.all_of_product(product_id)
-    return render_template(
-        "modals/product_add_stock.html",
-        product=product,
-        form=FlaskForm(),
-        stock_unit_list=stock_units,
-        is_admin=getattr(current_user, "username", None) == "admin"
-    )
-
-# Add inventory only for desktop
-@app.post("/product_add_inventory/<int:product_id>")
-@login_required
-def post_product_add_inventory(product_id: int):
-    if request.form.get('_method') == 'PATCH':
-        form = ProductAddInventoryForm()
-        form_errors = parse_errors(form)
-        stock_unit_submissions = parse_stock_units(request.form, form_errors)
-
-        product = Product.get_product(product_id)
-        if product is None:
-            form_errors.append(f"Could not find product {product_id}")
-        
-        if len(form_errors) == 0:
-            product.add_stock(stock_unit_submissions, form.donation.data)
-            product.mark_not_notified()
-            EmailJob.process_emails(Email.get_all_emails())
-            return htmx_redirect("/" + str(product_id))
-        else:
-            return htmx_errors(form_errors)
-    else:
-        return abort(405, description="Method Not Allowed")
-
 @app.get("/product_update_inventory_mobile/<int:product_id>")
 @login_required
 def get_product_update_inventory_mobile(product_id: int):
@@ -657,6 +625,45 @@ def post_product_update_inventory_mobile(product_id: int):
             product.mark_not_notified()
             EmailJob.process_emails(Email.get_all_emails())
             return htmx_redirect("/mobile")
+        else:
+            return htmx_errors(form_errors)
+    else:
+        return abort(405, description="Method Not Allowed")
+
+# Form to add inventory whether purchased or donated only for a given product in product inventory_history.html
+@app.get("/product_add_inventory/<int:product_id>")
+@admin_required
+def get_product_add_inventory(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f'No product found with id {product_id}')
+    stock_units = StockUnit.all_of_product(product_id)
+    return render_template(
+        "modals/product_add_stock.html",
+        product=product,
+        form=FlaskForm(),
+        stock_unit_list=stock_units,
+        is_admin=getattr(current_user, "username", None) == "admin"
+    )
+
+# Add inventory only for desktop
+@app.post("/product_add_inventory/<int:product_id>")
+@admin_required
+def post_product_add_inventory(product_id: int):
+    if request.form.get('_method') == 'PATCH':
+        form = ProductAddInventoryForm()
+        form_errors = parse_errors(form)
+        stock_unit_submissions = parse_stock_units(request.form, form_errors)
+
+        product = Product.get_product(product_id)
+        if product is None:
+            form_errors.append(f"Could not find product {product_id}")
+        
+        if len(form_errors) == 0:
+            product.add_stock(stock_unit_submissions, form.donation.data)
+            product.mark_not_notified()
+            EmailJob.process_emails(Email.get_all_emails())
+            return htmx_redirect("/" + str(product_id))
         else:
             return htmx_errors(form_errors)
     else:
@@ -919,7 +926,20 @@ def category_delete(category_id: int):
 def export_csv():
     csv_file = Product.get_csv()
     response = Response(csv_file, content_type="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=products.csv"
+    now = datetime.now().strftime("%Y-%m-%d")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"products-{now}.csv\""
+    return response
+
+@app.get("/product_export_csv/<int:product_id>")
+@admin_required
+def export_csv_product(product_id: int):
+    product = Product.get_product(product_id)
+    if product is None:
+        return abort(404, description=f"Could not find product with id")
+    csv_file = product.get_snapshot_csv()
+    response = Response(csv_file, content_type="text/csv")
+    now = datetime.now().strftime("%Y-%m-%d")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"{product.get_clean_name()}-{now}.csv\""
     return response
 
 @app.route("/data/<path:filename>")

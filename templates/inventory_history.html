@@ -43,6 +43,9 @@
                         title: {
                             display: true,
                             text: 'Product Intake'
+                        },
+                        legend: {
+                            onClick: null
                         }
                     }
                 }
@@ -79,6 +82,11 @@
                     }]
                 },
                 options: {
+                    plugins: {
+                        legend: {
+                            onClick: null
+                        }
+                    },
                     scales: {
                         x: {
                             type: 'time',
@@ -95,7 +103,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Value'
+                                text: 'Price ($)'
                             }
                         }
                     }
@@ -133,6 +141,11 @@
                     }]
                 },
                 options: {
+                    plugins: {
+                        legend: {
+                            onClick: null
+                        }
+                    },
                     scales: {
                         x: {
                             type: 'time',
@@ -149,7 +162,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Value'
+                                text: 'Individual Inventory'
                             }
                         }
                     }
@@ -236,13 +249,16 @@
                     hx-target="body"
                     hx-swap="beforeend"
                 >Set Inventory</button>
-                <button class="product-action-inventory"
-                    hx-get="/product_add_inventory/{{ product.id }}"
-                    hx-target="body"
-                    hx-swap="beforeend"
-                >Add Inventory</button>
                 {% if is_admin %}
-                    <div>
+                    <button class="product-action-inventory"
+                        hx-get="/product_add_inventory/{{ product.id }}"
+                        hx-target="body"
+                        hx-swap="beforeend"
+                    >Add Inventory</button>
+                    <form action="/product_export_csv/{{ product.id }}" method="get">
+                        <button class="product-action-inventory" type="submit">EXPORT CSV</button>
+                    </form>
+                    <div style="flex-shrink: 0; width: 30px;">
                         <button class="product-action-more">
                             <img src="icons/three_dot.svg">
                         </button>
@@ -257,8 +273,6 @@
                             </a>
                         </div>
                     </div>
-                {% else %}
-                    <div></div>
                 {% endif %}
             </div>
 
@@ -312,7 +326,10 @@
     </div>
 
     <div class="box-shadow-small chart-parent" style="grid-column: 2;">
-        {{ timeframe_form('/product_lifetime/' ~ product.get_id(), '#lifetime-chart-cont') }}
+        <div>
+            <h2 class="chart-title">Product Intake</h2>
+            {{ timeframe_form('/product_lifetime/' ~ product.get_id(), '#lifetime-chart-cont') }}
+        </div>
         <div style="height: 300px; width: 100%;" class="center-all" id="lifetime-chart-cont">
             {% include "charts/lifetime_split.html" %}
         </div>
@@ -320,10 +337,10 @@
     <div class="box-shadow-small" style="grid-column: 3;">
         <table><tbody>
             <tr id="info-col">
-                <th>Unit Name</th>
-                <th>Individual/Unit</th>
-                <th>Price/Unit</th>
-                <th>Count in Units</th>
+                <th style="text-indent: 0px;">Unit Name</th>
+                <th style="text-indent: 0px;">Individual/Unit</th>
+                <th style="text-indent: 0px;">Price/Unit</th>
+                <th style="text-indent: 0px;">Count in Units</th>
             </tr>
             {% for stock_unit, count in stock_units_with_counts %}
                 <tr>
@@ -337,13 +354,19 @@
     </div>
 
     <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
-        {{ timeframe_form('/product_price_history/' ~ product.get_id(), '#price-chart-cont') }}
+        <div>
+            <h2 class="chart-title">Average Price</h2>
+            {{ timeframe_form('/product_price_history/' ~ product.get_id(), '#price-chart-cont') }}
+        </div>
         <div style="height: 300px; width: 100%;" class="center-all" id="price-chart-cont">
             {% include "charts/price_line_chart.html" %}
         </div>
     </div>
     <div class="box-shadow-small chart-parent" style="grid-column: 2 / span 2;">
-        {{ timeframe_form('/product_inventory_history/' ~ product.get_id(), '#inventory-chart-cont') }}
+        <div>
+            <h2 class="chart-title">Individual Inventory</h2>
+            {{ timeframe_form('/product_inventory_history/' ~ product.get_id(), '#inventory-chart-cont') }}
+        </div>
         <div style="height: 300px; width: 100%;" class="center-all" id="inventory-chart-cont">
             {% include "charts/inventory_line_chart.html" %}
         </div>

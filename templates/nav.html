@@ -1,27 +1,15 @@
 <div class="navigation">
-    {% if flag %}
-        <form class="inventory" action="/" method="get">
-            <button type="submit">INVENTORY</button>
-        </form>
-        <form class="current" action="/reports" method="get">
-            <button type="submit" name="value" value="inventory">REPORTS</button>
-        </form>
-        <form class="logout" action="/logout" method="post">
-            <button type="submit" element="logout">
-                <img alt="User" src="icons/user.svg" class="logout-icon"/>SIGN OUT
-            </button>
-        </form>
-    {% elif not flag %}
-        <form class="current" action="/" method="get">
-            <button type="submit">INVENTORY</button>
-        </form>
-        <form class="reports" action="/reports" method="get">
-            <button type="submit" name="value" value="inventory">REPORTS</button>
-        </form>
-        <form class="logout" action="/logout" method="post">
-            <button type="submit" element="logout">
-                <img alt="User" src="icons/user.svg" class="logout-icon"/>SIGN OUT
-            </button>
-        </form>
+    <a href="/" class="{{ 'current' if current_page=='inventory' else '' }}">INVENTORY</a>
+    {% if current_user and current_user.username == "admin" %}
+        <a href="/reports" class="{{ 'current' if current_page=='reports' else '' }}">REPORTS</a>
+        <a href="/settings"  class="{{ 'current' if current_page=='settings' else '' }}">ADMIN SETTINGS</a>
     {% endif %}
+    <form class="logout" action="/logout" method="post">
+        <button type="submit" element="logout">
+            <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" viewBox="5 3 14 18">
+                <path fill="currentColor" d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-8a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm7 13v2a1 1 0 0 1-2 0v-2a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v2a1 1 0 1 1-2 0v-2a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3Z" style="--darkreader-inline-fill: var(--darkreader-background-003e52, #003242);" data-darkreader-inline-fill=""/>
+            </svg>
+            SIGN OUT
+        </button>
+    </form>
 </div>
