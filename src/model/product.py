@@ -199,7 +199,7 @@ class Product(Model):
     @staticmethod
     # overloaded with category id for filter
     def urgency_rank(category_id: str = None, price: str = None, amount: str = None, text: str = None, ideal: str = None,) -> list['Product']:
-        query = Product.select(Product)
+        query = Product.all()
         if category_id == '0' or category_id is None:
             pass
         else:
@@ -263,7 +263,7 @@ class Product(Model):
         else:
             hold = []
             for p in query:
-                if text in p.product_name:
+                if text.lower() in p.product_name.lower():
                     hold.append(p.id)
             query = Product.select().where(Product.id.in_(hold))
         query = query.order_by(fn.COALESCE(Product.days_left, 999999))
